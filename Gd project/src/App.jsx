@@ -1,8 +1,10 @@
-import { useState, useCallback, useMemo } from 'react'
-import { ReactFlow, applyNodeChanges, Panel } from '@xyflow/react'
+import { useState, useCallback, useMemo, useEffect } from 'react'
+import { ReactFlow, applyNodeChanges, Panel, useNodesInitialized, useReactFlow } from '@xyflow/react'
 import SeedCard from './components/SeedCard'
 import DerivedCard from './components/DerivedCard'
 import Toolbar from './components/Toolbar'
+import WriteModal from './components/modals/WriteModal'
+import { getLayoutedElements } from './utils/layout'
 
 // React Flow에 커스텀 노드 타입 등록
 // 'seed' → SeedCard 컴포넌트, 'derived' → DerivedCard 컴포넌트
@@ -86,6 +88,32 @@ function App() {
   // 모달에서 사용자가 직접 입력한 텍스트
   const [modalUserInput, setModalUserInput] = useState('')
 
+  // React Flow가 모든 노드의 DOM 크기 측정을 완료했는지 여부
+  // 새 노드가 추가되면 false → true로 다시 순환하므로, 카드 추가 시 자동으로 레이아웃 재계산 트리거됨
+  const nodesInitialized = useNodesInitialized()
+
+  // 현재 React Flow 스토어에 등록된 노드 배열을 가져오는 함수
+  // node.measured(실제 DOM 크기)가 채워진 상태로 반환됨
+  const { getNodes } = useReactFlow()
+
+  // 모든 노드 크기 측정 완료 시 Dagre 레이아웃 재계산
+  // nodesInitialized가 true가 될 때마다 실행: 초기 로드 시 + 새 카드 추가 시
+  useEffect(() => {
+    if (!nodesInitialized) return
+
+    // node.measured가 채워진 최신 노드 배열로 레이아웃 계산
+    const measuredNodes = getNodes()
+    const { nodes: layoutedNodes } = getLayoutedElements(measuredNodes, edges)
+
+    // 레이아웃 결과를 cards 상태에 반영 (위치만 업데이트, 나머지 data는 보존)
+    setCards((prev) =>
+      prev.map((card) => {
+        const layouted = layoutedNodes.find((n) => n.id === card.id)
+        return layouted ? { ...card, position: layouted.position } : card
+      })
+    )
+  }, [nodesInitialized]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // 선택된 파생카드의 바로 위 부모 카드 ID 계산
   // → 해당 부모 카드에 주황 테두리(highlighted) 표시
   // selectedCardId가 없거나 씨드카드이면 null 반환
@@ -105,13 +133,48 @@ function App() {
   const handleNodeClick = useCallback((event, node) => {
     setSelectedCardId(node.id)
     setInfoCardId(null)
+    // 모달 구현 전 임시 처리: 모달이 없는 상태에서 다른 카드를 클릭하면
+    // 이전 툴바 버튼의 active 상태가 유지되는 버그 방지.
+    // 모달 구현 후에는 오버레이가 모든 클릭을 차단하므로 실질적으로 동작하지 않음.
+    setActiveModal(null)
   }, [])
 
   // 캔버스 빈 공간 클릭: 모든 선택 상태 해제
   const handlePaneClick = useCallback(() => {
     setSelectedCardId(null)
     setInfoCardId(null)
+    // 모달 구현 전 임시 처리: 모달이 없는 상태에서 캔버스를 클릭하면
+    // 툴바가 사라지면서 active 상태가 남는 버그 방지.
+    // 모달 구현 후에는 오버레이가 모든 클릭을 차단하므로 실질적으로 동작하지 않음.
+    setActiveModal(null)
   }, [])
+
+  // 직접작성 모달 완료: 새 파생카드 + 엣지를 상태에 추가
+  // 레이아웃 재계산은 useNodesInitialized useEffect가 자동 처리
+  // (새 노드가 추가되면 React Flow가 크기를 측정하고 nodesInitialized가 true가 되면서 레이아웃 실행됨)
+  const handleWriteSubmit = useCallback((title, description) => {
+    const newId = `derived-${Date.now()}`
+
+    // 새 파생카드: tagType null = 직접작성 (태그 버튼 없음)
+    // position은 임시값 — useEffect에서 Dagre가 실제 위치로 덮어씀
+    setCards((prev) => [
+      ...prev,
+      {
+        id: newId,
+        type: 'derived',
+        position: { x: 0, y: 0 },
+        data: { title, description, tagType: null, tagName: null },
+      },
+    ])
+
+    // 선택된 카드 → 새 파생카드 연결 엣지 추가
+    setEdges((prev) => [
+      ...prev,
+      { id: `e-${selectedCardId}-${newId}`, source: selectedCardId, target: newId },
+    ])
+
+    setActiveModal(null)
+  }, [selectedCardId])
 
   // 카드 드래그 등 React Flow 내부 노드 변경사항 처리 (위치 이동 등)
   const handleNodesChange = useCallback((changes) => {
@@ -138,6 +201,14 @@ function App() {
 
   return (
     <div style={{ width: '100%', height: '100vh', background: '#F1F3F4' }}>
+      {/* 직접작성 모달: activeModal이 'write'일 때만 표시 */}
+      {activeModal === 'write' && (
+        <WriteModal
+          onClose={() => setActiveModal(null)}
+          onSubmit={handleWriteSubmit}
+        />
+      )}
+
       <ReactFlow
         nodes={nodes}
         edges={edges}

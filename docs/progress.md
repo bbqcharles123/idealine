@@ -42,6 +42,49 @@ src/
 - 태그 버튼 스펙: padding 4px 8px / border-radius 4px / 도구명 14px 600 lh18px / 아이콘-텍스트 간격 4px / 텍스트-화살표 간격 6px
 - 태그 버튼 화살표: 배경색에 맞는 색상 아이콘 별도 파일 관리 (CSS filter 부적합 — 특정 색상 변환 복잡)
 
+### Toolbar CSS 수정 ✅
+- `width: 427px` → `width: max-content`: flex 아이템 overflow로 padding-right 8px이 보이지 않던 문제 해결
+- `.toolbar-collection-wrapper`에 `flex-shrink: 0` 추가
+- 툴팁 `bottom: calc(100% + 4px)` (6px → 4px 조정)
+
+### activeModal 버그 수정 ✅
+- `handleNodeClick`, `handlePaneClick`에 `setActiveModal(null)` 추가
+- 모달 미구현 상태에서 다른 카드 클릭 시 이전 툴바 active 상태가 유지되는 버그 방지
+- 주석으로 "모달 구현 전 임시 처리" 명시 (모달 구현 후에는 오버레이가 차단하므로 실질적 동작 없음)
+
+### ModalButton 컴포넌트 ✅
+- 파일: `src/components/modals/ModalButton.jsx` + `ModalButton.css`
+- `variant`: `'filled'` (주 동작) | `'outline'` (보조 동작 - 이전으로)
+- `filled` + `disabled={false}` → 파란 배경 #589cfe, 흰 텍스트
+- `filled` + `disabled={true}` → 회색 배경 #d5d5d5, 회색 텍스트 #9e9e9e
+- `outline` → 흰 배경, 파란 테두리 #589cfe, 파란 텍스트 (항상 활성)
+- `width` prop: 기본 144px (시작카드생성 모달), 확장/변형/직접작성 모달은 222 전달
+- Figma의 `disabled/active/line` 3가지 → `variant(filled/outline)` + `disabled(boolean)` 조합으로 재구조화
+
+**설계 결정사항**
+- `disabled/active`는 같은 filled 스타일 안에서의 상태 변화, `line`은 스타일 자체가 다른 별도 버튼 → 같은 축으로 묶으면 의미 모호 → variant + disabled 분리
+- Notion 이해 페이지에 설계 근거 정리: https://www.notion.so/3642a8746cb180f79ccccff7c0a5465c
+
+### WriteModal 컴포넌트 ✅
+- 파일: `src/components/modals/WriteModal.jsx` + `WriteModal.css`
+- 구조: 오버레이(rgba 0,0,0,0.3) + 모달 박스(690×714px)
+- X 버튼(close_modal.svg): onClose 호출 → activeModal null
+- 아이디어 제목 input + 아이디어 설명 textarea
+- 버튼 활성 조건: 제목 + 설명 모두 입력(trim 기준)
+- 오버레이 클릭으로 닫기 없음 (X 버튼만) — 실수로 진행 내용 사라지는 UX 문제 방지
+
+**공통 CSS 클래스** (WriteModal.css에 정의, 확장/변형 모달에서 재사용)
+- `.modal-overlay`, `.modal-close-btn`
+- `.modal-input`: height 48px / border 1px #d5d5d5 / border-radius 4px / padding 14px 12px
+- `.modal-textarea`: height 112px / border 1px #d5d5d5 / border-radius 4px / padding 14px 12px
+- `.modal-label`: 14px SemiBold #555555 / lh 18px
+- `.modal-sublabel`: 14px Regular #4d4d4d / lh 18px
+- `.modal-subtitle`: 14px Regular #4d4d4d / lh 18px
+
+### App.jsx — 카드 생성 로직 ✅ (직접작성)
+- `handleWriteSubmit(title, description)`: 새 파생카드(tagType null) + 엣지를 `setCards`/`setEdges`에 추가 → 레이아웃은 `useNodesInitialized` useEffect가 자동 처리
+- WriteModal을 `activeModal === 'write'`일 때 렌더링 (ReactFlow 외부, overlay로 전체 화면 덮음)
+
 ### Toolbar ✅
 - 위치: `<Panel position="bottom-center">` — 뷰포트 하단 중앙 고정 (카드 드래그/캔버스 이동 무관)
 - 표시 조건: `selectedCardId`가 있을 때만 표시 (infoCardId만 있을 때는 미표시)
@@ -93,26 +136,51 @@ src/
 ### 코드 주석
 - SeedCard.jsx, DerivedCard.jsx, layout.js, App.jsx 전체에 한국어 블록 주석 추가 완료
 
+### Dagre 레이아웃 가변 높이 수정 ✅
+
+**문제 원인 2가지**
+1. Dagre graph 싱글톤(`dagreGraph`)이 module-level에 선언되어 이전 레이아웃 데이터가 누적됨
+2. `NODE_HEIGHT: 200` 고정값 → 실제 카드 높이 초과 시 카드끼리 겹침
+
+**해결 방식**: `useNodesInitialized` + `node.measured` 접근법 (Notion 가이드 기반)
+- `node.measured`: React Flow가 렌더링 후 실제 DOM 크기를 자동으로 저장하는 속성
+- `useNodesInitialized()`: 모든 노드 크기 측정 완료 시 `false → true` (새 노드 추가 시 반복)
+- `useEffect([nodesInitialized])`: 측정 완료 시점에 자동으로 레이아웃 재계산
+
+**layout.js 수정**
+- 매 호출 시 `dagreGraph.nodes().forEach(id => dagreGraph.removeNode(id))`로 누적 초기화
+- `node.measured?.width ?? 356`, `node.measured?.height ?? 200`으로 실제 DOM 크기 사용
+- `nodesep: 40, ranksep: 60` 추가 (카드 간 여백)
+- 좌상단 좌표 변환 시에도 측정된 크기 기준으로 계산
+
+**App.jsx 수정**
+- `useNodesInitialized`, `useReactFlow`, `useEffect` import 추가
+- `useEffect([nodesInitialized])`: `getNodes()`로 측정된 노드 배열 획득 → 레이아웃 계산 → `setCards`로 위치만 업데이트
+- `handleWriteSubmit`: `getLayoutedElements` 직접 호출 제거 → `setCards`/`setEdges`만 추가 (의존 배열도 `[selectedCardId]`로 단순화)
+- `ReactFlowProvider`가 main.jsx에서 App 전체를 감싸므로 App 컴포넌트 내에서 직접 hooks 사용 가능 (별도 분리 불필요)
+
 ---
 
 ## 미완료 / 나중에 해야 할 항목
 
 ### 컴포넌트
+- [x] **직접작성 모달** ✅
+- [x] **ModalButton 컴포넌트** ✅
+- [x] **카드 생성 로직 (직접작성)** ✅
+- [ ] **확장하기 모달**: BCC 사고도구(11개) 선택 → AI 질문 생성 → 사용자 답변 → 파생카드 생성 (3단계)
+- [ ] **변형하기 모달**: ERRC 프레임워크(4가지) 선택 → AI 질문 생성 → 사용자 답변 → 파생카드 생성 (3단계)
 - [ ] **다중 선택 툴바**: Shift+클릭으로 카드 여러 개 선택 시 별도 툴바 표시
   - 구조: "아이디어 카드 N개 선택됨" | [모음추가 버튼(파란 배경, 텍스트+아이콘)]
   - `selectedCardIds: string[]` 추가, React Flow `onSelectionChange` 활용
   - `selectedCardIds.length === 1` → 기존 툴바 / `> 1` → 다중 툴바 / `=== 0` → 숨김
 - [ ] **사이드패널 (SidePanel)**: ⓘ 클릭 시 우측에서 열리는 패널. 탭: 생성 정보(info) / UX 평가(ux)
-- [ ] **확장하기 모달**: BCC 사고도구(11개) 선택 → AI 질문 생성 → 사용자 답변 → 파생카드 생성 (3단계)
-- [ ] **변형하기 모달**: ERRC 프레임워크(4가지) 선택 → AI 질문 생성 → 사용자 답변 → 파생카드 생성 (3단계)
-- [ ] **직접작성 모달**: 사용자가 직접 아이디어 입력 → 파생카드 생성
 - [ ] **시작 모달 (StartModal)**: 앱 진입 시 씨드카드 초기 아이디어 입력 (AI API 연동 필요)
 - [ ] **태그 버튼 Popover**: DerivedCard 태그 버튼 클릭 시 도구 설명 팝오버
 
 ### 기능
 - [ ] **모음추가 기능**: 선택된 카드를 별도 모음 공간에 추가 (단일/다중 선택 모두)
-- [ ] **카드 생성 로직**: 모달 완료 후 파생카드 + edge를 cards/edges 배열에 추가
-- [ ] **Dagre 레이아웃 자동 배치**: 카드 추가 시 getLayoutedElements 호출. layout.js NODE_HEIGHT: 200 고정값 → 실제 카드 높이로 교체 필요
+- [ ] **카드 생성 로직 (확장하기/변형하기)**: 모달 완료 후 tagType 포함 파생카드 + edge 추가
+- [x] **Dagre 레이아웃 가변 높이** ✅
 - [ ] **AI API 연동**: Claude API를 사용한 질문 생성 및 아이디어 파생
 
 ### 아이콘
@@ -123,8 +191,12 @@ src/
 
 ## 다음 구현 순서
 
-1. **모달 (확장/변형/직접작성)** — 툴바 버튼 클릭 → activeModal 연동 → 모달 UI
-2. **카드 생성 로직** — 모달 완료 → cards/edges 업데이트 → Dagre 레이아웃 → activeModal null 초기화
+1. **확장하기 모달** — 3단계 플로우 (도구 선택 → AI 질문 → 답변 → 파생카드)
+   - Step 1: BCC 11개 도구 중 방향 선택
+   - Step 2: AI 질문 생성 (AI API 연동 전까지 임시 질문 사용 가능)
+   - Step 3: 답변 입력 → 파생카드 생성 (tagType: 'expand')
+   - 공통 CSS 클래스(modal-input, modal-textarea 등) WriteModal.css에서 재사용
+2. **변형하기 모달** — 확장하기와 동일 구조, ERRC 4가지 프레임워크 (tagType: 'transform')
 3. **다중 선택 툴바** — onSelectionChange 연동, 다중 툴바 UI
 4. **사이드패널** — infoCardId 연동
 5. **태그 버튼 Popover**

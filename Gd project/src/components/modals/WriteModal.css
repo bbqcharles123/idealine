@@ -1,0 +1,165 @@
+/* 오버레이: 뷰포트 전체를 덮어 모달 외부 인터랙션 차단 */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+/* 모달 박스 */
+.write-modal {
+  position: relative;
+  width: 690px;
+  height: 714px;
+  background: #ffffff;
+}
+
+/* X 닫기 버튼 */
+.modal-close-btn {
+  position: absolute;
+  top: 32px;
+  right: 28px;
+  width: 32px;
+  height: 32px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 콘텐츠 영역: 헤더 + 입력 필드들 */
+.write-modal-content {
+  position: absolute;
+  top: 92px;
+  left: 60px;
+  right: 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+}
+
+/* 헤더: 모달 제목 + 부제 */
+.write-modal-header {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.write-modal-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #222222;
+  line-height: normal;
+  margin: 0;
+}
+
+/* ---- 공통 텍스트 스타일 (다른 모달에서도 재사용) ---- */
+
+/* 부제 텍스트 */
+.modal-subtitle {
+  font-size: 14px;
+  font-weight: 400;
+  color: #4d4d4d;
+  line-height: 18px;
+  margin: 0;
+}
+
+/* 입력 필드 라벨 (아이디어 제목, 아이디어 설명) */
+.modal-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #555555;
+  line-height: 18px;
+}
+
+/* 설명 필드의 보조 안내 텍스트 */
+.modal-sublabel {
+  font-size: 14px;
+  font-weight: 400;
+  color: #4d4d4d;
+  line-height: 18px;
+  margin: 0;
+}
+
+/* 공통 input 스타일 */
+.modal-input {
+  height: 48px;
+  border: 1px solid #d5d5d5;
+  border-radius: 4px;
+  padding: 14px 12px;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  color: #4d4d4d;
+  font-family: 'Pretendard', sans-serif;
+  box-sizing: border-box;
+  outline: none;
+  width: 100%;
+}
+
+.modal-input::placeholder {
+  color: #9e9e9e;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+}
+
+/* 공통 textarea 스타일 */
+.modal-textarea {
+  height: 112px;
+  border: 1px solid #d5d5d5;
+  border-radius: 4px;
+  padding: 14px 12px;
+  font-size: 14px;
+  font-weight: 400;
+  color: #4d4d4d;
+  font-family: 'Pretendard', sans-serif;
+  box-sizing: border-box;
+  resize: none;
+  outline: none;
+  width: 100%;
+}
+
+.modal-textarea::placeholder {
+  color: #9e9e9e;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+/* ---- WriteModal 전용 레이아웃 ---- */
+
+/* 입력 필드 공통 래퍼 */
+.write-modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* 설명 필드: 라벨 헤더와 textarea 사이 간격을 별도 지정 */
+.write-modal-field--desc {
+  gap: 0;
+}
+
+/* 설명 필드 라벨 영역: 라벨 + 보조 안내 텍스트 */
+.write-modal-desc-header {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+/* 하단 버튼 영역 */
+.write-modal-footer {
+  position: absolute;
+  bottom: 26px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+}

@@ -1,10 +1,10 @@
 /* 툴바 컨테이너: 뷰포트 하단 중앙에 고정 표시 */
 .toolbar {
-  width: 427px;
+  width: max-content;
   height: 48px;
   display: flex;
   align-items: center;
-  padding: 0 8px;
+  padding: 4px 8px;
   background: #ffffff;
   border-radius: 6px;
   box-shadow: 0px 8px 40px 0 rgba(0, 0, 0, 0.12);
@@ -86,14 +86,14 @@
 /* hover 시 나타나는 툴팁 */
 .toolbar-tooltip {
   position: absolute;
-  bottom: calc(100% + 6px);
+  bottom: calc(100% + 4px);
   left: 50%;
   transform: translateX(-50%);
-  background-color: #222222;
+  background-color: #191C1E;
   color: #ffffff;
   font-size: 12px;
-  font-weight: 500;
-  padding: 4px 8px;
+  font-weight: 400;
+  padding: 2px 6px;
   border-radius: 4px;
   white-space: nowrap;
   opacity: 0;
