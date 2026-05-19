@@ -1,11 +1,28 @@
 import { Handle, Position } from '@xyflow/react'
 import './DerivedCard.css'
 
-// tagType별 도구 상징 아이콘 경로 매핑
-// expand: BCC 사고도구(확장하기) / transform: ERRC 프레임워크(변형하기)
+// tagType + tagName 조합으로 도구별 아이콘 경로 매핑 (chip_bcc_* / chip_errc_*)
+// BCC(확장하기)와 ERRC(변형하기) 모두 '제거'라는 도구명이 있지만 아이콘이 다르므로 중첩 구조로 관리
 const TAG_ICON = {
-  expand: '/tag_btn_bcc_copy.svg',
-  transform: '/tag_btn_errc_ban.svg',
+  expand: {
+    '제거':      '/chip_bcc_eraser.svg',
+    '대체':      '/chip_bcc_replace.svg',
+    '분할·분리': '/chip_bcc_scissors.svg',
+    '용도통합':  '/chip_bcc_layers.svg',
+    '결합':      '/chip_bcc_combine.svg',
+    '복제':      '/chip_bcc_copy.svg',
+    '역전':      '/chip_bcc_reverse.svg',
+    '재정의':    '/chip_bcc_refresh.svg',
+    '유추':      '/chip_bcc_lightbulb.svg',
+    '연결':      '/chip_bcc_link.svg',
+    '속성 의존성': '/chip_bcc_branch.svg',
+  },
+  transform: {
+    '증가': '/chip_errc_trending_up.svg',
+    '감소': '/chip_errc_trending_down.svg',
+    '창출': '/chip_errc_sparkles.svg',
+    '제거': '/chip_errc_ban.svg',
+  },
 }
 
 // tagType별 화살표 아이콘 경로 매핑 (배경색에 맞춰 색상이 다름)
@@ -33,7 +50,7 @@ function DerivedCard({ id, data }) {
           nodrag 클래스로 버튼 클릭 시 카드가 드래그되지 않도록 방지 */}
       {tagType && (
         <button className={`card-tag-btn card-tag-btn--${tagType} nodrag`}>
-          <img src={TAG_ICON[tagType]} width={16} height={16} alt="" />
+          <img src={TAG_ICON[tagType]?.[tagName]} width={16} height={16} alt="" />
           <span className="tag-name">{tagName}</span>
           <img className="tag-arrow" src={ARROW_ICON[tagType]} width={16} height={16} alt="" />
         </button>

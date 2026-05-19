@@ -1,0 +1,159 @@
+/* 모달 박스 */
+.transform-modal {
+  position: relative;
+  width: 690px;
+  height: 714px;
+  background: #ffffff;
+}
+
+/* 콘텐츠 영역: 헤더 + 진행도 + 단계 본문 */
+.transform-modal-content {
+  position: absolute;
+  top: 92px;
+  left: 60px;
+  right: 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+}
+
+/* 헤더: 제목 + 부제 */
+.transform-modal-header {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.transform-modal-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #222222;
+  margin: 0;
+}
+
+/* 진행도 + 단계 본문 묶음 */
+.transform-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+/* Step 1: 질문 + 선택지 */
+.transform-modal-step {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+/* Step 2: 질문 섹션 + 답변 섹션 (간격 더 좁음) */
+.transform-modal-step--answer {
+  gap: 24px;
+}
+
+/* Step 1 질문 텍스트 */
+.transform-modal-question {
+  font-size: 16px;
+  font-weight: 500;
+  color: #333333;
+  margin: 0;
+}
+
+/* 선택지 목록: 세로 배열 */
+.transform-modal-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ---- Step 2 전용 스타일 ---- */
+
+/* 질문 섹션: 헤더 행 + 질문 박스 */
+.transform-question-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* 질문 섹션 헤더: 좌측(라벨+도구칩) / 우측(재생성 버튼) */
+.transform-question-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* 좌측: 질문 라벨 + 도구 칩 묶음 */
+.transform-question-meta {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+/* 선택된 ERRC 도구명 칩 */
+.transform-tool-chip {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  background: #f2f2f2;
+  border-radius: 4px;
+  padding: 4px 8px;
+}
+
+.transform-tool-chip span {
+  font-size: 14px;
+  font-weight: 600;
+  color: #555555;
+  line-height: 18px;
+  text-align: center;
+}
+
+/* 재생성 버튼: AI 연동 후 onClick 핸들러 + disabled 속성 제거로 활성화 예정 */
+.transform-regenerate-btn {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  border: 1px solid #d5d5d5;
+  border-radius: 4px;
+  padding: 4px 6px;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.transform-regenerate-btn span {
+  font-size: 14px;
+  font-weight: 600;
+  color: #555555;
+  line-height: 18px;
+  text-align: center;
+}
+
+/* 질문 텍스트 박스 */
+.transform-question-box {
+  background: #eef5ff;
+  padding: 14px 12px;
+}
+
+.transform-question-box p {
+  font-size: 16px;
+  font-weight: 500;
+  color: #333333;
+  text-align: justify;
+  margin: 0;
+}
+
+/* 답변 섹션: 라벨 + textarea */
+.transform-answer-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* 하단 버튼 영역: 버튼 1개일 때는 가운데, 2개일 때는 나란히 */
+.transform-modal-footer {
+  position: absolute;
+  bottom: 26px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+}

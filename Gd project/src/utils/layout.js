@@ -18,7 +18,7 @@ export function getLayoutedElements(nodes, edges, direction = 'TB') {
 
   // 그래프 방향 및 카드 간 간격 설정
   // nodesep: 같은 rank(행) 내 카드 간 수평 간격 / ranksep: rank(행) 간 수직 간격
-  dagreGraph.setGraph({ rankdir: direction, nodesep: 40, ranksep: 60 })
+  dagreGraph.setGraph({ rankdir: direction, nodesep: 60, ranksep: 100 })
 
   // 각 노드를 Dagre에 등록
   // node.measured: React Flow가 렌더링 후 실제 DOM 크기를 자동으로 저장하는 속성

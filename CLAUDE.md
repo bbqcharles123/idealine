@@ -45,6 +45,10 @@ onInfoClick: fn
 // DerivedCard 추가
 tagType: 'expand' | 'transform' | null   — null이면 태그 버튼 없음 (직접쓰기)
 tagName: string | null                   — 도구명 (예: '복제', '제거')
+question: string | undefined             — 확장/변형 모달 도구에 연결된 질문 텍스트
+answer: string | undefined               — 사용자가 모달 textarea에 직접 입력한 원문 (사이드패널 Q&A에 표시)
+// description: AI가 answer를 프롬프트에 넘겨 생성한 카드 본문 (캔버스 카드에 표시)
+// AI 연동 전에는 description = answer 값을 임시로 사용
 ```
 
 ## ReactFlow 설정

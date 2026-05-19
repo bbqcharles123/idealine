@@ -4,6 +4,9 @@ import SeedCard from './components/SeedCard'
 import DerivedCard from './components/DerivedCard'
 import Toolbar from './components/Toolbar'
 import WriteModal from './components/modals/WriteModal'
+import ExpandModal from './components/modals/ExpandModal'
+import TransformModal from './components/modals/TransformModal'
+import SidePanel from './components/SidePanel'
 import { getLayoutedElements } from './utils/layout'
 
 // React Flow에 커스텀 노드 타입 등록
@@ -23,6 +26,8 @@ const DUMMY_CARDS = [
       title: 'AI 생활 루틴 코치 앱',
       description:
         'AI가 사용자의 하루 일정, 위치, 생활 패턴 데이터를 분석해 개인 맞춤형 생활 루틴을 제안하는 서비스이다. 사용자의 피로도와 집중 시간대를 고려해 업무, 휴식, 운동 시간을 자동으로 추천하고 루틴을 지속적으로 최적화한다.',
+      // 사이드패널 생성정보 탭에서 표시할 시작 모달 입력 주제 (시작 모달 구현 전 더미값)
+      topic: 'AI 기술 기반 혁신적인 제품 및 서비스 아이디어',
     },
   },
   {
@@ -31,10 +36,15 @@ const DUMMY_CARDS = [
     position: { x: 200, y: 400 },
     data: {
       title: '근무 유형별 루틴 자동 전환',
+      // AI가 사용자 답변을 바탕으로 생성한 카드 본문 (캔버스 카드에 표시)
       description:
         '재택·출근 등 그날의 근무 유형을 감지해 각각에 맞는 루틴으로 자동 전환되는 기능. 출근일에는 아침 준비 시간을 반영해 운동을 저녁으로 재배치하고, 재택일에는 이동 시간이 없는 만큼 오전 루틴을 더 촘촘하게 구성한다. 하나의 루틴을 억지로 따르는 대신 삶의 패턴에 맞게 복제된 루틴이 상황에 따라 작동한다.',
+      // 사용자가 모달 답변 textarea에 직접 입력한 원문 (사이드패널 질문&응답에 표시)
+      answer:
+        '재택근무 하는 날이랑 출근하는 날 루틴이 완전히 달라요. 출근 날은 아침에 준비 시간이 필요해서 운동을 저녁으로 밀어야 하는데, 앱은 매일 같은 시간에 운동하라고 추천하거든요.',
       tagType: 'expand',
       tagName: '복제',
+      question: '지금 하나의 루틴으로 관리하기 어렵다고 느끼는 상황이 있다면 어떤 경우인가요?',
     },
   },
   {
@@ -43,10 +53,15 @@ const DUMMY_CARDS = [
     position: { x: 600, y: 400 },
     data: {
       title: '온디맨드 루틴 피드',
+      // AI가 사용자 답변을 바탕으로 생성한 카드 본문 (캔버스 카드에 표시)
       description:
         '푸시 알림을 제거하고 사용자가 앱을 여는 순간 현재 시간·위치·패턴 데이터를 즉시 분석해 지금 이 순간에 맞는 루틴을 바로 제시하는 방식. 알림에 의해 끌려가는 루틴이 아니라 사용자가 필요할 때 능동적으로 확인하는 경험으로 전환하여 알림 피로 없이 루틴 유지율을 높인다.',
+      // 사용자가 모달 답변 textarea에 직접 입력한 원문 (사이드패널 질문&응답에 표시)
+      answer:
+        '알림이요. 아침에 일어나자마자 루틴 알림이 오는데 그냥 무시하게 되더라고요. 차라리 알림 없이 앱을 열면 지금 상태에 맞는 루틴이 바로 보이는 게 나을 것 같아요.',
       tagType: 'transform',
       tagName: '제거',
+      question: '루틴 앱에서 당연하게 제공되는 알림, 일정 직접 입력, 피로도 수동 체크 중 없애도 오히려 사용 경험이 더 나아질 것 같은 요소가 있나요?',
     },
   },
 ]
@@ -149,6 +164,66 @@ function App() {
     setActiveModal(null)
   }, [])
 
+  // 선택된 카드 데이터: ExpandModal에 전달 (AI 연동 시 Step 2 예시 생성에 사용 예정)
+  const selectedCard = cards.find((c) => c.id === selectedCardId) ?? null
+
+  // 사이드패널에 표시할 카드 데이터 (raw cards 사용 — isSelected 등 주입 전 원본)
+  const infoCard = cards.find((c) => c.id === infoCardId) ?? null
+
+  // 아이디어 출처 섹션용 직속 부모 카드
+  const infoParentCard = useMemo(() => {
+    if (!infoCardId) return null
+    const edge = edges.find((e) => e.target === infoCardId)
+    if (!edge) return null
+    return cards.find((c) => c.id === edge.source) ?? null
+  }, [infoCardId, edges, cards])
+
+  // 확장하기 모달 완료: 새 파생카드(tagType: 'expand') + 엣지를 상태에 추가
+  // AI 연동 전 임시: title = toolName + " 적용 아이디어", description = answer(placeholder), answer = 사용자 원문
+  const handleExpandSubmit = useCallback((answer, toolName, question) => {
+    const newId = `derived-${Date.now()}`
+
+    setCards((prev) => [
+      ...prev,
+      {
+        id: newId,
+        type: 'derived',
+        position: { x: 0, y: 0 },
+        data: { title: `${toolName} 적용 아이디어`, description: answer, answer, tagType: 'expand', tagName: toolName, question },
+      },
+    ])
+
+    setEdges((prev) => [
+      ...prev,
+      { id: `e-${selectedCardId}-${newId}`, source: selectedCardId, target: newId },
+    ])
+
+    setActiveModal(null)
+  }, [selectedCardId])
+
+  // 변형하기 모달 완료: 새 파생카드(tagType: 'transform') + 엣지를 상태에 추가
+  // AI 연동 전 임시: title = toolName + " 적용 아이디어", description = answer(placeholder), answer = 사용자 원문
+  const handleTransformSubmit = useCallback((answer, toolName, question) => {
+    const newId = `derived-${Date.now()}`
+
+    setCards((prev) => [
+      ...prev,
+      {
+        id: newId,
+        type: 'derived',
+        position: { x: 0, y: 0 },
+        data: { title: `${toolName} 적용 아이디어`, description: answer, answer, tagType: 'transform', tagName: toolName, question },
+      },
+    ])
+
+    setEdges((prev) => [
+      ...prev,
+      { id: `e-${selectedCardId}-${newId}`, source: selectedCardId, target: newId },
+    ])
+
+    setActiveModal(null)
+  }, [selectedCardId])
+
   // 직접작성 모달 완료: 새 파생카드 + 엣지를 상태에 추가
   // 레이아웃 재계산은 useNodesInitialized useEffect가 자동 처리
   // (새 노드가 추가되면 React Flow가 크기를 측정하고 nodesInitialized가 true가 되면서 레이아웃 실행됨)
@@ -201,11 +276,40 @@ function App() {
 
   return (
     <div style={{ width: '100%', height: '100vh', background: '#F1F3F4' }}>
+      {/* 확장하기 모달: activeModal이 'expand'일 때만 표시 */}
+      {activeModal === 'expand' && (
+        <ExpandModal
+          selectedCard={selectedCard}
+          onClose={() => setActiveModal(null)}
+          onSubmit={handleExpandSubmit}
+        />
+      )}
+
+      {/* 변형하기 모달: activeModal이 'transform'일 때만 표시 */}
+      {activeModal === 'transform' && (
+        <TransformModal
+          selectedCard={selectedCard}
+          onClose={() => setActiveModal(null)}
+          onSubmit={handleTransformSubmit}
+        />
+      )}
+
       {/* 직접작성 모달: activeModal이 'write'일 때만 표시 */}
       {activeModal === 'write' && (
         <WriteModal
           onClose={() => setActiveModal(null)}
           onSubmit={handleWriteSubmit}
+        />
+      )}
+
+      {/* 사이드패널: ⓘ 클릭 시 화면 우측 고정 표시 */}
+      {infoCardId && (
+        <SidePanel
+          card={infoCard}
+          parentCard={infoParentCard}
+          tab={sidePanelTab}
+          onTabChange={setSidePanelTab}
+          onClose={() => setInfoCardId(null)}
         />
       )}
 
@@ -218,7 +322,7 @@ function App() {
         onNodeClick={handleNodeClick}
         onPaneClick={handlePaneClick}
         defaultEdgeOptions={{
-          type: 'smoothstep',       // 연결선 곡선 스타일
+          type: 'step',             // 연결선 직각 스타일 (모든 엣지가 핸들 정중앙 한 점에서 출발)
           style: { stroke: '#000', strokeWidth: 3 },
         }}
         fitView                     // 초기 렌더링 시 모든 카드가 화면에 맞게 자동 조정

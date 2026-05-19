@@ -1,0 +1,23 @@
+/* 진행도 바 컨테이너: 막대들을 가로로 나열 */
+.modal-progress {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  width: 100%;
+}
+
+/* 개별 막대: flex: 1로 전체 너비를 균등 분배
+   3개일 때 → (570 - 48) / 3 = 174px, 2개일 때 → (570 - 24) / 2 = 273px */
+.modal-progress-bar {
+  flex: 1;
+  height: 10px;
+  border-radius: 8px;
+  border: 1px solid #d5d5d5;
+  background: #ffffff;
+}
+
+/* 완료된 단계: 파란색으로 채움 */
+.modal-progress-bar--filled {
+  background: #589cfe;
+  border-color: #589cfe;
+}
