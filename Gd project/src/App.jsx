@@ -104,9 +104,17 @@ const LAYER_STACK_TEST_NODES = [
 ]
 
 // 더미 카드 간 연결 관계 (씨드카드 → 두 파생카드)
+// + [테스트] 레이어스택 노드 엣지 연결
+//   seed-1 → ls-expand / ls-transform (부모→자식)
+//   ls-expand → ls-write              (layerstack→layerstack)
+//   ls-transform → ls-write           (layerstack→layerstack, 다중 부모)
 const DUMMY_EDGES = [
-  { id: 'e-seed1-derived1', source: 'seed-1', target: 'derived-1' },
-  { id: 'e-seed1-derived2', source: 'seed-1', target: 'derived-2' },
+  { id: 'e-seed1-derived1',   source: 'seed-1',      target: 'derived-1' },
+  { id: 'e-seed1-derived2',   source: 'seed-1',      target: 'derived-2' },
+  { id: 'e-seed1-ls-expand',  source: 'seed-1',      target: 'ls-expand'   },
+  { id: 'e-seed1-ls-transform', source: 'seed-1',    target: 'ls-transform' },
+  { id: 'e-ls-expand-write',  source: 'ls-expand',   target: 'ls-write'    },
+  { id: 'e-ls-transform-write', source: 'ls-transform', target: 'ls-write' },
 ]
 
 function App() {
