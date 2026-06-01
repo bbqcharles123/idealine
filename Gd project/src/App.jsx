@@ -2,6 +2,7 @@ import { useState, useCallback, useMemo, useEffect } from 'react'
 import { ReactFlow, applyNodeChanges, Panel, useNodesInitialized, useReactFlow } from '@xyflow/react'
 import SeedCard from './components/SeedCard'
 import DerivedCard from './components/DerivedCard'
+import LayerStackNode from './components/LayerStackNode'
 import Toolbar from './components/Toolbar'
 import WriteModal from './components/modals/WriteModal'
 import ExpandModal from './components/modals/ExpandModal'
@@ -11,9 +12,11 @@ import { getLayoutedElements } from './utils/layout'
 
 // React Flow에 커스텀 노드 타입 등록
 // 'seed' → SeedCard 컴포넌트, 'derived' → DerivedCard 컴포넌트
+// 'layerstack' → LayerStackNode (레이어 스택 구조 검증용)
 const nodeTypes = {
   seed: SeedCard,
   derived: DerivedCard,
+  layerstack: LayerStackNode,
 }
 
 // 개발/테스트용 더미 카드 데이터 (AI API 연동 전 캔버스 동작 확인용)
@@ -66,6 +69,40 @@ const DUMMY_CARDS = [
   },
 ]
 
+// [테스트] 레이어 스택 검증용 노드 3개 (확장하기 / 변형하기 / 직접작성)
+const LAYER_STACK_TEST_NODES = [
+  {
+    id: 'ls-expand',
+    type: 'layerstack',
+    position: { x: 900, y: 100 },
+    data: {
+      title: '확장하기 레이어 스택 테스트',
+      description: '카드 영역 클릭 시 노드 선택, 하단 초록 탭 클릭 시 도구 레이어 확장, 드래그 시 두 레이어 함께 이동.',
+      toolType: 'expand',
+    },
+  },
+  {
+    id: 'ls-transform',
+    type: 'layerstack',
+    position: { x: 1300, y: 100 },
+    data: {
+      title: '변형하기 레이어 스택 테스트',
+      description: '카드 영역 클릭 시 노드 선택, 하단 보라 탭 클릭 시 도구 레이어 확장, 드래그 시 두 레이어 함께 이동.',
+      toolType: 'transform',
+    },
+  },
+  {
+    id: 'ls-write',
+    type: 'layerstack',
+    position: { x: 1100, y: 450 },
+    data: {
+      title: '직접작성 레이어 스택 테스트',
+      description: '도구 레이어 없음. 카드만 렌더링되어 기존 파생카드와 동일하게 동작해야 한다.',
+      toolType: null,
+    },
+  },
+]
+
 // 더미 카드 간 연결 관계 (씨드카드 → 두 파생카드)
 const DUMMY_EDGES = [
   { id: 'e-seed1-derived1', source: 'seed-1', target: 'derived-1' },
@@ -76,8 +113,8 @@ function App() {
   // 시작 모달 표시 여부 (true = 앱 진입 시 모달 표시, AI API 연동 후 활성화 예정)
   const [isStartModalOpen, setIsStartModalOpen] = useState(false)
 
-  // 캔버스에 표시되는 전체 카드(노드) 배열
-  const [cards, setCards] = useState(DUMMY_CARDS)
+  // 캔버스에 표시되는 전체 카드(노드) 배열 (레이어 스택 테스트 노드 포함)
+  const [cards, setCards] = useState([...DUMMY_CARDS, ...LAYER_STACK_TEST_NODES])
 
   // 카드 간 연결선(엣지) 배열
   const [edges, setEdges] = useState(DUMMY_EDGES)
