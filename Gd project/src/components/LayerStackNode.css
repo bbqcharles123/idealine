@@ -1,13 +1,13 @@
 /* ============================================================
    LayerStackNode — 레이어 스택 구조 검증용 커스텀 노드
    구조: 아이디어 레이어(z:2) + 도구 레이어(z:1→3)
+   Figma 스펙: border-radius 28px, card drop-shadow, peek 35px
    ============================================================ */
 
 .lsn {
   position: relative;
   width: 356px;
-  /* overflow: visible — 도구 레이어 하단 peek이 카드 경계 밖으로 나오도록 */
-  overflow: visible;
+  overflow: visible; /* 도구 레이어 하단 peek이 카드 경계 밖으로 나오도록 */
 }
 
 /* ── 아이디어 레이어 ───────────────────── */
@@ -17,36 +17,34 @@
   z-index: 2;
   background: #fff;
   border: 1px solid #d5d5d5;
+  border-radius: 28px;
+  box-shadow: 0px 4px 9px rgba(0, 0, 0, 0.12);
   padding: 18px 22px;
   box-sizing: border-box;
-  /* 확장/복귀 시 트랜지션 */
   transition:
     transform 440ms cubic-bezier(0.4, 0, 0.2, 1),
     opacity   440ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* 카드 선택 시 파란 테두리 */
 .lsn--selected .lsn__card {
   background: #EEF5FF;
   border-color: #589CFE;
   box-shadow: 0 0 0 2px #589CFE;
 }
 
-/* 부모 하이라이트: 주황 테두리 */
 .lsn--highlighted .lsn__card {
   background: #FFF7ED;
   border-color: #F59E0B;
   box-shadow: 0 0 0 1px #F59E0B;
 }
 
-/* 도구 레이어 확장 시: 카드가 아래로 밀려 사라짐 (card-scoop) */
+/* card-scoop: 확장 시 카드가 아래로 밀려 사라짐 */
 .lsn--expanded .lsn__card {
   transform: translateY(10px) scale(0.97);
   opacity: 0;
   pointer-events: none;
 }
 
-/* 정보 버튼 */
 .lsn__info {
   position: absolute;
   top: 18px;
@@ -83,28 +81,20 @@
 /* ── 도구 레이어 ───────────────────────── */
 
 .lsn__tool {
-  /* 카드와 동일한 위치에서 시작, 하단으로 peek만큼 튀어나옴 */
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  /* bottom: -peek → 도구 레이어 하단이 카드 하단보다 peek만큼 아래 */
-  bottom: calc(-1 * var(--peek));
+  bottom: calc(-1 * var(--peek)); /* 하단 peek만큼 카드 밖으로 노출 */
   z-index: 1;
 
-  border: 1px solid transparent;
+  border: 1px solid #d5d5d5;
+  border-radius: 28px;
   box-sizing: border-box;
-  border-radius: 0;
 
   display: flex;
   flex-direction: column;
-  /* peek 스트립이 항상 하단에 위치 */
-  justify-content: flex-end;
-
-  /* idle → expanded 트랜지션 (tool-swell 효과) */
-  transition:
-    transform 440ms cubic-bezier(0.4, 0, 0.2, 1),
-    z-index   0ms;
+  justify-content: flex-end; /* idle: peek 스트립이 하단 고정 */
 
   overflow: hidden;
   cursor: pointer;
@@ -112,15 +102,13 @@
 
 .lsn__tool--expand {
   background: #E8F5E9;
-  border-color: #C8E6C9;
 }
 
 .lsn__tool--transform {
   background: #EDE8F9;
-  border-color: #D1C4E9;
 }
 
-/* 확장 시: 도구 레이어가 카드 위로 올라옴 (z:3) + swell 애니메이션 */
+/* tool-swell: 확장 시 도구 레이어가 카드 위로 올라와 부풀어오르는 효과 */
 .lsn--expanded .lsn__tool {
   z-index: 3;
   justify-content: flex-start;
@@ -129,41 +117,39 @@
 }
 
 @keyframes tool-swell {
-  0%   { transform: translateY(0)     scale(0.97); }
-  45%  { transform: translateY(-8px)  scale(1.012); }
-  100% { transform: translateY(0)     scale(1); }
+  0%   { transform: scale(0.97); }
+  45%  { transform: translateY(-8px) scale(1.012); }
+  100% { transform: translateY(0)   scale(1); }
 }
 
-/* ── idle peek 스트립 ─────────────────── */
+/* ── idle peek 스트립 (Figma: h-35px, 가운데 정렬) ── */
 
 .lsn__peek {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 0 14px;
-  height: var(--peek);
-  box-sizing: border-box;
+  justify-content: center; /* 가운데 정렬 */
+  gap: 9px;
+  height: var(--peek);   /* 35px */
   flex-shrink: 0;
 }
 
-/* 확장 시 peek 스트립 숨김 */
 .lsn--expanded .lsn__peek {
   display: none;
 }
 
 .lsn__peek-label {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
-  line-height: 1;
+  line-height: 19px;
 }
 
-/* ── 확장 시 상단 콘텐츠 ─────────────── */
+/* ── 확장 시 상단 콘텐츠 (Figma: gap-18px, pb-1px, pt-18px, px-22px) ── */
 
 .lsn__tool-main {
   display: none;
   flex-direction: column;
-  gap: 10px;
-  padding: 18px 20px;
+  gap: 7px;
+  padding: 18px 22px 1px;
   flex: 1;
 }
 
@@ -174,32 +160,34 @@
 .lsn__tool-header {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
 }
 
 .lsn__tool-label {
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 600;
+  line-height: 19px;
 }
 
 .lsn__tool-desc {
-  font-size: 14px;
-  line-height: 1.6;
-  color: #555;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 20px;
+  text-align: justify;
   margin: 0;
 }
 
 /* "아이디어 카드 확인하기" 복귀 버튼 */
 .lsn__return {
-  margin-top: auto;
-  padding: 7px 14px;
+  margin-top: 12px;
+  padding: 8px 16px;
   background: none;
-  border: 1.5px solid;
-  border-radius: 6px;
+  border: 1.5px solid currentColor;
+  border-radius: 20px;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  align-self: flex-start;
+  align-self: center;
 }
 
 /* ── React Flow 핸들 숨김 ─────────────── */

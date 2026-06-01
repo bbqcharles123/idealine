@@ -2,24 +2,21 @@ import { useState, useCallback } from 'react'
 import { Handle, Position } from '@xyflow/react'
 import './LayerStackNode.css'
 
-const PEEK_HEIGHT = 44 // px visible below card in idle
+// Figma 스펙: peek 35px (h-[35px])
+const PEEK_HEIGHT = 35
 
 const TOOL_CONFIG = {
   expand: {
-    bg: '#E8F5E9',
-    border: '#C8E6C9',
     textColor: '#2E7D32',
     icon: '/toolbar_btn_expand.svg',
     label: '확장하기',
-    desc: '이 아이디어를 다양한 방향으로 확장하는 도구입니다.',
+    desc: '이미 있는 요소를 하나 더 추가하되 조금 다르게 변형해보세요. 같은 듯 다른 요소가 새로운 가능성을 열어줍니다.',
   },
   transform: {
-    bg: '#EDE8F9',
-    border: '#D1C4E9',
     textColor: '#5E35B1',
     icon: '/toolbar_btn_change.svg',
     label: '변형하기',
-    desc: '이 아이디어의 요소를 변형해보는 도구입니다.',
+    desc: '기존 요소를 증가·감소·창출·제거해보세요. 변형을 통해 새로운 아이디어를 발견할 수 있습니다.',
   },
 }
 
@@ -79,7 +76,7 @@ function LayerStackNode({ id, data }) {
                 {tool.label}
               </span>
             </div>
-            <p className="lsn__tool-desc">{tool.desc}</p>
+            <p className="lsn__tool-desc" style={{ color: tool.textColor }}>{tool.desc}</p>
             <button
               className="lsn__return nodrag"
               style={{ color: tool.textColor, borderColor: tool.textColor }}
