@@ -64,7 +64,7 @@ function LayerStackNode({ id, data }) {
       {/* ── 도구 레이어 (z:1 idle → z:3 expanded) ── */}
       {tool && (
         <div
-          className={`lsn__tool lsn__tool--${toolType} nodrag`}
+          className={`lsn__tool lsn__tool--${toolType}${!isExpanded ? ' nodrag' : ''}`}
           style={{ '--peek': `${PEEK_HEIGHT}px` }}
           onClick={handleToolClick}
         >
