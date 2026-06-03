@@ -1,0 +1,114 @@
+{
+  "meta": {
+    "source": "Figma",
+    "fileKey": "yZ41AtAYIZrZvdfuUmhFbL",
+    "fileName": "캡스톤 겨울",
+    "exportedAt": "2026-06-03T11:25:09.159Z",
+    "note": "Generated from local Figma text styles and paint/color styles for sharing with AI or code tools."
+  },
+  "textStyles": {
+    "heading1": {
+      "name": "heading1",
+      "figmaStyleId": "S:f1985afb7255043532c0f24e56d46330264dc5f5,",
+      "fontFamily": "Pretendard",
+      "fontWeight": "Bold",
+      "fontSize": 28,
+      "lineHeight": 36,
+      "letterSpacing": "0%",
+      "paragraphSpacing": 0,
+      "textCase": "ORIGINAL",
+      "textDecoration": "NONE"
+    },
+    "heading2": {
+      "name": "heading2",
+      "figmaStyleId": "S:07c814aeeb604b42d94700b5baf40022a9d9b0e8,",
+      "fontFamily": "Pretendard",
+      "fontWeight": "Bold",
+      "fontSize": 22,
+      "lineHeight": "auto",
+      "letterSpacing": "0%",
+      "paragraphSpacing": 0,
+      "textCase": "ORIGINAL",
+      "textDecoration": "NONE"
+    },
+    "heading3": {
+      "name": "heading3",
+      "figmaStyleId": "S:467cc5ed599786b5a3e517a2ef524ddba23e03d6,",
+      "fontFamily": "Pretendard",
+      "fontWeight": "SemiBold",
+      "fontSize": 18,
+      "lineHeight": "auto",
+      "letterSpacing": "0%",
+      "paragraphSpacing": 0,
+      "textCase": "ORIGINAL",
+      "textDecoration": "NONE"
+    },
+    "body1": {
+      "name": "body1",
+      "figmaStyleId": "S:7e661b742dae7fb260ac925acdb54f28db15ae55,",
+      "fontFamily": "Pretendard",
+      "fontWeight": "Medium",
+      "fontSize": 16,
+      "lineHeight": "auto",
+      "letterSpacing": "0%",
+      "paragraphSpacing": 0,
+      "textCase": "ORIGINAL",
+      "textDecoration": "NONE"
+    },
+    "body2": {
+      "name": "body2",
+      "figmaStyleId": "S:e2111835747a144d2c06c3f2a5627eb00517f248,",
+      "fontFamily": "Pretendard",
+      "fontWeight": "Regular",
+      "fontSize": 14,
+      "lineHeight": "auto",
+      "letterSpacing": "0%",
+      "paragraphSpacing": 0,
+      "textCase": "ORIGINAL",
+      "textDecoration": "NONE"
+    },
+    "label": {
+      "name": "label",
+      "figmaStyleId": "S:062480293a746ca1d22e6babccec16382de5893f,",
+      "fontFamily": "Pretendard",
+      "fontWeight": "SemiBold",
+      "fontSize": 14,
+      "lineHeight": 18,
+      "letterSpacing": "0%",
+      "paragraphSpacing": 0,
+      "textCase": "ORIGINAL",
+      "textDecoration": "NONE"
+    },
+    "caption": {
+      "name": "caption",
+      "figmaStyleId": "S:1fee14cd23d5a5f7bf42c8f06848c4bdb6b989c2,",
+      "fontFamily": "Pretendard",
+      "fontWeight": "Regular",
+      "fontSize": 12,
+      "lineHeight": "auto",
+      "letterSpacing": "0%",
+      "paragraphSpacing": 0,
+      "textCase": "ORIGINAL",
+      "textDecoration": "NONE"
+    }
+  },
+  "colorStyles": {
+    "primary": { "name": "primary", "figmaStyleId": "S:f0fd9a1d3b2e494f7d4695a28099500fa2f4a3b8,", "value": "#589CFE", "opacity": 1 },
+    "strokeColor": { "name": "stroke_color", "figmaStyleId": "S:c916b1bdf8ca3ce00aba6880fecd2c21f36be8c4,", "value": "#D5D5D5", "opacity": 1 },
+    "mainText": { "name": "main text", "figmaStyleId": "S:d26143f22af28bbd74fd214d82d914bac783f226,", "value": "#6B6B6B", "opacity": 1 },
+    "selectionBack": { "name": "selection back", "figmaStyleId": "S:2d6c11538dab194039f3556113389c691be6ee96,", "value": "#EEF5FF", "opacity": 1 },
+    "expandToolBackground": { "name": "확장하기 세부도구 배경", "figmaStyleId": "S:10e0a21b853ddcc9c789ad468dd14c369b74afd2,", "value": "#E8F5E9", "opacity": 1 },
+    "transformToolBackground": { "name": "변형하기 세부도구 배경", "figmaStyleId": "S:ea678423d9ef78b16ae4db2763716fed1eeaa274,", "value": "#EDE8F9", "opacity": 1 },
+    "expandToolInner": { "name": "확장하기 내부", "figmaStyleId": "S:6a07e88ac39fd8d38d6e7ab83ba25ca465ecb981,", "value": "#2E7D32", "opacity": 1 },
+    "transformToolInner": { "name": "변형하기 내부", "figmaStyleId": "S:d7d7b92bb020372a3a2484314b045decc3ae49ba,", "value": "#7B61C4", "opacity": 1 },
+    "transformToolParentBackground": { "name": "변형하기 상위도구 배경", "figmaStyleId": "S:6b098322f2d0d3ac0f318d0da7719a2df892075f,", "value": "#D4CBEF", "opacity": 1 },
+    "border": { "name": "테두리색", "figmaStyleId": "S:3ad71906ef988e930afbbd98d60b3f5c55f399ae,", "value": "#D1D5DB", "opacity": 1 },
+    "heading1": { "name": "heading1", "figmaStyleId": "S:f3300eb4ef26a163f207d664a614fa781a7928be,", "value": "#1A1A1A", "opacity": 1 },
+    "heading2-3": { "name": "heading2-3", "figmaStyleId": "S:397b01a97de39af2ce3fb3b59f61199b1c9ed960,", "value": "#222222", "opacity": 1 },
+    "body1": { "name": "body1", "figmaStyleId": "S:3f7089366ebbbd2e0bccbb2452f31ce2fb4a912c,", "value": "#333333", "opacity": 1 },
+    "body2": { "name": "body2", "figmaStyleId": "S:9f3b66c086609d4034b3dac83fc75c157219020f,", "value": "#4D4D4D", "opacity": 1 },
+    "label": { "name": "label", "figmaStyleId": "S:ac3825fd9750d20a6f55132dac2e3bf79dffed95,", "value": "#555555", "opacity": 1 },
+    "caption": { "name": "caption", "figmaStyleId": "S:e9a2358528465e522d6dd8f265425fc6942e9086,", "value": "#767676", "opacity": 1 },
+    "disabled": { "name": "disabled", "figmaStyleId": "S:defb7e92396bec00dbd4ae5bbde11414830464ef,", "value": "#9E9E9E", "opacity": 1 }
+  }
+}
