@@ -1,0 +1,50 @@
+:root {
+  /* ── 텍스트 색상 ── */
+  --color-heading1:   #1A1A1A;
+  --color-heading2-3: #222222;
+  --color-body1:      #333333;
+  --color-body2:      #4D4D4D;
+  --color-label:      #555555;
+  --color-caption:    #767676;
+  --color-disabled:   #9E9E9E;
+
+  /* ── 카드 선택 상태 (선택된 카드) ── */
+  --color-selected-bg:     #EEF5FF;
+  --color-selected-border: #589CFE;
+
+  /* ── 카드 하이라이트 상태 (직속 부모 카드) ── */
+  --color-highlighted-bg:     #FFF7ED;
+  --color-highlighted-border: #F59E0B;
+
+  /* ── 서체 크기 ── */
+  --font-size-heading1: 28px;
+  --font-size-heading2: 22px;
+  --font-size-heading3: 18px;
+  --font-size-body1:    16px;
+  --font-size-body2:    14px;
+  --font-size-label:    14px;
+  --font-size-caption:  12px;
+
+  /* ── 행간 (px 고정값만, auto는 제외) ── */
+  --line-height-heading1: 36px;
+  --line-height-label:    18px;
+
+  /* ── 자간 ── */
+  --letter-spacing: 0%;
+
+  /* ── 폰트 굵기 ── */
+  --font-weight-bold:     700;
+  --font-weight-semibold: 600;
+  --font-weight-medium:   500;
+  --font-weight-regular:  400;
+
+  /* ── 폰트 패밀리 ── */
+  --font-family-base: 'Pretendard', system-ui, -apple-system, sans-serif;
+
+  /* ── 모서리 반경 ── */
+  --radius-pill:      999px;
+  --radius-card:       28px;
+  --radius-container:  16px;
+  --radius-element:     8px;
+  --radius-none:         0px;
+}

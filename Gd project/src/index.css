@@ -1,4 +1,5 @@
 @import '@xyflow/react/dist/base.css';
+@import './tokens.css';
 
 * {
   box-sizing: border-box;
