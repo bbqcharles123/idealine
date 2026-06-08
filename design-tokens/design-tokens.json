@@ -100,5 +100,42 @@
     "label": { "name": "label", "figmaStyleId": "S:ac3825fd9750d20a6f55132dac2e3bf79dffed95,", "value": "#555555", "opacity": 1 },
     "caption": { "name": "caption", "figmaStyleId": "S:e9a2358528465e522d6dd8f265425fc6942e9086,", "value": "#767676", "opacity": 1 },
     "disabled": { "name": "disabled", "figmaStyleId": "S:defb7e92396bec00dbd4ae5bbde11414830464ef,", "value": "#9E9E9E", "opacity": 1 }
+  },
+  "radius": {
+    "pill": {
+      "name": "radius/pill",
+      "figmaVariableId": "VariableID:1508:1431",
+      "figmaVariableKey": "455e2b734d4078b488fce92635a19cba0aa40849",
+      "value": 999,
+      "unit": "px"
+    },
+    "card": {
+      "name": "radius/card",
+      "figmaVariableId": "VariableID:1503:1448",
+      "figmaVariableKey": "d55fd5f646af52f5cd157990d867b46180c3f285",
+      "value": 28,
+      "unit": "px"
+    },
+    "container": {
+      "name": "radius/container",
+      "figmaVariableId": "VariableID:1503:1442",
+      "figmaVariableKey": "f2836b191d510e05db9f7867162fbf15e2311885",
+      "value": 16,
+      "unit": "px"
+    },
+    "element": {
+      "name": "radius/element",
+      "figmaVariableId": "VariableID:1503:1446",
+      "figmaVariableKey": "e4e1542782c76f5db1ce60788d61694bd51ecae0",
+      "value": 8,
+      "unit": "px"
+    },
+    "none": {
+      "name": "radius/none",
+      "figmaVariableId": "VariableID:1503:1447",
+      "figmaVariableKey": "679eb63d07a8f12a88c1a7a01b9a929f52fb358b",
+      "value": 0,
+      "unit": "px"
+    }
   }
 }
