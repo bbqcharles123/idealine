@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react'
-import { Handle, Position } from '@xyflow/react'
+import { useState, useCallback, useEffect } from 'react'
+import { Handle, Position, useUpdateNodeInternals } from '@xyflow/react'
 import {
   Eraser, ArrowLeftRight, Scissors, Layers, Combine,
   Copy, ArrowRightLeft, RefreshCw, Lightbulb, Link, GitBranch,
@@ -46,25 +46,56 @@ const TOOL_CONFIG = {
     label: '변형하기',
     desc: '기존 요소를 증가·감소·창출·제거해보세요. 변형을 통해 새로운 아이디어를 발견할 수 있습니다.',
   },
-  // 직접작성: tagName 없으므로 아이콘 없이 label만 표시
+  // 직접작성: AI 추천 결과(writeRec)에 따라 레이블이 결정됨. 아이콘 없음
   write: {
     textColor: '#00695C',
     label: '직접작성',
-    desc: '아이디어를 자유롭게 직접 작성해보세요.',
+    desc: '아이디어를 더 구체적으로 작성하면 더 정확한 도구를 추천받을 수 있습니다.',
   },
 }
 
+// 직접작성(write) 카드: AI가 추천한 도구 카테고리 (헤더는 카테고리명+아이콘, peek은 "추천")
+// 아이콘은 PanelTool과 동일한 카테고리 자산 재사용 (시안의 branch/transform 아이콘과 일치)
+const WRITE_REC = {
+  expand:    { label: '확장하기', icon: '/panel_bcc_expand.svg' },
+  transform: { label: '변형하기', icon: '/panel_errc_transform.svg' },
+}
+
 function LayerStackNode({ id, data }) {
-  const { title, description, toolType, tagName, isSelected, isHighlighted, onInfoClick } = data ?? {}
+  const { title, description, toolType, tagName, writeRec, isSelected, isHighlighted, onInfoClick } = data ?? {}
   const [isExpanded, setIsExpanded] = useState(false)
   const [isCollapsing, setIsCollapsing] = useState(false)
 
+  // 펼침/접힘으로 source 핸들의 DOM 위치가 바뀌면 React Flow에 알려 엣지를 다시 그리게 함
+  const updateNodeInternals = useUpdateNodeInternals()
+
+  // 펼침/접힘 애니메이션(440ms) 동안 매 프레임 핸들 위치를 재측정 → 엣지가 끊기지 않고 따라옴
+  useEffect(() => {
+    let raf
+    const start = performance.now()
+    const tick = (now) => {
+      updateNodeInternals(id)
+      if (now - start < 480) raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [isExpanded, isCollapsing, id, updateNodeInternals])
+
   const tool = TOOL_CONFIG[toolType]
+
+  // write 타입: AI 추천 카테고리 정보 (없으면 'expand' 기본값), 그 외 타입은 null
+  const writeCat = toolType === 'write' ? (WRITE_REC[writeRec] ?? WRITE_REC.expand) : null
+
+  // 헤더 라벨: write는 카테고리명('확장하기'), expand/transform은 tagName
+  const headerLabel = writeCat ? writeCat.label : (tagName ?? tool?.label)
+
+  // peek 라벨: write는 '카테고리명 추천', expand/transform은 tagName
+  const peekLabel = writeCat ? `${writeCat.label} 추천` : (tagName ?? tool?.label)
 
   // tagName별 고유 설명 텍스트, 없으면 toolType 단위 generic desc 사용
   const tagDesc = TOOL_LAYER_DESC[toolType]?.[tagName] ?? tool?.desc
 
-  // tagName에 해당하는 lucide 아이콘 컴포넌트 (expand/transform 타입만 해당)
+  // tagName에 해당하는 lucide 아이콘 컴포넌트 (expand/transform 타입만 해당, write는 null)
   const TagIcon = TAG_ICON[toolType]?.[tagName] ?? null
 
   // 도구 레이어 클릭 → 펼치기 (React Flow 노드 선택 이벤트 차단)
@@ -96,11 +127,15 @@ function LayerStackNode({ id, data }) {
     <div className={cls}>
       <Handle type="target" position={Position.Top} />
 
-      {/* expanded 시 빈 공간에서 React Flow 드래그 시작을 차단하는 오버레이 */}
+      {/* expanded 시 빈(안 보이는 카드) 영역에서 React Flow 노드 선택/드래그/패닝 차단
+          - React Flow v12는 pointerdown 기반 → onMouseDown 대신 onPointerDown으로 막아야 함
+          - nodrag(노드 드래그 방지) + nopan(캔버스 패닝 방지) 클래스 병행
+          - onClick stopPropagation으로 노드 선택(부모 하이라이트)까지 차단 */}
       {isExpanded && (
         <div
-          className="lsn__drag-blocker"
-          onMouseDown={(e) => e.stopPropagation()}
+          className="lsn__drag-blocker nodrag nopan"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
         />
       )}
 
@@ -126,10 +161,12 @@ function LayerStackNode({ id, data }) {
           {/* 확장 시 보이는 상단 콘텐츠 (idle 시 display:none) */}
           <div className="lsn__tool-main">
             <div className="lsn__tool-header">
-              {/* tagName에 맞는 lucide 아이콘, write 타입은 아이콘 없음 */}
-              {TagIcon && <TagIcon size={20} color={tool.textColor} strokeWidth={2} />}
+              {/* write는 카테고리 svg 아이콘, expand/transform은 tagName lucide 아이콘 */}
+              {writeCat
+                ? <img src={writeCat.icon} width={20} height={20} alt="" />
+                : (TagIcon && <TagIcon size={20} color={tool.textColor} strokeWidth={2} />)}
               <span className="lsn__tool-label" style={{ color: tool.textColor }}>
-                {tagName ?? tool.label}
+                {headerLabel}
               </span>
             </div>
             <p className="lsn__tool-desc" style={{ color: tool.textColor }}>{tagDesc}</p>
@@ -148,17 +185,41 @@ function LayerStackNode({ id, data }) {
               </span>
             ) : (
               <>
-                {TagIcon && <TagIcon size={18} color={tool.textColor} strokeWidth={2} />}
+                {/* write peek은 아이콘 없이 "추천" 텍스트만, expand/transform은 chip 아이콘+tagName */}
+                {!writeCat && TagIcon && <TagIcon size={18} color={tool.textColor} strokeWidth={2} />}
                 <span className="lsn__peek-label" style={{ color: tool.textColor }}>
-                  {tagName ?? tool.label}
+                  {peekLabel}
                 </span>
               </>
             )}
           </div>
+
+          {/* source Handle을 도구 레이어 안쪽(peek 하단)에 배치
+              → 접힘/펼침 모두에서 "보이는 하단"을 따라가므로 엣지가 끊기지 않음
+              (useUpdateNodeInternals가 상태 변화 시 이 위치를 재측정) */}
+          <Handle type="source" position={Position.Bottom} />
         </div>
       )}
 
-      <Handle type="source" position={Position.Bottom} />
+      {/* 고스트 peek: 접힘 애니메이션 동안만 카드 뒤(z:1)에 idle peek을 미리 깔아둠
+          → 앞쪽 도구가 sink로 사라질 때 빈틈 없이 peek이 계속 보이고,
+            상태 리셋 시 실제 idle 도구가 같은 위치에 들어와 깜빡임이 없음 */}
+      {tool && isCollapsing && (
+        <div
+          className={`lsn__tool lsn__tool--${toolType} lsn__tool--ghost`}
+          style={{ '--peek': `${PEEK_HEIGHT}px` }}
+        >
+          <div className="lsn__peek">
+            {!writeCat && TagIcon && <TagIcon size={18} color={tool.textColor} strokeWidth={2} />}
+            <span className="lsn__peek-label" style={{ color: tool.textColor }}>
+              {peekLabel}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* tool 레이어가 없는 예외 노드를 위한 fallback source Handle */}
+      {!tool && <Handle type="source" position={Position.Bottom} />}
     </div>
   )
 }

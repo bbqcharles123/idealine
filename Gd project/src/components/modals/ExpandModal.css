@@ -153,7 +153,7 @@
 /* 하단 버튼 영역: 버튼 1개일 때는 가운데, 2개일 때는 나란히 */
 .expand-modal-footer {
   position: absolute;
-  bottom: 26px;
+  bottom: 32px;
   left: 0;
   right: 0;
   display: flex;

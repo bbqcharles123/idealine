@@ -133,9 +133,21 @@
   pointer-events: none;
 }
 
-.lsn--expanded.lsn--collapsing .lsn__tool {
+/* tool-sink는 앞쪽 실제 도구에만 적용 (뒤에 깔린 고스트 peek은 제외) */
+.lsn--expanded.lsn--collapsing .lsn__tool:not(.lsn__tool--ghost) {
   animation: tool-sink 440ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
   pointer-events: none; /* 애니메이션 중 재클릭 방지 */
+}
+
+/* 고스트 peek: 접힘 중 카드 뒤(z:1) idle 위치에 고정 — 애니메이션 없이 그대로 노출
+   .lsn--expanded.lsn--collapsing 스코프(0,3,0)로 .lsn--expanded .lsn__tool(0,2,0) 오버라이드 */
+.lsn--expanded.lsn--collapsing .lsn__tool--ghost {
+  z-index: 1;
+  top: 0;
+  bottom: calc(-1 * var(--peek));
+  justify-content: flex-end;
+  animation: none;
+  pointer-events: none;
 }
 
 /* 도구 레이어: 앞에서 뒤로 내려가며 사라짐 (tool-swell 역방향) */
@@ -229,6 +241,8 @@
   inset: 0;
   z-index: 2;
   cursor: default;
+  /* lsn--expanded의 pointer-events:none을 개별 오버라이드해야 mousedown을 가로챌 수 있음 */
+  pointer-events: all;
 }
 
 /* ── React Flow 핸들 숨김 ─────────────── */

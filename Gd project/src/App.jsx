@@ -233,7 +233,8 @@ function App() {
   const handleWriteSubmit = useCallback((title, description) => {
     const newId = `derived-${Date.now()}`
 
-    // 새 파생카드: tagType null = 직접작성 (태그 버튼 없음)
+    // 새 파생카드: toolType 'write' = 직접작성
+    // writeRec: AI 연동 전 placeholder ('expand') — AI 연동 후 실제 추천값으로 교체 예정
     // position은 임시값 — useEffect에서 Dagre가 실제 위치로 덮어씀
     setCards((prev) => [
       ...prev,
@@ -241,7 +242,7 @@ function App() {
         id: newId,
         type: 'layerstack',
         position: { x: 0, y: 0 },
-        data: { title, description, toolType: null },
+        data: { title, description, toolType: 'write', writeRec: 'expand' },
       },
     ])
 

@@ -48,9 +48,9 @@ function SidePanel({ card, parentCard, tab, onTabChange, onClose }) {
   const isSeedCard    = card.type === 'seed'
   const isDerivedCard = card.type === 'layerstack'
 
-  // toolType이 있는 파생카드 = 확장/변형으로 생성 → 사용 도구 칩 + 질문&응답 표시
-  // toolType이 null인 파생카드 = 직접작성 → "직접작성" 텍스트만 표시
-  const hasToolUsed = isDerivedCard && card.data.toolType !== null
+  // 확장/변형으로 생성된 파생카드 = 사용 도구 칩 + 질문&응답 표시
+  // 직접작성(toolType: 'write') 파생카드 = "직접작성" 텍스트만 표시 (PanelTool/QA 미사용)
+  const hasToolUsed = isDerivedCard && (card.data.toolType === 'expand' || card.data.toolType === 'transform')
 
   return (
     <div className="side-panel">

@@ -15,6 +15,8 @@
   width: 690px;
   height: 714px;
   background: #ffffff;
+  border-radius: var(--radius-container);
+  overflow: hidden;
 }
 
 /* X 닫기 버튼 */
@@ -36,7 +38,7 @@
 /* 콘텐츠 영역: 헤더 + 입력 필드들 */
 .write-modal-content {
   position: absolute;
-  top: 92px;
+  top: 64px;
   left: 60px;
   right: 60px;
   display: flex;
@@ -90,7 +92,7 @@
 .modal-input {
   height: 48px;
   border: 1px solid #d5d5d5;
-  border-radius: 4px;
+  border-radius: var(--radius-element);
   padding: 14px 12px;
   font-size: 14px;
   font-weight: 400;
@@ -113,7 +115,7 @@
 .modal-textarea {
   height: 112px;
   border: 1px solid #d5d5d5;
-  border-radius: 4px;
+  border-radius: var(--radius-element);
   padding: 14px 12px;
   font-size: 14px;
   font-weight: 400;
@@ -137,7 +139,7 @@
 .write-modal-field {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
 /* 설명 필드: 라벨 헤더와 textarea 사이 간격을 별도 지정 */
@@ -149,14 +151,14 @@
 .write-modal-desc-header {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-bottom: 20px;
+  gap: 8px;
+  margin-bottom: 12px;
 }
 
 /* 하단 버튼 영역 */
 .write-modal-footer {
   position: absolute;
-  bottom: 26px;
+  bottom: 32px;
   left: 0;
   right: 0;
   display: flex;

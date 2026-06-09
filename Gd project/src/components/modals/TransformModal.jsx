@@ -65,7 +65,11 @@ function TransformModal({ selectedCard, onClose, onSubmit }) {
           <div className="transform-modal-body">
 
             {/* 2단계 진행도 바 */}
-            <ModalProgress totalSteps={2} currentStep={step} />
+            <ModalProgress
+              stepLabel={['방향 선택', '아이디어 발전'][step - 1]}
+              totalSteps={2}
+              currentStep={step}
+            />
 
             {/* Step 1: 방향성 선택 (= 도구 결정) */}
             {step === 1 && (
