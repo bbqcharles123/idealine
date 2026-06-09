@@ -35,7 +35,7 @@ const DUMMY_CARDS = [
   },
   {
     id: 'derived-1',
-    type: 'derived',
+    type: 'layerstack',
     position: { x: 200, y: 400 },
     data: {
       title: '근무 유형별 루틴 자동 전환',
@@ -45,14 +45,14 @@ const DUMMY_CARDS = [
       // 사용자가 모달 답변 textarea에 직접 입력한 원문 (사이드패널 질문&응답에 표시)
       answer:
         '재택근무 하는 날이랑 출근하는 날 루틴이 완전히 달라요. 출근 날은 아침에 준비 시간이 필요해서 운동을 저녁으로 밀어야 하는데, 앱은 매일 같은 시간에 운동하라고 추천하거든요.',
-      tagType: 'expand',
+      toolType: 'expand',
       tagName: '복제',
       question: '지금 하나의 루틴으로 관리하기 어렵다고 느끼는 상황이 있다면 어떤 경우인가요?',
     },
   },
   {
     id: 'derived-2',
-    type: 'derived',
+    type: 'layerstack',
     position: { x: 600, y: 400 },
     data: {
       title: '온디맨드 루틴 피드',
@@ -62,59 +62,17 @@ const DUMMY_CARDS = [
       // 사용자가 모달 답변 textarea에 직접 입력한 원문 (사이드패널 질문&응답에 표시)
       answer:
         '알림이요. 아침에 일어나자마자 루틴 알림이 오는데 그냥 무시하게 되더라고요. 차라리 알림 없이 앱을 열면 지금 상태에 맞는 루틴이 바로 보이는 게 나을 것 같아요.',
-      tagType: 'transform',
+      toolType: 'transform',
       tagName: '제거',
       question: '루틴 앱에서 당연하게 제공되는 알림, 일정 직접 입력, 피로도 수동 체크 중 없애도 오히려 사용 경험이 더 나아질 것 같은 요소가 있나요?',
     },
   },
 ]
 
-// [테스트] 레이어 스택 검증용 노드 3개 (확장하기 / 변형하기 / 직접작성)
-const LAYER_STACK_TEST_NODES = [
-  {
-    id: 'ls-expand',
-    type: 'layerstack',
-    position: { x: 900, y: 100 },
-    data: {
-      title: '확장하기 레이어 스택 테스트',
-      description: '카드 영역 클릭 시 노드 선택, 하단 초록 탭 클릭 시 도구 레이어 확장, 드래그 시 두 레이어 함께 이동.',
-      toolType: 'expand',
-    },
-  },
-  {
-    id: 'ls-transform',
-    type: 'layerstack',
-    position: { x: 1300, y: 100 },
-    data: {
-      title: '변형하기 레이어 스택 테스트',
-      description: '카드 영역 클릭 시 노드 선택, 하단 보라 탭 클릭 시 도구 레이어 확장, 드래그 시 두 레이어 함께 이동.',
-      toolType: 'transform',
-    },
-  },
-  {
-    id: 'ls-write',
-    type: 'layerstack',
-    position: { x: 1100, y: 450 },
-    data: {
-      title: '직접작성 레이어 스택 테스트',
-      description: '도구 레이어 없음. 카드만 렌더링되어 기존 파생카드와 동일하게 동작해야 한다.',
-      toolType: null,
-    },
-  },
-]
-
 // 더미 카드 간 연결 관계 (씨드카드 → 두 파생카드)
-// + [테스트] 레이어스택 노드 엣지 연결
-//   seed-1 → ls-expand / ls-transform (부모→자식)
-//   ls-expand → ls-write              (layerstack→layerstack)
-//   ls-transform → ls-write           (layerstack→layerstack, 다중 부모)
 const DUMMY_EDGES = [
-  { id: 'e-seed1-derived1',   source: 'seed-1',      target: 'derived-1' },
-  { id: 'e-seed1-derived2',   source: 'seed-1',      target: 'derived-2' },
-  { id: 'e-seed1-ls-expand',  source: 'seed-1',      target: 'ls-expand'   },
-  { id: 'e-seed1-ls-transform', source: 'seed-1',    target: 'ls-transform' },
-  { id: 'e-ls-expand-write',  source: 'ls-expand',   target: 'ls-write'    },
-  { id: 'e-ls-transform-write', source: 'ls-transform', target: 'ls-write' },
+  { id: 'e-seed1-derived1', source: 'seed-1', target: 'derived-1' },
+  { id: 'e-seed1-derived2', source: 'seed-1', target: 'derived-2' },
 ]
 
 function App() {
@@ -122,7 +80,7 @@ function App() {
   const [isStartModalOpen, setIsStartModalOpen] = useState(false)
 
   // 캔버스에 표시되는 전체 카드(노드) 배열 (레이어 스택 테스트 노드 포함)
-  const [cards, setCards] = useState([...DUMMY_CARDS, ...LAYER_STACK_TEST_NODES])
+  const [cards, setCards] = useState(DUMMY_CARDS)
 
   // 카드 간 연결선(엣지) 배열
   const [edges, setEdges] = useState(DUMMY_EDGES)
@@ -232,9 +190,9 @@ function App() {
       ...prev,
       {
         id: newId,
-        type: 'derived',
+        type: 'layerstack',
         position: { x: 0, y: 0 },
-        data: { title: `${toolName} 적용 아이디어`, description: answer, answer, tagType: 'expand', tagName: toolName, question },
+        data: { title: `${toolName} 적용 아이디어`, description: answer, answer, toolType: 'expand', tagName: toolName, question },
       },
     ])
 
@@ -255,9 +213,9 @@ function App() {
       ...prev,
       {
         id: newId,
-        type: 'derived',
+        type: 'layerstack',
         position: { x: 0, y: 0 },
-        data: { title: `${toolName} 적용 아이디어`, description: answer, answer, tagType: 'transform', tagName: toolName, question },
+        data: { title: `${toolName} 적용 아이디어`, description: answer, answer, toolType: 'transform', tagName: toolName, question },
       },
     ])
 
@@ -281,9 +239,9 @@ function App() {
       ...prev,
       {
         id: newId,
-        type: 'derived',
+        type: 'layerstack',
         position: { x: 0, y: 0 },
-        data: { title, description, tagType: null, tagName: null },
+        data: { title, description, toolType: null },
       },
     ])
 
@@ -367,8 +325,9 @@ function App() {
         onNodeClick={handleNodeClick}
         onPaneClick={handlePaneClick}
         defaultEdgeOptions={{
-          type: 'step',             // 연결선 직각 스타일 (모든 엣지가 핸들 정중앙 한 점에서 출발)
-          style: { stroke: '#000', strokeWidth: 3 },
+          type: 'smoothstep',       // 모서리 radius 적용을 위해 smoothstep 사용
+          style: { stroke: '#9E9E9E', strokeWidth: 1.5 },
+          pathOptions: { borderRadius: 8 },
         }}
         fitView                     // 초기 렌더링 시 모든 카드가 화면에 맞게 자동 조정
       >
@@ -380,7 +339,6 @@ function App() {
               onExpand={() => setActiveModal('expand')}
               onTransform={() => setActiveModal('transform')}
               onWrite={() => setActiveModal('write')}
-              onAddToCollection={() => {/* TODO: 모음추가 기능 */}}
             />
           </Panel>
         )}

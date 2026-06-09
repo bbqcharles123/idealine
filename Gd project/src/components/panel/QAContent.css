@@ -8,7 +8,7 @@
   background: #eef5ff;
   border: 1px solid #d5d5d5;
   border-bottom: none;
-  border-radius: 4px 4px 0 0;
+  border-radius: var(--radius-element) var(--radius-element) 0 0;
   padding: 12px 16px;
 }
 
@@ -24,7 +24,7 @@
   background: #f7f7f7;
   border: 1px solid #d5d5d5;
   border-top: none;
-  border-radius: 0 0 4px 4px;
+  border-radius: 0 0 var(--radius-element) var(--radius-element);
   padding: 12px 16px;
 }
 

@@ -1,43 +1,38 @@
 /* 툴바 컨테이너: 뷰포트 하단 중앙에 고정 표시 */
 .toolbar {
   width: max-content;
-  height: 48px;
   display: flex;
   align-items: center;
+  gap: 12px;
   padding: 4px 8px;
-  background: #ffffff;
-  border-radius: 6px;
-  box-shadow: 0px 8px 40px 0 rgba(0, 0, 0, 0.12);
+  background: #fff;
+  border-radius: var(--radius-pill, 999px);
+  box-shadow: 0 8px 40px 0 rgba(0, 0, 0, 0.12);
   box-sizing: border-box;
-}
-
-/* 메인 버튼 3개(확장하기, 변형하기, 직접작성)를 감싸는 그룹 */
-.toolbar-main {
-  display: flex;
-  align-items: center;
-  gap: 16px;
 }
 
 /* 버튼 공통 스타일 */
 .toolbar-btn {
   display: flex;
+  flex-direction: column;
   align-items: center;
   gap: 4px;
-  padding: 8px 12px;
-  border-radius: 6px;
-  background-color: #ffffff;
+  width: 120px;
+  padding: 8px 20px;
+  border-radius: var(--radius-pill, 999px);
+  background-color: #fff;
   border: none;
   cursor: pointer;
   white-space: nowrap;
 }
 
 .toolbar-btn:hover {
-  background-color: #E6E6E6;
+  background-color: #E4E4E4;
 }
 
 /* active: 해당 모달이 열려 있는 동안 유지 */
 .toolbar-btn.active {
-  background-color: #1A6FD4;
+  background-color: #589CFE;
 }
 
 /* active 상태에서 아이콘을 흰색으로 변환 */
@@ -58,49 +53,3 @@
   color: #ffffff;
 }
 
-/* 구분선: 직접작성과 모음추가 버튼 사이 */
-.toolbar-divider {
-  width: 0.8px;
-  height: 24px;
-  background-color: #D5D5D5;
-  margin: 0 20px;
-  flex-shrink: 0;
-}
-
-/* 모음추가 버튼 wrapper: 툴팁 기준점 역할 */
-.toolbar-collection-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* 모음추가 버튼: 아이콘만, 고정 크기 36×36px */
-.toolbar-btn--icon-only {
-  width: 36px;
-  height: 36px;
-  padding: 0;
-  justify-content: center;
-}
-
-/* hover 시 나타나는 툴팁 */
-.toolbar-tooltip {
-  position: absolute;
-  bottom: calc(100% + 4px);
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: #191C1E;
-  color: #ffffff;
-  font-size: 12px;
-  font-weight: 400;
-  padding: 2px 6px;
-  border-radius: 4px;
-  white-space: nowrap;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.15s ease;
-}
-
-.toolbar-collection-wrapper:hover .toolbar-tooltip {
-  opacity: 1;
-}

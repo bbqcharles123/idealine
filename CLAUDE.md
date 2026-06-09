@@ -56,7 +56,7 @@ answer: string | undefined               — 사용자가 모달 textarea에 직
 - base.css import (style.css 아님)
 - nodeTypes: { seed: SeedCard, derived: DerivedCard }
 - ReactFlowProvider로 App 전체 감싸기 (main.jsx)
-- defaultEdgeOptions: type smoothstep / stroke #000 / strokeWidth 3
+- defaultEdgeOptions: type smoothstep / stroke #9E9E9E / strokeWidth 1.5 / borderRadius 8
 - React Flow 내장 selected prop 미사용 → data.isSelected로 직접 관리
 
 ## 선택/하이라이트 로직

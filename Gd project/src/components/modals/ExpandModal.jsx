@@ -70,7 +70,11 @@ function ExpandModal({ selectedCard, onClose, onSubmit }) {
           <div className="expand-modal-body">
 
             {/* 3단계 진행도 바 */}
-            <ModalProgress totalSteps={3} currentStep={step} />
+            <ModalProgress
+              stepLabel={['방향 선택', '도구 선택', '아이디어 발전'][step - 1]}
+              totalSteps={3}
+              currentStep={step}
+            />
 
             {/* Step 1: 방향성 선택 */}
             {step === 1 && (

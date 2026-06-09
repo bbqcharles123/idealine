@@ -1,7 +1,7 @@
 /* 모달 버튼 공통 스타일 */
 .modal-btn {
   height: 44px;
-  border-radius: 4px;
+  border-radius: var(--radius-element);
   border: none;
   cursor: pointer;
   font-size: 14px;
