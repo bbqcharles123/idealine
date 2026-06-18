@@ -89,8 +89,11 @@ function LayerStackNode({ id, data }) {
   // 헤더 라벨: write는 카테고리명('확장하기'), expand/transform은 tagName
   const headerLabel = writeCat ? writeCat.label : (tagName ?? tool?.label)
 
-  // peek 라벨: write는 '카테고리명 추천', expand/transform은 tagName
-  const peekLabel = writeCat ? `${writeCat.label} 추천` : (tagName ?? tool?.label)
+  // peek 왼쪽 고정 텍스트: write는 '아이디어 발전 도구 추천', 나머지는 '아이디어 생성 도구'
+  const peekCategoryLabel = toolType === 'write' ? '아이디어 발전 도구 추천' : '아이디어 생성 도구'
+
+  // peek 오른쪽 칩 라벨: write는 카테고리명, expand/transform은 tagName
+  const peekChipLabel = writeCat ? writeCat.label : (tagName ?? tool?.label)
 
   // tagName별 고유 설명 텍스트, 없으면 toolType 단위 generic desc 사용
   const tagDesc = TOOL_LAYER_DESC[toolType]?.[tagName] ?? tool?.desc
@@ -185,11 +188,20 @@ function LayerStackNode({ id, data }) {
               </span>
             ) : (
               <>
-                {/* write peek은 아이콘 없이 "추천" 텍스트만, expand/transform은 chip 아이콘+tagName */}
-                {!writeCat && TagIcon && <TagIcon size={18} color={tool.textColor} strokeWidth={2} />}
-                <span className="lsn__peek-label" style={{ color: tool.textColor }}>
-                  {peekLabel}
+                {/* 왼쪽: "아이디어 생성 도구" 또는 "아이디어 발전 도구 추천" */}
+                <span className="lsn__peek-category" style={{ color: tool.textColor }}>
+                  {peekCategoryLabel}
                 </span>
+                {/* 오른쪽 칩: 아이콘 + 도구명/카테고리명 */}
+                <div className="lsn__peek-chip">
+                  {writeCat
+                    ? <img src={writeCat.icon} width={18} height={18} alt="" />
+                    : (TagIcon && <TagIcon size={18} color={tool.textColor} strokeWidth={2} />)
+                  }
+                  <span className="lsn__peek-label" style={{ color: tool.textColor }}>
+                    {peekChipLabel}
+                  </span>
+                </div>
               </>
             )}
           </div>
@@ -210,10 +222,18 @@ function LayerStackNode({ id, data }) {
           style={{ '--peek': `${PEEK_HEIGHT}px` }}
         >
           <div className="lsn__peek">
-            {!writeCat && TagIcon && <TagIcon size={18} color={tool.textColor} strokeWidth={2} />}
-            <span className="lsn__peek-label" style={{ color: tool.textColor }}>
-              {peekLabel}
+            <span className="lsn__peek-category" style={{ color: tool.textColor }}>
+              {peekCategoryLabel}
             </span>
+            <div className="lsn__peek-chip">
+              {writeCat
+                ? <img src={writeCat.icon} width={18} height={18} alt="" />
+                : (TagIcon && <TagIcon size={18} color={tool.textColor} strokeWidth={2} />)
+              }
+              <span className="lsn__peek-label" style={{ color: tool.textColor }}>
+                {peekChipLabel}
+              </span>
+            </div>
           </div>
         </div>
       )}

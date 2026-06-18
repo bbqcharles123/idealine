@@ -8,6 +8,7 @@ import WriteModal from './components/modals/WriteModal'
 import ExpandModal from './components/modals/ExpandModal'
 import TransformModal from './components/modals/TransformModal'
 import SidePanel from './components/SidePanel'
+import CanvasHeader from './components/CanvasHeader'
 import { getLayoutedElements } from './utils/layout'
 
 // React Flow에 커스텀 노드 타입 등록
@@ -45,6 +46,12 @@ const DUMMY_CARDS = [
       // 사용자가 모달 답변 textarea에 직접 입력한 원문 (사이드패널 질문&응답에 표시)
       answer:
         '재택근무 하는 날이랑 출근하는 날 루틴이 완전히 달라요. 출근 날은 아침에 준비 시간이 필요해서 운동을 저녁으로 밀어야 하는데, 앱은 매일 같은 시간에 운동하라고 추천하거든요.',
+      // AI 연동 전 UI 확인용 더미 하이라이트 (character index 기준)
+      // '재택근무 하는 날이랑 출근하는 날' [0,18) / '매일 같은 시간에 운동하라고 추천하거든요.' [75,98)
+      highlights: [
+        { start: 0,  end: 18 },
+        { start: 75, end: 98 },
+      ],
       toolType: 'expand',
       tagName: '복제',
       question: '지금 하나의 루틴으로 관리하기 어렵다고 느끼는 상황이 있다면 어떤 경우인가요?',
@@ -62,6 +69,13 @@ const DUMMY_CARDS = [
       // 사용자가 모달 답변 textarea에 직접 입력한 원문 (사이드패널 질문&응답에 표시)
       answer:
         '알림이요. 아침에 일어나자마자 루틴 알림이 오는데 그냥 무시하게 되더라고요. 차라리 알림 없이 앱을 열면 지금 상태에 맞는 루틴이 바로 보이는 게 나을 것 같아요.',
+      // AI 연동 전 UI 확인용 더미 하이라이트 (character index 기준)
+      // '알림이요' [0,4) / '루틴 알림이 오는데 그냥 무시하게 되더라고요.' [17,42) / '알림 없이' [47,52)
+      highlights: [
+        { start: 0,  end: 4  },
+        { start: 17, end: 42 },
+        { start: 47, end: 52 },
+      ],
       toolType: 'transform',
       tagName: '제거',
       question: '루틴 앱에서 당연하게 제공되는 알림, 일정 직접 입력, 피로도 수동 체크 중 없애도 오히려 사용 경험이 더 나아질 것 같은 요소가 있나요?',
@@ -78,6 +92,9 @@ const DUMMY_EDGES = [
 function App() {
   // 시작 모달 표시 여부 (true = 앱 진입 시 모달 표시, AI API 연동 후 활성화 예정)
   const [isStartModalOpen, setIsStartModalOpen] = useState(false)
+
+  // 캔버스 제목 (시작 모달 연동 후 사용자 입력값으로 교체 예정)
+  const [canvasTitle, setCanvasTitle] = useState('AI 생활 루틴 코치 앱')
 
   // 캔버스에 표시되는 전체 카드(노드) 배열 (레이어 스택 테스트 노드 포함)
   const [cards, setCards] = useState(DUMMY_CARDS)
@@ -280,6 +297,9 @@ function App() {
 
   return (
     <div style={{ width: '100%', height: '100vh', background: '#F1F3F4' }}>
+      {/* 캔버스 상단 고정 헤더: 홈 버튼 + 캔버스 제목 (제목 편집 가능) */}
+      <CanvasHeader title={canvasTitle} onTitleChange={setCanvasTitle} />
+
       {/* 확장하기 모달: activeModal이 'expand'일 때만 표시 */}
       {activeModal === 'expand' && (
         <ExpandModal

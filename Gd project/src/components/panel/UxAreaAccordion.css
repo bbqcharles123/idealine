@@ -1,0 +1,59 @@
+/* 아코디언 블록: 헤더 + 선택적 본문 */
+.ux-area-accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+/* 헤더 버튼: 영역명 + 배지 + 화살표를 양 끝 배치 */
+.ux-area-accordion__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+}
+
+.ux-area-accordion__title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* 영역명: 14px SemiBold #333 */
+.ux-area-accordion__name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  line-height: 18px;
+}
+
+/* 본문: 평가 텍스트 + 평가요소 태그 */
+.ux-area-accordion__body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* 평가 텍스트 */
+.ux-area-accordion__evaluation {
+  font-size: 14px;
+  font-weight: 400;
+  color: #4d4d4d;
+  line-height: normal;
+  margin: 0;
+  width: 100%;
+}
+
+/* 평가요소 태그 목록: 줄바꿈 허용 */
+.ux-area-accordion__criteria {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}

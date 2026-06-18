@@ -185,17 +185,33 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 12px;           /* 카테고리 텍스트 ↔ 칩 사이 간격 */
   height: 34px;        /* peek strip 고정 높이 (var(--peek)과 다름) */
   flex-shrink: 0;
   padding-bottom: 4px; /* 스트립 하단 여백 */
   box-sizing: border-box;
 }
 
+/* "아이디어 생성 도구" / "아이디어 발전 도구 추천" 왼쪽 텍스트 */
+.lsn__peek-category {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 18px;
+  white-space: nowrap;
+}
+
+/* 아이콘 + 도구명 오른쪽 칩 */
+.lsn__peek-chip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .lsn__peek-label {
   font-size: 14px;
   font-weight: 600;
   line-height: 18px;
+  white-space: nowrap;
 }
 
 /* ── 확장 시 상단 콘텐츠 (Figma: pt-16px, px-20px, pb-4px, gap-8px) ── */

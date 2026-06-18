@@ -1,0 +1,26 @@
+/* 아이디어 출처 버튼: 텍스트 너비에 맞는 inline-flex, 호박색 배경+테두리 */
+.idea-source {
+  display: inline-flex;
+  align-self: flex-start;   /* 부모 flex-column에서 늘어나지 않도록 */
+  align-items: center;
+  gap: 8px;
+  background: var(--color-highlighted-bg);   /* #FFF7ED */
+  border: 1px solid var(--color-highlighted-border); /* #F59E0B */
+  border-radius: var(--radius-element);      /* 8px */
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.idea-source__title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-body1);  /* #333 */
+  line-height: 18px;
+  white-space: nowrap;
+}
+
+.idea-source__icon {
+  color: var(--color-label);  /* #555555 */
+  flex-shrink: 0;
+}
