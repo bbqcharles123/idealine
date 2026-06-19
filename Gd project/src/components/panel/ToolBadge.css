@@ -8,8 +8,8 @@
   overflow: hidden;
 }
 
-.tool-badge--expand   { background: #e8f5e9; }
-.tool-badge--transform { background: #ede8f9; }
+.tool-badge--expand   { background: var(--color-expand-bg); }
+.tool-badge--transform { background: var(--color-transform-bg); }
 
 /* 좌측 액센트 바: 3px 고정 너비, 전체 높이를 채움 */
 .tool-badge__bar {
@@ -17,8 +17,8 @@
   flex-shrink: 0;
 }
 
-.tool-badge__bar--expand   { background: #2e7d32; }
-.tool-badge__bar--transform { background: #7b61c4; }
+.tool-badge__bar--expand   { background: var(--color-expand-text); }
+.tool-badge__bar--transform { background: var(--color-transform-text); }
 
 /* 콘텐츠 영역: 상단 레이블 → 하단 태그 순 세로 배치
    padding: top 8 / right 12 / bottom 10 / left 9 (bar 3px 포함해 좌 12px 맞춤)
@@ -39,14 +39,14 @@
 }
 
 .tool-badge__label {
-  font-size: 12px;
-  font-weight: 400;
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-regular);
   line-height: normal;
   white-space: nowrap;
 }
 
-.tool-badge__label--expand   { color: #2e7d32; }
-.tool-badge__label--transform { color: #7b61c4; }
+.tool-badge__label--expand   { color: var(--color-expand-text); }
+.tool-badge__label--transform { color: var(--color-transform-text); }
 
 /* 하단 pill 태그: 흰 배경 + 도구 유형 색 테두리 */
 .tool-badge__tag {
@@ -55,21 +55,21 @@
   gap: 4px;
   padding: 4px 8px;
   border-radius: var(--radius-pill);
-  background: #fff;
+  background: var(--color-white);
   border-style: solid;
   border-width: 0.5px;
 }
 
-.tool-badge__tag--expand   { border-color: #2e7d32; }
-.tool-badge__tag--transform { border-color: #7b61c4; }
+.tool-badge__tag--expand   { border-color: var(--color-expand-text); }
+.tool-badge__tag--transform { border-color: var(--color-transform-text); }
 
 /* 태그 도구명 텍스트 */
 .tool-badge__tag-name {
-  font-size: 10px;
-  font-weight: 400;
+  font-size: var(--font-size-nano);
+  font-weight: var(--font-weight-regular);
   line-height: normal;
   white-space: nowrap;
 }
 
-.tool-badge__tag-name--expand   { color: #2e7d32; }
-.tool-badge__tag-name--transform { color: #7b61c4; }
+.tool-badge__tag-name--expand   { color: var(--color-expand-text); }
+.tool-badge__tag-name--transform { color: var(--color-transform-text); }

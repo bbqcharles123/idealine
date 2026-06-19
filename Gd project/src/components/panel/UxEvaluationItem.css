@@ -12,7 +12,7 @@
   align-items: center;
   gap: 6px;
   align-self: flex-start;
-  background: #f5f5f5;
+  background: var(--color-surface);
   padding: 8px 12px;
   border-radius: var(--radius-element);
   flex-shrink: 0;
@@ -20,9 +20,9 @@
 
 /* 평가요소명 텍스트: 14px SemiBold #555 */
 .ux-evaluation-item__name {
-  font-size: 14px;
-  font-weight: 600;
-  color: #555;
+  font-size: var(--font-size-label);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-label);
   line-height: 18px;
   white-space: nowrap;
 }
@@ -61,9 +61,9 @@
 
 /* 평가 내용 텍스트: 14px Regular #4d4d4d */
 .ux-evaluation-item__text {
-  font-size: 14px;
-  font-weight: 400;
-  color: #4d4d4d;
+  font-size: var(--font-size-body2);
+  font-weight: var(--font-weight-regular);
+  color: var(--color-body2);
   line-height: normal;
   margin: 0;
   width: 100%;

@@ -1,8 +1,8 @@
 /* ── CanvasCard: 홈 작업공간 캔버스 카드 ── */
 
 .canvas-card {
-  background: #f6f6f6;
-  border: 1px solid #d5d5d5;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-element);
   padding: 19px 23px 15px;
   min-height: 160px;
@@ -66,18 +66,18 @@
 
 /* 확장하기 배지: 연두 계열 */
 .canvas-card__badge--expand {
-  background: #e8f5e9;
-  color: #2e7d32;
+  background: var(--color-expand-bg);
+  color: var(--color-expand-text);
 }
 
 /* 변형하기 배지: 보라 계열 */
 .canvas-card__badge--transform {
-  background: #ede8f9;
-  color: #7b61c4;
+  background: var(--color-transform-bg);
+  color: var(--color-transform-text);
 }
 
 /* 직접작성 배지: 청록 계열 */
 .canvas-card__badge--write {
-  background: #e0f2f1;
-  color: #00695c;
+  background: var(--color-write-bg);
+  color: var(--color-write-text);
 }

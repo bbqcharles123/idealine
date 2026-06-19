@@ -27,9 +27,9 @@
 
 /* 영역명: 14px SemiBold #333 */
 .ux-area-accordion__name {
-  font-size: 14px;
-  font-weight: 600;
-  color: #333;
+  font-size: var(--font-size-label);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-body1);
   line-height: 18px;
 }
 
@@ -42,9 +42,9 @@
 
 /* 평가 텍스트 */
 .ux-area-accordion__evaluation {
-  font-size: 14px;
-  font-weight: 400;
-  color: #4d4d4d;
+  font-size: var(--font-size-body2);
+  font-weight: var(--font-weight-regular);
+  color: var(--color-body2);
   line-height: normal;
   margin: 0;
   width: 100%;

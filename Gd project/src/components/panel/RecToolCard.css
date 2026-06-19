@@ -32,18 +32,18 @@
 
 /* 도구명 텍스트 */
 .rec-tool-card__label {
-  font-size: 14px;
-  font-weight: 400;
+  font-size: var(--font-size-body2);
+  font-weight: var(--font-weight-regular);
   line-height: 18px;
   white-space: nowrap;
 }
 
 /* 도구 방향 설명 텍스트 */
 .rec-tool-card__desc {
-  font-size: 12px;
-  font-weight: 400;
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-regular);
   line-height: normal;
-  color: #4D4D4D;
+  color: var(--color-body2);
   margin: 0;
   white-space: nowrap;
 }

@@ -11,11 +11,11 @@
   background: #f7f7f7;
   border: 1px solid #e8e8e8;
   border-bottom: none;
-  border-radius: 8px 8px 0 0;
+  border-radius: var(--radius-element) var(--radius-element) 0 0;
   padding: 8px 12px;
-  font-size: 14px;
-  font-weight: 600;
-  color: #555;
+  font-size: var(--font-size-label);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-label);
   line-height: 18px;
   word-break: break-word;
 }
@@ -25,11 +25,11 @@
   background: #ffffff;
   border: 1px solid #e8e8e8;
   border-top: none;
-  border-radius: 0 0 8px 8px;
+  border-radius: 0 0 var(--radius-element) var(--radius-element);
   padding: 8px 12px;
-  font-size: 14px;
-  font-weight: 400;
-  color: #4d4d4d;
+  font-size: var(--font-size-body2);
+  font-weight: var(--font-weight-regular);
+  color: var(--color-body2);
   line-height: normal;
   word-break: break-word;
 }

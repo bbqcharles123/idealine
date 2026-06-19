@@ -4,8 +4,8 @@
   justify-content: center;
   padding: 4px 12px;
   border-radius: var(--radius-pill);
-  font-size: 10px;
-  font-weight: 500;
+  font-size: var(--font-size-nano);
+  font-weight: var(--font-weight-medium);
   line-height: normal;
   white-space: nowrap;
   flex-shrink: 0;
@@ -13,12 +13,12 @@
 
 /* 보완: 노란 배경 + 진한 갈색 텍스트 */
 .ux-status-badge--supplement {
-  background: #FEF08A;
-  color: #713f12;
+  background: var(--color-status-warn-bg);
+  color: var(--color-status-warn-text);
 }
 
 /* 충족: 연녹색 배경 + 진한 녹색 텍스트 */
 .ux-status-badge--satisfied {
-  background: #DCFCE7;
-  color: #166534;
+  background: var(--color-status-ok-bg);
+  color: var(--color-status-ok-text);
 }

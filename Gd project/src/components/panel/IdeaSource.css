@@ -14,8 +14,8 @@
 }
 
 .idea-source__title {
-  font-size: 14px;
-  font-weight: 500;
+  font-size: var(--font-size-body2);
+  font-weight: var(--font-weight-medium);
   color: var(--color-body1);  /* #333 */
   line-height: 18px;
   text-align: left;           /* 버튼 기본 가운데 정렬 → 줄바꿈 시 왼쪽 정렬 */

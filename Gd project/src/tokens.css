@@ -16,6 +16,33 @@
   --color-highlighted-bg:     #FFF7ED;
   --color-highlighted-border: #F59E0B;
 
+  /* ── 표면 색상 ── */
+  --color-white:    #FFFFFF;   /* 카드·모달·버튼·input 기본 배경 */
+  --color-surface:  #F5F5F5;   /* 연한 회색 내부 박스·섹션·칩 배경 */
+  --color-track:    #EBEBEB;   /* 비활성 pill·프로그레스 바 트랙 */
+  --color-hover:    #E4E4E4;   /* 버튼 hover 배경 */
+
+  /* ── 테두리 색상 ── */
+  --color-border:      #D5D5D5;   /* 표준 테두리·구분선 */
+  --color-disabled-bg: #D5D5D5;   /* 비활성 버튼 배경 (border와 값은 같으나 의미 구분) */
+
+  /* ── 도구 의미 색상 (확장/변형/직접작성) ── */
+  --color-expand-bg:      #E8F5E9;
+  --color-expand-text:    #2E7D32;
+  --color-transform-bg:   #EDE8F9;
+  --color-transform-text: #7B61C4;
+  --color-write-bg:       #E0F2F1;
+  --color-write-text:     #00695C;
+
+  /* ── UX 평가 상태 색상 ── */
+  --color-status-warn-bg:   #FEF08A;   /* 보완 필요 */
+  --color-status-warn-text: #713F12;
+  --color-status-ok-bg:     #DCFCE7;   /* 충족 */
+  --color-status-ok-text:   #166534;
+
+  /* ── 툴팁 ── */
+  --color-tooltip-bg: rgba(26, 26, 26, 0.72);   /* opacity 적용 다크 배경 (Figma pass-through) */
+
   /* ── 서체 크기 ── */
   --font-size-heading1: 28px;
   --font-size-heading2: 22px;
@@ -24,6 +51,7 @@
   --font-size-body2:    14px;
   --font-size-label:    14px;
   --font-size-caption:  12px;
+  --font-size-nano:     10px;   /* 배지·pill·툴팁 등 극소형 요소 */
 
   /* ── 행간 (px 고정값만, auto는 제외) ── */
   --line-height-heading1: 36px;

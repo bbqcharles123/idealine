@@ -1,7 +1,7 @@
 /* 모달 박스: 550px 콘텐츠 + 좌우 36px 패딩 = 622px, flex 컬럼으로 콘텐츠와 하단 버튼 배치 */
 .transform-modal {
   width: 622px;
-  background: #ffffff;
+  background: var(--color-white);
   border-radius: var(--radius-container);
   padding: 32px 36px;
   box-sizing: border-box;
@@ -35,9 +35,9 @@
 }
 
 .transform-modal-title {
-  font-size: 22px;
-  font-weight: 700;
-  color: #222222;
+  font-size: var(--font-size-heading2);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-heading2-3);
   margin: 0;
 }
 
@@ -77,9 +77,9 @@
 
 /* Step 1 질문 텍스트 */
 .transform-modal-question {
-  font-size: 16px;
-  font-weight: 500;
-  color: #333333;
+  font-size: var(--font-size-body1);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-body1);
   margin: 0;
 }
 
@@ -118,15 +118,15 @@
   display: flex;
   gap: 4px;
   align-items: center;
-  background: #f2f2f2;
+  background: var(--color-surface);
   border-radius: var(--radius-element);
   padding: 4px 8px;
 }
 
 .transform-tool-chip span {
-  font-size: 14px;
-  font-weight: 600;
-  color: #555555;
+  font-size: var(--font-size-label);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-label);
   line-height: 18px;
   text-align: center;
 }
@@ -136,32 +136,32 @@
   display: flex;
   gap: 4px;
   align-items: center;
-  border: 1px solid #d5d5d5;
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-element);
   padding: 4px 8px;
-  background: #ffffff;
+  background: var(--color-white);
   cursor: pointer;
 }
 
 .transform-regenerate-btn span {
-  font-size: 14px;
-  font-weight: 600;
-  color: #555555;
+  font-size: var(--font-size-label);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-label);
   line-height: 18px;
   text-align: center;
 }
 
 /* 질문 텍스트 박스 */
 .transform-question-box {
-  background: #eef5ff;
+  background: var(--color-selected-bg);
   padding: 16px;
   border-radius: var(--radius-element);
 }
 
 .transform-question-box p {
-  font-size: 16px;
-  font-weight: 500;
-  color: #333333;
+  font-size: var(--font-size-body1);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-body1);
   text-align: justify;
   margin: 0;
 }

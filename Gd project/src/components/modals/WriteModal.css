@@ -12,7 +12,7 @@
 /* 모달 박스: 550px 콘텐츠 + 좌우 36px 패딩 = 622px, flex 컬럼으로 콘텐츠와 하단 버튼 배치 */
 .write-modal {
   width: 622px;
-  background: #ffffff;
+  background: var(--color-white);
   border-radius: var(--radius-container);
   padding: 32px 36px;
   box-sizing: border-box;
@@ -46,9 +46,9 @@
 }
 
 .write-modal-title {
-  font-size: 22px;
-  font-weight: 700;
-  color: #222222;
+  font-size: var(--font-size-heading2);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-heading2-3);
   line-height: normal;
   margin: 0;
 }
@@ -104,25 +104,25 @@
 
 /* 부제 텍스트 */
 .modal-subtitle {
-  font-size: 14px;
-  font-weight: 400;
-  color: #4d4d4d;
+  font-size: var(--font-size-body2);
+  font-weight: var(--font-weight-regular);
+  color: var(--color-body2);
   margin: 0;
 }
 
 /* 입력 필드 라벨 */
 .modal-label {
-  font-size: 14px;
-  font-weight: 600;
-  color: #555555;
+  font-size: var(--font-size-label);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-label);
   line-height: 18px;
 }
 
 /* 설명 필드의 보조 안내 텍스트 */
 .modal-sublabel {
-  font-size: 14px;
-  font-weight: 400;
-  color: #4d4d4d;
+  font-size: var(--font-size-body2);
+  font-weight: var(--font-weight-regular);
+  color: var(--color-body2);
   line-height: 18px;
   margin: 0;
 }
@@ -130,13 +130,13 @@
 /* 공통 input 스타일 */
 .modal-input {
   height: 48px;
-  border: 1px solid #d5d5d5;
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-element);
   padding: 14px 12px;
-  font-size: 14px;
-  font-weight: 400;
+  font-size: var(--font-size-body2);
+  font-weight: var(--font-weight-regular);
   line-height: 20px;
-  color: #4d4d4d;
+  color: var(--color-body2);
   font-family: 'Pretendard', sans-serif;
   box-sizing: border-box;
   outline: none;
@@ -144,21 +144,21 @@
 }
 
 .modal-input::placeholder {
-  color: #9e9e9e;
-  font-size: 14px;
-  font-weight: 400;
+  color: var(--color-disabled);
+  font-size: var(--font-size-body2);
+  font-weight: var(--font-weight-regular);
   line-height: 20px;
 }
 
 /* 공통 textarea 스타일 */
 .modal-textarea {
   height: 112px;
-  border: 1px solid #d5d5d5;
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-element);
   padding: 14px 12px;
-  font-size: 14px;
-  font-weight: 400;
-  color: #4d4d4d;
+  font-size: var(--font-size-body2);
+  font-weight: var(--font-weight-regular);
+  color: var(--color-body2);
   font-family: 'Pretendard', sans-serif;
   box-sizing: border-box;
   resize: none;
@@ -167,7 +167,7 @@
 }
 
 .modal-textarea::placeholder {
-  color: #9e9e9e;
-  font-size: 14px;
-  font-weight: 400;
+  color: var(--color-disabled);
+  font-size: var(--font-size-body2);
+  font-weight: var(--font-weight-regular);
 }

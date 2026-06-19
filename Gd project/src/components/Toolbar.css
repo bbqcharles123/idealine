@@ -5,7 +5,7 @@
   align-items: center;
   gap: 12px;
   padding: 4px 8px;
-  background: #fff;
+  background: var(--color-white);
   border-radius: var(--radius-pill, 999px);
   box-shadow: 0 8px 40px 0 rgba(0, 0, 0, 0.12);
   box-sizing: border-box;
@@ -25,19 +25,19 @@
   width: 100px;
   padding: 8px 16px;
   border-radius: var(--radius-pill, 999px);
-  background-color: #fff;
+  background-color: var(--color-white);
   border: none;
   cursor: pointer;
   white-space: nowrap;
 }
 
 .toolbar-btn:hover {
-  background-color: #E4E4E4;
+  background-color: var(--color-hover);
 }
 
 /* active: 해당 모달이 열려 있는 동안 유지 */
 .toolbar-btn.active {
-  background-color: #589CFE;
+  background-color: var(--color-selected-border);
 }
 
 /* active 상태에서 아이콘을 흰색으로 변환 */
@@ -47,7 +47,7 @@
 
 /* rec: write 카드 도구 레이어에서 추천된 도구 버튼 */
 .toolbar-btn.rec {
-  background-color: #E0F2F1;
+  background-color: var(--color-write-bg);
 }
 
 /* rec 상태 아이콘: #00695C 색상으로 변환 */
@@ -57,19 +57,19 @@
 
 /* 버튼 텍스트 */
 .toolbar-btn-label {
-  font-size: 12px;
-  font-weight: 600;
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-semibold);
   line-height: 18px;
   text-align: center;
-  color: #222222;
+  color: var(--color-heading2-3);
 }
 
 .toolbar-btn.active .toolbar-btn-label {
-  color: #ffffff;
+  color: var(--color-white);
 }
 
 .toolbar-btn.rec .toolbar-btn-label {
-  color: #00695C;
+  color: var(--color-write-text);
 }
 
 /* tooltip: 추천 버튼 위에 표시
@@ -81,14 +81,14 @@
   bottom: calc(100% + 12px);
   left: 50%;
   transform: translateX(-50%);
-  background: #3D3D3D;
-  color: #fff;
-  font-size: 10px;
-  font-weight: 400;
+  background: var(--color-tooltip-bg);
+  color: var(--color-white);
+  font-size: var(--font-size-nano);
+  font-weight: var(--font-weight-regular);
   line-height: 18px;
   text-align: center;
   padding: 3px 8px;
-  border-radius: 8px;
+  border-radius: var(--radius-element);
   white-space: nowrap;
   pointer-events: none;
   z-index: 10;
@@ -105,5 +105,5 @@
   height: 0;
   border-left: 6px solid transparent;
   border-right: 6px solid transparent;
-  border-top: 4px solid #3D3D3D;
+  border-top: 4px solid var(--color-tooltip-bg);
 }

@@ -4,8 +4,8 @@
   border-radius: var(--radius-element);
   border: none;
   cursor: pointer;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: var(--font-size-label);
+  font-weight: var(--font-weight-semibold);
   line-height: 20px;
   text-align: center;
   white-space: nowrap;
@@ -13,20 +13,20 @@
 
 /* filled: 주 동작 버튼 (활성) */
 .modal-btn--filled {
-  background-color: #589cfe;
-  color: #ffffff;
+  background-color: var(--color-selected-border);
+  color: var(--color-white);
 }
 
 /* filled disabled: 조건 미충족 시 */
 .modal-btn--filled.modal-btn--disabled {
-  background-color: #d5d5d5;
-  color: #9e9e9e;
+  background-color: var(--color-disabled-bg);
+  color: var(--color-disabled);
   cursor: not-allowed;
 }
 
 /* outline: 보조 동작 버튼 (이전으로) */
 .modal-btn--outline {
-  background-color: #ffffff;
-  color: #589cfe;
-  border: 1px solid #589cfe;
+  background-color: var(--color-white);
+  color: var(--color-selected-border);
+  border: 1px solid var(--color-selected-border);
 }

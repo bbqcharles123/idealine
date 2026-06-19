@@ -2,21 +2,21 @@
   position: relative;
   width: 356px;
   padding: 18px 22px;
-  background: #fff;
-  border: 1px solid #d5d5d5;
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
   box-sizing: border-box;
 }
 
 .derived-card.selected {
-  background-color: #EEF5FF;
-  border-color: #589CFE;
-  box-shadow: 0 0 0 2px #589CFE;
+  background-color: var(--color-selected-bg);
+  border-color: var(--color-selected-border);
+  box-shadow: 0 0 0 2px var(--color-selected-border);
 }
 
 .derived-card.highlighted {
-  background-color: #FFF7ED;
-  border-color: #F59E0B;
-  box-shadow: 0 0 0 1px #F59E0B;
+  background-color: var(--color-highlighted-bg);
+  border-color: var(--color-highlighted-border);
+  box-shadow: 0 0 0 1px var(--color-highlighted-border);
 }
 
 /* 태그 버튼 */
@@ -31,27 +31,27 @@
 }
 
 .card-tag-btn--expand {
-  background-color: #E8F5E9;
+  background-color: var(--color-expand-bg);
 }
 
 .card-tag-btn--transform {
-  background-color: #EDE8F9;
+  background-color: var(--color-transform-bg);
 }
 
 .tag-name {
-  font-size: 14px;
-  font-weight: 600;
+  font-size: var(--font-size-label);
+  font-weight: var(--font-weight-semibold);
   line-height: 18px;
   text-align: center;
   margin-left: 4px;
 }
 
 .card-tag-btn--expand .tag-name {
-  color: #2E7D32;
+  color: var(--color-expand-text);
 }
 
 .card-tag-btn--transform .tag-name {
-  color: #7B61C4;
+  color: var(--color-transform-text);
 }
 
 .tag-arrow {
