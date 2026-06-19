@@ -4,6 +4,7 @@
   align-self: flex-start;   /* 부모 flex-column에서 늘어나지 않도록 */
   align-items: center;
   gap: 8px;
+  max-width: 316px;         /* 사이드패널 콘텐츠 폭 한계 — 초과 시 제목이 줄바꿈됨 */
   background: var(--color-highlighted-bg);   /* #FFF7ED */
   border: 1px solid var(--color-highlighted-border); /* #F59E0B */
   border-radius: var(--radius-element);      /* 8px */
@@ -17,7 +18,8 @@
   font-weight: 500;
   color: var(--color-body1);  /* #333 */
   line-height: 18px;
-  white-space: nowrap;
+  text-align: left;           /* 버튼 기본 가운데 정렬 → 줄바꿈 시 왼쪽 정렬 */
+  word-break: break-word;     /* 공백 없는 긴 문자열도 강제 줄바꿈 (Figma 시안 기준) */
 }
 
 .idea-source__icon {

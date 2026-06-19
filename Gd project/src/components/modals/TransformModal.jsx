@@ -3,6 +3,7 @@ import ModalButton from './ModalButton'
 import ModalOption from './ModalOption'
 import ModalProgress from './ModalProgress'
 import { ERRC_DIRECTIONS } from '../../data/transformData'
+import { generateQuestion } from '../../ai/deriveCard'
 import './WriteModal.css'
 import './TransformModal.css'
 
@@ -21,25 +22,58 @@ function TransformModal({ selectedCard, onClose, onSubmit }) {
   // Step 2 답변 textarea 값
   const [answer, setAnswer] = useState('')
 
+  // Step 2 질문: AI가 생성한 질문 텍스트와 로딩 상태
+  const [aiQuestion, setAiQuestion] = useState('')
+  const [isLoadingQuestion, setIsLoadingQuestion] = useState(false)
+
+  // 파생카드 생성(호출 5) 진행 중 여부 — 제출 버튼 로딩 표시
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
   // 현재 선택된 방향성 객체 (도구 정보 포함)
   const currentDirection = selectedDirectionIdx !== null ? ERRC_DIRECTIONS[selectedDirectionIdx] : null
 
   // 현재 선택된 도구 객체 (Step 2에서 도구명·질문 표시에 사용)
   const currentTool = currentDirection ? currentDirection.tool : null
 
-  // Step 1 → 2로 이동
-  const handleNext = () => setStep(2)
+  // 질문 생성(호출 4): 선택된 도구 + 부모 카드 본문으로 AI 질문을 받아옴
+  // Step 2 진입 시와 재생성 버튼에서 공용으로 사용
+  const fetchQuestion = async () => {
+    if (!currentTool) return
+    setIsLoadingQuestion(true)
+    try {
+      const res = await generateQuestion(selectedCard?.data?.description ?? '', currentTool.name, 'transform')
+      setAiQuestion(res.question)
+    } catch (err) {
+      console.error('질문 생성 실패:', err)
+      setAiQuestion('질문 생성에 실패했습니다. 재생성을 눌러주세요.')
+    } finally {
+      setIsLoadingQuestion(false)
+    }
+  }
 
-  // Step 2 → 1로 돌아갈 때 답변 초기화
+  // Step 1 → 2로 이동: 질문 생성 호출
+  const handleNext = () => {
+    setStep(2)
+    fetchQuestion()
+  }
+
+  // Step 2 → 1로 돌아갈 때 답변·생성된 질문 초기화
   const handleBack = () => {
     setAnswer('')
+    setAiQuestion('')
     setStep(1)
   }
 
-  // 파생 카드 생성 제출: answer(답변), toolName(도구명), question(질문 텍스트) 전달
-  const handleSubmit = () => {
-    if (!answer.trim() || !currentTool) return
-    onSubmit(answer.trim(), currentTool.name, currentTool.question)
+  // 파생 카드 생성 제출: AI 생성(호출 5)이 끝날 때까지 버튼 로딩 표시
+  // 성공 시 부모(App)가 모달을 닫음, 실패 시 모달 유지하고 버튼 복구
+  const handleSubmit = async () => {
+    if (!answer.trim() || !currentTool || !aiQuestion) return
+    setIsSubmitting(true)
+    try {
+      await onSubmit(answer.trim(), currentTool.name, aiQuestion)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -47,18 +81,18 @@ function TransformModal({ selectedCard, onClose, onSubmit }) {
     <div className="modal-overlay">
       <div className="transform-modal">
 
-        {/* X 닫기 버튼 */}
-        <button className="modal-close-btn" onClick={onClose}>
-          <img src="/close_modal.svg" width={32} height={32} alt="닫기" />
-        </button>
+        {/* 상단 그룹: 헤더 행 + 진행도/단계 본문 */}
+        <div className="transform-modal-top-group">
 
-        {/* 콘텐츠 영역: 헤더 + 진행도 + 단계별 본문 */}
-        <div className="transform-modal-content">
-
-          {/* 헤더: 모달 제목 + 부제 */}
-          <div className="transform-modal-header">
-            <h2 className="transform-modal-title">변형하기</h2>
-            <p className="modal-subtitle">아이디어의 요소를 조정해 더 나은 방향을 찾습니다</p>
+          {/* 헤더 행: 제목+부제(좌) / X 닫기(우) */}
+          <div className="transform-modal-header-row">
+            <div className="transform-modal-header">
+              <h2 className="transform-modal-title">변형하기</h2>
+              <p className="modal-subtitle">아이디어의 요소를 조정해 더 나은 방향을 찾습니다</p>
+            </div>
+            <button className="transform-close-btn" onClick={onClose}>
+              <img src="/close_modal.svg" width={26} height={26} alt="닫기" />
+            </button>
           </div>
 
           {/* 진행도 + 단계 본문 */}
@@ -104,19 +138,19 @@ function TransformModal({ selectedCard, onClose, onSubmit }) {
                         <span>{currentTool.name}</span>
                       </div>
                     </div>
-                    {/* 재생성 버튼: AI API 연동 전 UI만 구현 (클릭 시 동작 없음) */}
-                    <button className="transform-regenerate-btn" disabled>
+                    {/* 재생성 버튼: 같은 도구로 질문을 다시 생성 (로딩 중 비활성화) */}
+                    <button className="transform-regenerate-btn" onClick={fetchQuestion} disabled={isLoadingQuestion}>
                       <img src="/repeat.svg" width={18} height={18} alt="" />
                       <span>재생성</span>
                     </button>
                   </div>
-                  {/* 질문 텍스트 박스 */}
+                  {/* 질문 텍스트 박스: 생성 중에는 로딩 문구, 완료되면 AI 질문 표시 */}
                   <div className="transform-question-box">
-                    <p>{currentTool.question}</p>
+                    <p>{isLoadingQuestion ? '질문 생성 중…' : aiQuestion}</p>
                   </div>
                 </div>
 
-                {/* 답변 섹션 */}
+                {/* 답변 섹션: 질문 생성 중에는 입력 비활성화 */}
                 <div className="transform-answer-section">
                   <label className="modal-label">답변</label>
                   <textarea
@@ -124,6 +158,7 @@ function TransformModal({ selectedCard, onClose, onSubmit }) {
                     placeholder="질문에 답변을 작성해주세요"
                     value={answer}
                     onChange={(e) => setAnswer(e.target.value)}
+                    disabled={isLoadingQuestion}
                   />
                 </div>
 
@@ -140,7 +175,7 @@ function TransformModal({ selectedCard, onClose, onSubmit }) {
             <ModalButton
               variant="filled"
               disabled={selectedDirectionIdx === null}
-              width={222}
+              width={209}
               onClick={handleNext}
             >
               다음으로
@@ -150,16 +185,16 @@ function TransformModal({ selectedCard, onClose, onSubmit }) {
           {/* Step 2: 이전으로 + 파생 카드 생성하기 */}
           {step === 2 && (
             <>
-              <ModalButton variant="outline" width={222} onClick={handleBack}>
+              <ModalButton variant="outline" width={209} onClick={handleBack} disabled={isSubmitting}>
                 이전으로
               </ModalButton>
               <ModalButton
                 variant="filled"
-                disabled={answer.trim() === ''}
-                width={222}
+                disabled={answer.trim() === '' || isLoadingQuestion || !aiQuestion || isSubmitting}
+                width={209}
                 onClick={handleSubmit}
               >
-                파생 카드 생성하기
+                {isSubmitting ? '생성 중…' : '파생 카드 생성하기'}
               </ModalButton>
             </>
           )}

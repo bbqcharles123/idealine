@@ -62,7 +62,7 @@ const WRITE_REC = {
 }
 
 function LayerStackNode({ id, data }) {
-  const { title, description, toolType, tagName, writeRec, isSelected, isHighlighted, onInfoClick } = data ?? {}
+  const { title, description, toolType, tagName, writeRec, writeExpect, isSelected, isHighlighted, onInfoClick, onWriteLayerToggle, onToolOpen } = data ?? {}
   const [isExpanded, setIsExpanded] = useState(false)
   const [isCollapsing, setIsCollapsing] = useState(false)
 
@@ -95,28 +95,40 @@ function LayerStackNode({ id, data }) {
   // peek 오른쪽 칩 라벨: write는 카테고리명, expand/transform은 tagName
   const peekChipLabel = writeCat ? writeCat.label : (tagName ?? tool?.label)
 
-  // tagName별 고유 설명 텍스트, 없으면 toolType 단위 generic desc 사용
-  const tagDesc = TOOL_LAYER_DESC[toolType]?.[tagName] ?? tool?.desc
+  // 도구레이어 설명 텍스트
+  // - write 카드: AI가 생성한 기대효과(writeExpect) 사용
+  // - expand/transform: tagName별 고유 설명, 없으면 generic desc
+  const tagDesc = (toolType === 'write' && writeExpect)
+    ? writeExpect
+    : (TOOL_LAYER_DESC[toolType]?.[tagName] ?? tool?.desc)
 
   // tagName에 해당하는 lucide 아이콘 컴포넌트 (expand/transform 타입만 해당, write는 null)
   const TagIcon = TAG_ICON[toolType]?.[tagName] ?? null
 
   // 도구 레이어 클릭 → 펼치기 (React Flow 노드 선택 이벤트 차단)
+  // 카드 타입 무관: onToolOpen으로 열린 사이드패널 닫기
+  // write 타입이면 App에 추천 도구 정보 전달 (툴바 rec 상태 활성화)
   const handleToolClick = useCallback((e) => {
     e.stopPropagation()
-    if (!isExpanded) setIsExpanded(true)
-  }, [isExpanded])
+    if (!isExpanded) {
+      setIsExpanded(true)
+      onToolOpen?.(id)
+      if (toolType === 'write') onWriteLayerToggle?.(true, writeRec, id)
+    }
+  }, [id, isExpanded, toolType, writeRec, onWriteLayerToggle, onToolOpen])
 
   // peek "아이디어 확인하기" 클릭 → 역방향 애니메이션 재생 후 접기
+  // write 타입이면 App에 접힘 알림 (툴바 rec 상태 비활성화)
   const handleReturnClick = useCallback((e) => {
     e.stopPropagation()
     if (isCollapsing) return
     setIsCollapsing(true)
+    if (toolType === 'write') onWriteLayerToggle?.(false, writeRec, id)
     setTimeout(() => {
       setIsExpanded(false)
       setIsCollapsing(false)
     }, 440)
-  }, [isCollapsing])
+  }, [id, isCollapsing, toolType, writeRec, onWriteLayerToggle])
 
   const cls = [
     'lsn',

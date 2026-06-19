@@ -1,9 +1,11 @@
 import { useState, useRef, useEffect, useLayoutEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import './CanvasHeader.css'
 
 // 캔버스 상단 고정 헤더: 홈 버튼 + (편집 가능한) 캔버스 제목
 // position: fixed로 ReactFlow 캔버스 위에 올라와 항상 표시됨
 function CanvasHeader({ title, onTitleChange }) {
+  const navigate = useNavigate()
   const [isEditing, setIsEditing] = useState(false)
   const [draft, setDraft] = useState(title)
   const inputRef = useRef(null)
@@ -64,8 +66,8 @@ function CanvasHeader({ title, onTitleChange }) {
 
   return (
     <div className="canvas-header">
-      {/* 홈 버튼 */}
-      <button className="canvas-header__home-btn">
+      {/* 홈 버튼: 클릭 시 홈 화면으로 이동 */}
+      <button className="canvas-header__home-btn" onClick={() => navigate('/')}>
         <img src="/header_home.svg" width={24} height={24} alt="홈" />
       </button>
 

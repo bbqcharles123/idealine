@@ -1,29 +1,37 @@
-/* 모달 박스 */
+/* 모달 박스: 550px 콘텐츠 + 좌우 36px 패딩 = 622px, flex 컬럼으로 콘텐츠와 하단 버튼 배치 */
 .expand-modal {
-  position: relative;
-  width: 690px;
-  height: 714px;
+  width: 622px;
   background: #ffffff;
   border-radius: var(--radius-container);
-  overflow: hidden;
+  padding: 32px 36px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 52px;
+  align-items: center;
 }
 
-/* 콘텐츠 영역: 헤더 + 진행도 + 단계 본문 */
-.expand-modal-content {
-  position: absolute;
-  top: 64px;
-  left: 60px;
-  right: 60px;
+/* 상단 그룹: 헤더 행 + 진행도/단계 본문 */
+.expand-modal-top-group {
   display: flex;
   flex-direction: column;
   gap: 48px;
+  width: 100%;
 }
 
-/* 헤더: 제목 + 부제 */
+/* 헤더 행: 제목+부제(좌) / X 닫기(우) */
+.expand-modal-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  width: 100%;
+}
+
+/* 제목 + 부제 그룹 */
 .expand-modal-header {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
 .expand-modal-title {
@@ -33,23 +41,38 @@
   margin: 0;
 }
 
+/* 인라인 닫기 버튼: 헤더 행 우측에 배치 */
+.expand-close-btn {
+  width: 26px;
+  height: 26px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
 /* 진행도 + 단계 본문 묶음 */
 .expand-modal-body {
   display: flex;
   flex-direction: column;
   gap: 40px;
+  width: 100%;
 }
 
-/* Step 1/2: 질문 + 선택지 */
+/* Step 1/2: 질문 텍스트 + 선택지 목록 */
 .expand-modal-step {
   display: flex;
   flex-direction: column;
-  gap: 32px;
+  gap: 24px;
 }
 
-/* Step 3: 질문 섹션 + 답변 섹션 (간격 더 좁음) */
+/* Step 3: 질문 섹션 + 답변 섹션 */
 .expand-modal-step--answer {
-  gap: 24px;
+  gap: 20px;
 }
 
 /* Step 1/2 질문 텍스트 */
@@ -67,13 +90,21 @@
   gap: 12px;
 }
 
+/* Step 2 예시 생성 중 로딩 문구 */
+.expand-modal-loading {
+  font-size: 14px;
+  color: #999999;
+  margin: 0;
+  padding: 12px 0;
+}
+
 /* ---- Step 3 전용 스타일 ---- */
 
 /* 질문 섹션: 헤더 행 + 질문 박스 */
 .expand-question-section {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
 /* 질문 섹션 헤더: 좌측(라벨+도구칩) / 우측(재생성 버튼) */
@@ -131,7 +162,7 @@
 /* 질문 텍스트 박스 */
 .expand-question-box {
   background: #eef5ff;
-  padding: 14px 12px;
+  padding: 16px;
   border-radius: var(--radius-element);
 }
 
@@ -147,16 +178,12 @@
 .expand-answer-section {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
 /* 하단 버튼 영역: 버튼 1개일 때는 가운데, 2개일 때는 나란히 */
 .expand-modal-footer {
-  position: absolute;
-  bottom: 32px;
-  left: 0;
-  right: 0;
   display: flex;
   justify-content: center;
-  gap: 20px;
+  gap: 16px;
 }

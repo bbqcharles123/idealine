@@ -11,6 +11,11 @@
   box-sizing: border-box;
 }
 
+/* 버튼 감싸는 wrapper: tooltip 위치 기준점 */
+.toolbar-btn-wrap {
+  position: relative;
+}
+
 /* 버튼 공통 스타일 */
 .toolbar-btn {
   display: flex;
@@ -40,6 +45,16 @@
   filter: brightness(0) invert(1);
 }
 
+/* rec: write 카드 도구 레이어에서 추천된 도구 버튼 */
+.toolbar-btn.rec {
+  background-color: #E0F2F1;
+}
+
+/* rec 상태 아이콘: #00695C 색상으로 변환 */
+.toolbar-btn.rec img {
+  filter: brightness(0) saturate(100%) invert(29%) sepia(89%) saturate(446%) hue-rotate(148deg) brightness(97%) contrast(100%);
+}
+
 /* 버튼 텍스트 */
 .toolbar-btn-label {
   font-size: 12px;
@@ -53,3 +68,42 @@
   color: #ffffff;
 }
 
+.toolbar-btn.rec .toolbar-btn-label {
+  color: #00695C;
+}
+
+/* tooltip: 추천 버튼 위에 표시
+   bottom: calc(100% + 12px) = 버튼 wrapper 상단 기준
+   + 4px(툴바 padding-top) + 4px(삼각형 높이) + 4px(툴바와의 간격)
+   → 삼각형 끝이 툴바 상단에서 4px 위에 위치 */
+.toolbar-tooltip {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #3D3D3D;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 18px;
+  text-align: center;
+  padding: 3px 8px;
+  border-radius: 8px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* 아래쪽 삼각형: 4px 높이, 가운데 정렬 */
+.toolbar-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 4px solid #3D3D3D;
+}

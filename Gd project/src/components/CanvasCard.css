@@ -1,0 +1,83 @@
+/* ── CanvasCard: 홈 작업공간 캔버스 카드 ── */
+
+.canvas-card {
+  background: #f6f6f6;
+  border: 1px solid #d5d5d5;
+  border-radius: var(--radius-element);
+  padding: 19px 23px 15px;
+  min-height: 160px;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* 제목: 1~2줄, flex-grow로 나머지 공간 점유 → 하단 정보가 자연스럽게 아래로 */
+.canvas-card__title {
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-heading3);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-body1);
+  line-height: 1.4;
+  margin: 0;
+  white-space: pre-line;
+  flex: 1;
+}
+
+/* 카드 수 + 배지를 묶는 하단 영역 */
+.canvas-card__bottom {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* 파생 카드 수 텍스트 */
+.canvas-card__card-count {
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-body2);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-label);
+  line-height: var(--line-height-label);
+  margin: 0;
+}
+
+/* 배지 묶음 */
+.canvas-card__badges {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* 공통 배지 */
+.canvas-card__badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-regular);
+  white-space: nowrap;
+}
+
+/* 확장하기 배지: 연두 계열 */
+.canvas-card__badge--expand {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+/* 변형하기 배지: 보라 계열 */
+.canvas-card__badge--transform {
+  background: #ede8f9;
+  color: #7b61c4;
+}
+
+/* 직접작성 배지: 청록 계열 */
+.canvas-card__badge--write {
+  background: #e0f2f1;
+  color: #00695c;
+}

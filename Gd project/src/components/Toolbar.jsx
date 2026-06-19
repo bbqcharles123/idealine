@@ -8,8 +8,9 @@ const TOOLBAR_BUTTONS = [
 ]
 
 // 툴바: 카드 1개 선택 시 뷰포트 하단 중앙에 고정 표시
-// activeModal 값에 따라 해당 버튼이 active 상태(파란 배경)로 표시됨
-function Toolbar({ activeModal, onExpand, onTransform, onWrite }) {
+// activeModal: 해당 버튼이 active 상태(파란 배경)
+// recTool: write 카드 도구 레이어 펼침 시 추천 버튼 하이라이트(민트 배경) + tooltip 표시
+function Toolbar({ activeModal, onExpand, onTransform, onWrite, recTool }) {
   const handlers = {
     expand:    onExpand,
     transform: onTransform,
@@ -18,16 +19,26 @@ function Toolbar({ activeModal, onExpand, onTransform, onWrite }) {
 
   return (
     <div className="toolbar">
-      {TOOLBAR_BUTTONS.map(({ id, icon, label, modal }) => (
-        <button
-          key={id}
-          className={`toolbar-btn${activeModal === modal ? ' active' : ''}`}
-          onClick={handlers[id]}
-        >
-          <img src={icon} width={24} height={24} alt="" />
-          <span className="toolbar-btn-label">{label}</span>
-        </button>
-      ))}
+      {TOOLBAR_BUTTONS.map(({ id, icon, label, modal }) => {
+        const isActive = activeModal === modal
+        // active 상태가 아닐 때만 rec 상태 적용
+        const isRec = !isActive && recTool === modal
+        return (
+          <div key={id} className="toolbar-btn-wrap">
+            {/* tooltip: rec 상태인 버튼 위에만 표시 */}
+            {isRec && (
+              <div className="toolbar-tooltip">추천하는 도구</div>
+            )}
+            <button
+              className={`toolbar-btn${isActive ? ' active' : ''}${isRec ? ' rec' : ''}`}
+              onClick={handlers[id]}
+            >
+              <img src={icon} width={24} height={24} alt="" />
+              <span className="toolbar-btn-label">{label}</span>
+            </button>
+          </div>
+        )
+      })}
     </div>
   )
 }

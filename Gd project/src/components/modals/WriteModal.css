@@ -9,48 +9,40 @@
   z-index: 1000;
 }
 
-/* 모달 박스 */
+/* 모달 박스: 550px 콘텐츠 + 좌우 36px 패딩 = 622px, flex 컬럼으로 콘텐츠와 하단 버튼 배치 */
 .write-modal {
-  position: relative;
-  width: 690px;
-  height: 714px;
+  width: 622px;
   background: #ffffff;
   border-radius: var(--radius-container);
-  overflow: hidden;
-}
-
-/* X 닫기 버튼 */
-.modal-close-btn {
-  position: absolute;
-  top: 32px;
-  right: 28px;
-  width: 32px;
-  height: 32px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* 콘텐츠 영역: 헤더 + 입력 필드들 */
-.write-modal-content {
-  position: absolute;
-  top: 64px;
-  left: 60px;
-  right: 60px;
+  padding: 32px 36px;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 36px;
+  gap: 52px;
+  align-items: center;
 }
 
-/* 헤더: 모달 제목 + 부제 */
+/* 상단 그룹: 헤더 행 + 입력 필드 묶음 */
+.write-modal-top-group {
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+  width: 100%;
+}
+
+/* 헤더 행: 제목+부제(좌) / X 닫기(우) */
+.write-modal-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  width: 100%;
+}
+
+/* 제목 + 부제 그룹 */
 .write-modal-header {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
 .write-modal-title {
@@ -61,7 +53,54 @@
   margin: 0;
 }
 
-/* ---- 공통 텍스트 스타일 (다른 모달에서도 재사용) ---- */
+/* 인라인 닫기 버튼: 헤더 행 우측에 배치 */
+.write-close-btn {
+  width: 26px;
+  height: 26px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* 입력 필드 묶음: 제목 필드와 설명 필드 사이 간격 */
+.write-modal-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  width: 100%;
+}
+
+/* 입력 필드 공통 래퍼: 라벨과 input/서브그룹 사이 간격 */
+.write-modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* 설명 필드: 라벨과 서브그룹(서브라벨+textarea) 사이 간격 */
+.write-modal-field--desc {
+  gap: 12px;
+}
+
+/* 설명 필드 서브그룹: 서브라벨과 textarea 사이 간격 */
+.write-modal-desc-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* 하단 버튼 영역 */
+.write-modal-footer {
+  display: flex;
+  justify-content: center;
+}
+
+/* ---- 공통 텍스트 스타일 (ExpandModal, TransformModal에서도 재사용) ---- */
 
 /* 부제 텍스트 */
 .modal-subtitle {
@@ -71,7 +110,7 @@
   margin: 0;
 }
 
-/* 입력 필드 라벨 (아이디어 제목, 아이디어 설명) */
+/* 입력 필드 라벨 */
 .modal-label {
   font-size: 14px;
   font-weight: 600;
@@ -131,36 +170,4 @@
   color: #9e9e9e;
   font-size: 14px;
   font-weight: 400;
-}
-
-/* ---- WriteModal 전용 레이아웃 ---- */
-
-/* 입력 필드 공통 래퍼 */
-.write-modal-field {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-/* 설명 필드: 라벨 헤더와 textarea 사이 간격을 별도 지정 */
-.write-modal-field--desc {
-  gap: 0;
-}
-
-/* 설명 필드 라벨 영역: 라벨 + 보조 안내 텍스트 */
-.write-modal-desc-header {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-/* 하단 버튼 영역 */
-.write-modal-footer {
-  position: absolute;
-  bottom: 32px;
-  left: 0;
-  right: 0;
-  display: flex;
-  justify-content: center;
 }

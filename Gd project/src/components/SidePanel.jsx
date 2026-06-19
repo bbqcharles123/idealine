@@ -4,6 +4,8 @@ import IdeaSource from './panel/IdeaSource'
 import InputTopic from './panel/InputTopic'
 import ToolBadge from './panel/ToolBadge'
 import QAContent from './panel/QAContent'
+import RecToolCard from './panel/RecToolCard'
+import RecReason from './panel/RecReason'
 import UxAreaAccordion from './panel/UxAreaAccordion'
 import UxEvaluationItem from './panel/UxEvaluationItem'
 import './SidePanel.css'
@@ -73,8 +75,13 @@ function SidePanel({ card, parentCard, tab, onTabChange, onClose }) {
   const isDerivedCard = card.type === 'layerstack'
 
   // 확장/변형으로 생성된 파생카드 = 사용 도구 칩 + 질문&응답 표시
-  // 직접작성(toolType: 'write') 파생카드 = "직접작성" 텍스트만 표시 (PanelTool/QA 미사용)
   const hasToolUsed = isDerivedCard && (card.data.toolType === 'expand' || card.data.toolType === 'transform')
+
+  // 직접작성 파생카드 = 사용 도구 섹션 제거, 추천 도구·추천 이유 섹션으로 대체
+  const isWriteCard = isDerivedCard && card.data.toolType === 'write'
+
+  // UX 평가 데이터: 카드에 AI가 생성한 uxData가 있으면 사용, 없으면 더미로 폴백
+  const uxData = card.data.uxData ?? UX_DUMMY
 
   // X 버튼 클릭: 슬라이드아웃 애니메이션(200ms) 실행 후 실제 닫기 호출
   const handleClose = () => {
@@ -129,17 +136,25 @@ function SidePanel({ card, parentCard, tab, onTabChange, onClose }) {
               </section>
             )}
 
-            {/* 파생카드 전용: 사용 도구
-                확장/변형 → PanelTool 칩 UI / 직접작성 → 텍스트 */}
-            {isDerivedCard && (
+            {/* 확장/변형 파생카드 전용: 사용 도구 칩 */}
+            {hasToolUsed && (
               <section className="panel-section">
                 <p className="panel-label">사용 도구</p>
-                {hasToolUsed ? (
-                  <ToolBadge tagType={card.data.toolType} tagName={card.data.tagName} />
-                ) : (
-                  <p className="panel-value">직접작성</p>
-                )}
+                <ToolBadge tagType={card.data.toolType} tagName={card.data.tagName} />
               </section>
+            )}
+
+            {/* 직접작성 파생카드 전용: 추천 도구 카드 */}
+            {isWriteCard && (
+              <section className="panel-section">
+                <p className="panel-label">추천 도구</p>
+                <RecToolCard toolType={card.data.writeRec} />
+              </section>
+            )}
+
+            {/* 직접작성 파생카드 전용: 추천 이유 박스 (AI 생성 텍스트) */}
+            {isWriteCard && (
+              <RecReason reason={card.data.writeRecReason} />
             )}
 
             {/* 확장/변형 파생카드 전용: 질문 & 응답 */}
@@ -159,7 +174,7 @@ function SidePanel({ card, parentCard, tab, onTabChange, onClose }) {
         )}
 
         {/* ── UX 평가 탭 ── */}
-        {/* AI 연동 후에는 UX_DUMMY 대신 card.data.uxData를 사용 예정 */}
+        {/* 카드의 uxData(AI 생성)를 표시, 없으면 UX_DUMMY로 폴백 */}
         {tab === 'ux' && (
           <div className="panel-ux">
 
@@ -167,7 +182,7 @@ function SidePanel({ card, parentCard, tab, onTabChange, onClose }) {
             <div className="panel-ux__section panel-ux__section--summary">
               <p className="panel-label">종합요약</p>
               <div className="panel-ux__summary-box">
-                <p className="panel-ux__summary-text">{UX_DUMMY.summary}</p>
+                <p className="panel-ux__summary-text">{uxData.summary}</p>
               </div>
             </div>
 
@@ -175,7 +190,7 @@ function SidePanel({ card, parentCard, tab, onTabChange, onClose }) {
             <div className="panel-ux__section panel-ux__section--areas">
               <p className="panel-label">영역별 평가</p>
               <div className="panel-ux__areas">
-                {UX_DUMMY.areas.map((area) => (
+                {uxData.areas.map((area) => (
                   <React.Fragment key={area.key}>
                     <hr className="panel-ux__divider" />
                     <UxAreaAccordion area={area} defaultOpen={true} />
@@ -189,7 +204,7 @@ function SidePanel({ card, parentCard, tab, onTabChange, onClose }) {
             <div className="panel-ux__section panel-ux__section--items">
               <p className="panel-label">평가 요소</p>
               <div className="panel-ux__evaluation-items">
-                {UX_DUMMY.evaluationItems.map((item) => (
+                {uxData.evaluationItems.map((item) => (
                   <UxEvaluationItem
                     key={item.name}
                     name={item.name}

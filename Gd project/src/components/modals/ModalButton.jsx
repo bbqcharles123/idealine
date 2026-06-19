@@ -20,7 +20,7 @@ function ModalButton({ variant = 'filled', disabled = false, width = 144, onClic
       className={className}
       style={{ width: `${width}px` }}
       onClick={onClick}
-      disabled={variant === 'filled' && disabled}
+      disabled={disabled}
     >
       {children}
     </button>
