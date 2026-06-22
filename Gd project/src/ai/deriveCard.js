@@ -3,6 +3,10 @@
 
 import { TOOL_LAYER_DESC } from '../data/toolLayerDesc.js'
 import { getFrameworkContext, getDirectionReasoning } from '../data/frameworkDesc.js'
+import { mockToolExamples, mockQuestion, mockDerivedCard, mockWriteCard } from './__mock__.js'
+
+// VITE_USE_AI_MOCK=true 이면 OpenAI를 호출하지 않고 mock 데이터를 즉시 반환
+const USE_MOCK = import.meta.env.VITE_USE_AI_MOCK === 'true'
 
 // OpenAI API 키 (.env의 VITE_OPENAI_API_KEY)
 const API_KEY = import.meta.env.VITE_OPENAI_API_KEY
@@ -134,6 +138,7 @@ const EXAMPLES_SCHEMA = {
 }
 
 export async function generateToolExamples(cardDescription, direction) {
+  if (USE_MOCK) return mockToolExamples(direction)
   // 방향성 프레임워크 설명 (예시는 확장하기에서만 사용하므로 'expand' 고정)
   const reasoning = getDirectionReasoning('expand', direction.label)
 
@@ -183,6 +188,7 @@ const QUESTION_SCHEMA = {
 }
 
 export async function generateQuestion(cardDescription, toolName, toolType, selectedExample = '') {
+  if (USE_MOCK) return mockQuestion(toolName)
   // 프롬프트 컨텍스트: 도구 자체의 정의(toolLayerDesc) + 방향성 프레임워크 설명
   const toolDef = TOOL_LAYER_DESC[toolType]?.[toolName] ?? ''
   const frameworkCtx = getFrameworkContext(toolType, toolName)
@@ -249,6 +255,7 @@ const DERIVED_SCHEMA = {
 }
 
 export async function generateDerivedCard(parentDescription, question, answer, toolName, toolType) {
+  if (USE_MOCK) return mockDerivedCard(toolName, answer)
   const system = `당신은 아이디어 발산 도구의 AI 어시스턴트입니다.
 사용자가 '${TOOL_TYPE_LABEL[toolType]}'의 '${toolName}' 도구로 답변한 내용을 바탕으로, 발전된 파생 아이디어 카드를 생성하고 UX 관점에서 평가합니다.
 
@@ -300,6 +307,7 @@ const WRITE_SCHEMA = {
 }
 
 export async function generateWriteCard(title, description) {
+  if (USE_MOCK) return mockWriteCard()
   const system = `당신은 아이디어 발산 도구의 AI 어시스턴트입니다.
 사용자가 직접 작성한 아이디어를 더 발전시키기 위해, 다음 두 접근 중 어떤 것이 더 적합한지 추천하고 그 아이디어를 UX 관점에서 평가합니다.
 

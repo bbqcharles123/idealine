@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect } from 'react'
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { doc, getDoc, updateDoc } from 'firebase/firestore'
 import { db } from './firebase'
@@ -142,6 +142,67 @@ function App() {
   // 도구 레이어 클릭 핸들러
   const handleToolOpen = useCallback((cardId) => {
     setInfoCardId((prev) => (prev !== null && prev !== cardId ? null : prev))
+  }, [])
+
+  // 펼친 노드별 { descendants, delta } 저장 — 접힘 시 복귀에 사용
+  // (상태가 아닌 ref로 관리해 불필요한 리렌더링 방지)
+  const expandedNodeDeltasRef = useRef({})
+
+  // LayerStackNode.css의 --overlap과 반드시 동일하게 유지
+  const TOOL_OVERLAP = 20
+  // LayerStackNode.jsx의 PEEK_HEIGHT와 반드시 동일하게 유지 (idle 시 카드 아래 노출 높이)
+  const PEEK_HEIGHT = 42
+
+  // 도구 레이어 펼침: 실제 도구 레이어 DOM 높이를 받아 하위 노드를 아래로 밀어냄
+  // delta = 도구 레이어가 펼쳐지며 "카드 아래로 보이는 하단"이 자라난 양
+  //       = (펼친 후 도구 레이어가 카드 하단 아래로 뻗는 높이) - (idle 시 노출 높이)
+  //       = (toolHeight - OVERLAP) - PEEK_HEIGHT
+  // 이 값만큼만 하위 노드를 내리면, 각 노드가 펼치기 전 가지고 있던 간격을
+  // 실제 위치와 무관하게 그대로 보존한다 (사용자가 노드를 옮긴 뒤에도 겹치지 않음)
+  // delta > 0 인 경우에만 이동 (도구 레이어가 기존 peek보다 더 내려오지 않으면 이동 불필요)
+  const handleToolExpand = useCallback((nodeId, toolHeight) => {
+    const delta = toolHeight - TOOL_OVERLAP - PEEK_HEIGHT
+    if (delta <= 0) return
+
+    // BFS로 nodeId의 모든 하위 노드(자식·손자·...) ID 수집
+    const descendants = []
+    const visited = new Set()
+    const queue = [nodeId]
+    while (queue.length) {
+      const cur = queue.shift()
+      edges.filter((e) => e.source === cur).forEach((e) => {
+        if (!visited.has(e.target)) {
+          visited.add(e.target)
+          descendants.push(e.target)
+          queue.push(e.target)
+        }
+      })
+    }
+    if (descendants.length === 0) return
+
+    expandedNodeDeltasRef.current[nodeId] = { descendants, delta }
+    setCards((prev) =>
+      prev.map((card) =>
+        descendants.includes(card.id)
+          ? { ...card, position: { ...card.position, y: card.position.y + delta } }
+          : card
+      )
+    )
+  }, [edges])
+
+  // 도구 레이어 접힘: 펼칠 때 이동한 만큼 하위 노드를 원래 위치로 복귀
+  const handleToolCollapse = useCallback((nodeId) => {
+    const entry = expandedNodeDeltasRef.current[nodeId]
+    if (!entry) return
+    const { descendants, delta } = entry
+    delete expandedNodeDeltasRef.current[nodeId]
+    setCards((prev) =>
+      prev.map((card) =>
+        descendants.includes(card.id)
+          ? { ...card, position: { ...card.position, y: card.position.y - delta } }
+          : card
+      )
+    )
   }, [])
 
   // write 카드 도구 레이어 펼침/접힘 핸들러
@@ -303,10 +364,12 @@ function App() {
           isHighlighted: card.id === parentId,
           onInfoClick: handleInfoClick,
           onToolOpen: handleToolOpen,
+          onToolExpand: handleToolExpand,
+          onToolCollapse: handleToolCollapse,
           onWriteLayerToggle: card.data?.toolType === 'write' ? handleWriteLayerToggle : undefined,
         },
       })),
-    [cards, selectedCardId, infoCardId, parentId, handleInfoClick, handleToolOpen, handleWriteLayerToggle]
+    [cards, selectedCardId, infoCardId, parentId, handleInfoClick, handleToolOpen, handleToolExpand, handleToolCollapse, handleWriteLayerToggle]
   )
 
   // Firestore 로드 완료 전에는 빈 화면 표시

@@ -1,16 +1,17 @@
 /* ============================================================
-   LayerStackNode — 레이어 스택 구조 커스텀 노드
-   구조: 아이디어 레이어(z:2) + 도구 레이어(z:1→3)
-   Figma 스펙: border-radius 28px, card drop-shadow
-              PEEK_HEIGHT 42px (카드 하단 노출 총량)
-              peek strip 34px (스트립 자체 높이)
+   LayerStackNode — 레이어 스택 구조 커스텀 노드 (서랍 방식)
+   구조: 아이디어 레이어(z:2) + 도구 레이어(z:1 idle → z:3 expanded)
+   동작: 펼치면 아이디어 카드는 그대로 두고, 도구 레이어가
+         카드 하단 아래로 슬라이드되어 펼쳐짐 (큐카드 플립 아님)
+   Figma 스펙: 카드 width 356px / 도구 레이어 width 320px (가운데 정렬)
+              border-radius 28px
+              idle 노출 42px / expanded 노출 106px (도구 콘텐츠 156px)
    ============================================================ */
 
 .lsn {
   position: relative;
   width: 356px;
-  overflow: visible; /* 도구 레이어 하단 peek이 카드 경계 밖으로 나오도록 */
-  perspective: 1200px; /* 큐카드 3D 애니메이션용 원근감 */
+  overflow: visible; /* 도구 레이어가 카드 경계 밖(아래)으로 나오도록 */
 }
 
 /* ── 아이디어 레이어 ───────────────────── */
@@ -36,12 +37,6 @@
   background: var(--color-highlighted-bg);
   border-color: var(--color-highlighted-border);
   box-shadow: 0 4px 18px 0 rgba(0, 0, 0, 0.12), 0 0 0 2px var(--color-highlighted-border);
-}
-
-/* card-scoop: 확장 시 카드가 뒤로 내려가며 사라짐 */
-.lsn--expanded .lsn__card {
-  animation: card-scoop 440ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
-  pointer-events: none;
 }
 
 .lsn__info {
@@ -84,16 +79,18 @@
   top: 0;
   left: 0;
   right: 0;
-  bottom: calc(-1 * var(--peek)); /* 하단 PEEK_HEIGHT(42px)만큼 카드 밖으로 노출 */
-  z-index: 1;
+  margin: 0 auto;         /* 카드(356px)보다 좁은 320px을 가운데 정렬 */
+  width: 320px;
+  bottom: calc(-1 * var(--peek));      /* idle: 하단 42px만 카드 밖으로 노출 */
+  z-index: 1;             /* idle: 카드 뒤 */
 
-  border-radius: var(--radius-card);
+  border-radius: 0 0 var(--radius-card) var(--radius-card); /* Figma: 하단 모서리만 둥글게 */
   box-sizing: border-box;
 
   display: flex;
   flex-direction: column;
-  justify-content: flex-end; /* idle: peek 스트립이 하단 고정 */
-  gap: 20px; /* tool-main ↔ peek 사이 간격 */
+  justify-content: flex-end; /* idle: peek을 하단(노출 영역)에 고정 */
+  gap: 8px;                  /* tool-main ↔ peek 사이 간격 (Figma gap-8) */
 
   overflow: hidden;
   cursor: pointer;
@@ -109,90 +106,55 @@
   filter: brightness(0) saturate(100%) invert(29%) sepia(89%) saturate(446%) hue-rotate(148deg) brightness(97%) contrast(100%);
 }
 
-/* expanded 시 래퍼 전체 클릭 차단 → 도구 레이어 영역만 다시 활성화 */
-.lsn--expanded {
-  pointer-events: none;
-}
-
-/* tool-swell: 확장 시 도구 레이어가 카드 위로 올라와 컨텐츠 크기만큼 표시 */
+/* ── 펼침: 도구 레이어가 아이디어 레이어 아래로 내려옴 ──
+   - top: 카드 하단(100%)에서 20px 위 → 아이디어 레이어와 20px 겹침
+   - bottom/height auto → 높이는 내용(tool-main)에 따라 가변
+   - z:1(카드 뒤) 유지 → 겹친 20px은 카드 뒤로 들어가고, 카드 하단 라운드가 그대로 보임
+   - 겹친 20px만큼 padding-top을 줘서 실제 내용(도구명/설명)은 카드 아래에서 시작 */
 .lsn--expanded .lsn__tool {
-  z-index: 3;
-  bottom: auto; /* 자기 내용(아이콘+설명+peek)만큼만 높이 결정 */
+  top: calc(100% - var(--overlap));
+  bottom: auto;
+  height: auto;
+  z-index: 1;
   justify-content: flex-start;
-  cursor: default;
-  pointer-events: all; /* 도구 레이어 자체는 클릭 가능하게 유지 */
-  animation: tool-swell 440ms cubic-bezier(0.4, 0, 0.2, 1) both;
+  padding-top: var(--overlap);
+  animation: tool-slide-down 320ms cubic-bezier(0.4, 0, 0.2, 1) both;
 }
 
-/* expanded 상태에서 peek은 "아이디어 확인하기" 텍스트로 바뀌며 클릭 가능 */
+/* 접힘: 위로 슬라이드되며 사라짐 → JS가 320ms 후 idle로 리셋 */
+.lsn--expanded.lsn--collapsing .lsn__tool {
+  animation: tool-slide-up 280ms cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* 펼침 상태: peek을 접기 트리거로 활용 → 클릭 커서 표시 */
 .lsn--expanded .lsn__peek {
   cursor: pointer;
   flex-shrink: 0;
 }
 
-/* ── collapsing: 도구→아이디어 역방향 애니메이션 ──
-   lsn--expanded + lsn--collapsing 동시에 붙어 있을 때 적용
-   (specificity가 lsn--expanded 단독보다 높아 정상적으로 override) */
-
-.lsn--expanded.lsn--collapsing .lsn__card {
-  animation: card-unspool 440ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
-  pointer-events: none;
+/* 아이디어 레이어와 겹치는 양 */
+.lsn__tool {
+  --overlap: 20px;
 }
 
-/* tool-sink는 앞쪽 실제 도구에만 적용 (뒤에 깔린 고스트 peek은 제외) */
-.lsn--expanded.lsn--collapsing .lsn__tool:not(.lsn__tool--ghost) {
-  animation: tool-sink 440ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
-  pointer-events: none; /* 애니메이션 중 재클릭 방지 */
+@keyframes tool-slide-down {
+  0%   { opacity: 0; transform: translateY(-20px); }
+  100% { opacity: 1; transform: translateY(0); }
 }
 
-/* 고스트 peek: 접힘 중 카드 뒤(z:1) idle 위치에 고정 — 애니메이션 없이 그대로 노출
-   .lsn--expanded.lsn--collapsing 스코프(0,3,0)로 .lsn--expanded .lsn__tool(0,2,0) 오버라이드 */
-.lsn--expanded.lsn--collapsing .lsn__tool--ghost {
-  z-index: 1;
-  top: 0;
-  bottom: calc(-1 * var(--peek));
-  justify-content: flex-end;
-  animation: none;
-  pointer-events: none;
+@keyframes tool-slide-up {
+  0%   { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-20px); }
 }
 
-/* 도구 레이어: 앞에서 뒤로 내려가며 사라짐 (tool-swell 역방향) */
-@keyframes tool-sink {
-  0%   { transform: translate3d(0,  0px,   0px) scale(1);    opacity: 1; }
-  50%  { transform: translate3d(0, 16px, -20px) scale(0.97); opacity: 0.65; }
-  100% { transform: translate3d(0,  6px, -40px) scale(0.94); opacity: 0; }
-}
-
-/* 아이디어 카드: 뒤에서 앞으로 떠오름 (card-scoop 역방향) */
-@keyframes card-unspool {
-  0%   { transform: translate3d(0,  6px, -40px) scale(0.94); opacity: 0; }
-  55%  { transform: translate3d(0, -5px,  12px) scale(1.012); opacity: 0.9; }
-  100% { transform: translate3d(0,  0px,   0px) scale(1);    opacity: 1; }
-}
-
-/* 아이디어 카드: 뒤로 내려가며 사라짐 (큐카드 넘기기 효과) */
-@keyframes card-scoop {
-  0%   { transform: translate3d(0,  0px,   0px) scale(1);    opacity: 1; }
-  50%  { transform: translate3d(0, 16px, -20px) scale(0.97); opacity: 0.65; }
-  100% { transform: translate3d(0,  6px, -40px) scale(0.94); opacity: 0; }
-}
-
-/* 도구 레이어: 뒤에서 앞으로 떠오름 (큐카드 넘기기 효과) */
-@keyframes tool-swell {
-  0%   { transform: translate3d(0,  6px, -40px) scale(0.94); opacity: 0; }
-  55%  { transform: translate3d(0, -5px,  12px) scale(1.012); opacity: 0.9; }
-  100% { transform: translate3d(0,  0px,   0px) scale(1);    opacity: 1; }
-}
-
-/* ── idle peek 스트립 (Figma: h-34px, 가운데 정렬) ──
-   PEEK_HEIGHT(42px)와 다른 값 — 카드 하단 노출 총량과 스트립 높이를 분리 */
+/* ── idle peek 스트립 (Figma: h-34px, 가운데 정렬) ── */
 
 .lsn__peek {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 12px;           /* 카테고리 텍스트 ↔ 칩 사이 간격 */
-  height: 34px;        /* peek strip 고정 높이 (var(--peek)과 다름) */
+  height: 34px;        /* peek strip 고정 높이 */
   flex-shrink: 0;
   padding-bottom: 4px; /* 스트립 하단 여백 */
   box-sizing: border-box;
@@ -220,16 +182,18 @@
   white-space: nowrap;
 }
 
-/* ── 확장 시 상단 콘텐츠 (Figma: pt-16px, px-20px, pb-4px, gap-8px) ── */
+/* ── 펼침 시 도구 콘텐츠 (도구명 + 설명) ──
+   Figma: px-20px, gap-8px / 높이는 내용에 따라 가변(flex:1 제거)
+   상하 패딩 16/20px로 카드 아래에서 자연스러운 여백 확보 */
 
 .lsn__tool-main {
   display: none;
   flex-direction: column;
   gap: 8px;
-  padding: 16px 20px 4px;
-  flex: 1;
+  padding: 16px 20px 0; /* bottom은 gap이 담당 (Figma pb-4는 peek 자체 padding으로 처리) */
 }
 
+/* 펼칠 때만 콘텐츠 표시 (슬라이드/페이드는 .lsn__tool 애니메이션이 담당) */
 .lsn--expanded .lsn__tool-main {
   display: flex;
 }
@@ -252,19 +216,6 @@
   line-height: 18px;
   text-align: justify;
   margin: 0;
-}
-
-/* ── expanded 빈 공간 드래그 차단 오버레이 ──
-   도구 레이어(z:3) 아래에 깔려 빈 공간의 mousedown이
-   React Flow 노드 래퍼까지 전파되지 않도록 막음 */
-
-.lsn__drag-blocker {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  cursor: default;
-  /* lsn--expanded의 pointer-events:none을 개별 오버라이드해야 mousedown을 가로챌 수 있음 */
-  pointer-events: all;
 }
 
 /* ── React Flow 핸들 숨김 ─────────────── */

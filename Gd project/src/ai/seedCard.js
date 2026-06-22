@@ -1,3 +1,7 @@
+// VITE_USE_AI_MOCK=true 이면 OpenAI를 호출하지 않고 mock 데이터를 즉시 반환
+import { mockSeedCard } from './__mock__.js'
+const USE_MOCK = import.meta.env.VITE_USE_AI_MOCK === 'true'
+
 // OpenAI API 키 (.env의 VITE_OPENAI_API_KEY)
 // 클라이언트에서 직접 호출하므로 빌드 시 번들에 포함됨 (데모/과제용으로만 사용)
 const API_KEY = import.meta.env.VITE_OPENAI_API_KEY
@@ -87,6 +91,7 @@ const SYSTEM_PROMPT = `당신은 아이디어 발산 도구의 AI 어시스턴�
 // fetch로 OpenAI Chat Completions API를 직접 호출한다.
 // 반환값: { title, description, uxData }
 export async function generateSeedCard(topic) {
+  if (USE_MOCK) return mockSeedCard(topic)
   // OpenAI Chat Completions 엔드포인트로 POST 요청
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
