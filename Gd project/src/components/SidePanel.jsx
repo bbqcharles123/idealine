@@ -82,12 +82,15 @@ function SidePanel({ card, parentCard, tab, onTabChange, onClose }) {
   // UX 평가 데이터: 카드에 AI가 생성한 uxData가 있으면 사용, 없으면 더미로 폴백
   const uxData = card.data.uxData ?? UX_DUMMY
 
-  // 평가요소명 → 소속 영역명 매핑: evaluationItems에는 영역 정보가 없으므로
-  // areas[].criteria를 역참조해 각 항목이 어느 영역(Business/Human/Social)에 속하는지 파생
-  const areaByCriterion = {}
-  uxData.areas.forEach((area) => {
-    area.criteria.forEach((criterion) => {
-      areaByCriterion[criterion.name] = area.name
+  // areas 순서대로 evaluationItems를 그룹핑: { 'Business': [...], 'Human': [...], 'Social': [...] }
+  // areas[].criteria를 기준으로 각 항목이 어느 영역에 속하는지 파악해 배열에 push
+  const itemsByArea = {}
+  uxData.areas.forEach((area) => { itemsByArea[area.name] = [] })
+  uxData.evaluationItems.forEach((item) => {
+    uxData.areas.forEach((area) => {
+      if (area.criteria.some((c) => c.name === item.name)) {
+        itemsByArea[area.name].push(item)
+      }
     })
   })
 
@@ -205,18 +208,24 @@ function SidePanel({ card, parentCard, tab, onTabChange, onClose }) {
               </div>
             </div>
 
-            {/* 평가 요소: 평가요소명 pill + 세부 평가내용 목록 */}
+            {/* 평가 요소: 영역별로 그룹핑된 평가요소 카드 목록 */}
             <div className="panel-ux__section panel-ux__section--items">
               <p className="panel-label">평가 요소</p>
               <div className="panel-ux__evaluation-items">
-                {uxData.evaluationItems.map((item) => (
-                  <UxEvaluationItem
-                    key={item.name}
-                    name={item.name}
-                    area={areaByCriterion[item.name]}
-                    needsImprovement={item.needsImprovement}
-                    evaluation={item.evaluation}
-                  />
+                {uxData.areas.map((area) => (
+                  <div key={area.name} className="panel-ux__evaluation-group">
+                    <p className="panel-ux__evaluation-group-label">{area.name}</p>
+                    <div className="panel-ux__evaluation-group-cards">
+                      {itemsByArea[area.name].map((item) => (
+                        <UxEvaluationItem
+                          key={item.name}
+                          name={item.name}
+                          needsImprovement={item.needsImprovement}
+                          evaluation={item.evaluation}
+                        />
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>

@@ -202,7 +202,7 @@
   width: 100%;
   background: var(--color-surface);
   border-radius: var(--radius-element);
-  padding: 8px 12px;
+  padding: 10px 12px;
   box-sizing: border-box;
 }
 
@@ -233,15 +233,37 @@
   gap: 12px;
 }
 
-/* 평가요소 항목 목록: 회색 배경 컨테이너 안에 UxEvaluationItem 카드를 4px 간격으로 배치
-   컨테이너: bg #f5f5f5, radius 16px, padding 상하 8 / 좌우 12 */
+/* 평가요소 컨테이너: 회색 배경, 영역 그룹 사이 20px 간격 (Figma 46:1885) */
 .panel-ux__evaluation-items {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 20px;
   width: 100%;
   box-sizing: border-box;
   background: var(--color-surface);
   border-radius: var(--radius-container);
-  padding: 8px 12px;
+  padding: 12px;
+}
+
+/* 영역 그룹: 영역명 라벨 + 카드 목록 */
+.panel-ux__evaluation-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* 영역명 라벨: Business / Human / Social (Figma 46:1887) */
+.panel-ux__evaluation-group-label {
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-regular);
+  color: var(--color-caption);
+  line-height: normal;
+  margin: 0;
+}
+
+/* 그룹 내 카드 목록: 8px 간격 세로 배치 */
+.panel-ux__evaluation-group-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }

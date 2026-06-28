@@ -1,24 +1,15 @@
-/* 평가요소 항목 카드: 흰 배경 + 테두리, 상단 행 + 하단 텍스트 세로 배치
-   padding 상하 20 / 좌우 12, 행 간격 16px, 세로 중앙정렬 */
+/* 평가요소 항목 카드: 흰 배경, 항목명 pill + 평가 텍스트 세로 배치 (Figma 46:1889)
+   padding 상하 16 / 좌우 12, 간격 8px */
 .ux-evaluation-item {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  gap: 16px;
+  align-items: flex-start;
+  gap: 8px;
   width: 100%;
   box-sizing: border-box;
-  padding: 20px 12px;
+  padding: 16px 12px;
   background: var(--color-white);
-  border: 0.8px solid var(--color-border);
   border-radius: var(--radius-element);
-}
-
-/* 상단 행: 항목명(좌) + 영역명(우) 양끝 배치, 세로 중앙정렬 */
-.ux-evaluation-item__top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
 }
 
 /* 평가 내용 텍스트: 14px Regular #4d4d4d */

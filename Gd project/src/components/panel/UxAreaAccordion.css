@@ -30,12 +30,12 @@
   gap: 12px;
 }
 
-/* 영역명: 14px SemiBold #333 */
+/* 영역명: 16px Medium #333 (Figma 14:482) */
 .ux-area-accordion__name {
-  font-size: var(--font-size-label);
-  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-body1);
+  font-weight: var(--font-weight-medium);
   color: var(--color-body1);
-  line-height: 18px;
+  line-height: 20px;
 }
 
 /* 본문: 평가 텍스트 + 평가요소 태그 */
