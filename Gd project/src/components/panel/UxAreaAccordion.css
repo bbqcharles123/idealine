@@ -1,9 +1,14 @@
-/* 아코디언 블록: 헤더 + 선택적 본문 */
+/* 아코디언 블록: 헤더 + 선택적 본문 — 흰색 영역 카드 */
 .ux-area-accordion {
   display: flex;
   flex-direction: column;
   gap: 16px;
   width: 100%;
+  background: #fff;
+  border: 0.8px solid #D5D5D5;
+  border-radius: 8px;
+  padding: 20px 12px; /* 상하 20px 좌우 12px */
+  box-sizing: border-box;
 }
 
 /* 헤더 버튼: 영역명 + 배지 + 화살표를 양 끝 배치 */

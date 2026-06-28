@@ -110,10 +110,11 @@
    Figma: body top 146px = tabs top 68px + h 46px + gap 32px → padding-top 32px */
 .side-panel-body {
   flex: 1;
-  /* scroll: 스크롤바 공간(4px)을 항상 예약 → 아코디언 열려도 콘텐츠 너비 불변
-     padding-right 24px: 스크롤바 4px 보정 → 콘텐츠 실제 너비 316px (= 372-28-24-4) */
+  /* scroll: 스크롤바 공간을 항상 예약 → 아코디언 열려도 콘텐츠 너비 불변
+     실제 스크롤바 폭은 10px(Chrome thin) → padding-right 18px로 보정
+     콘텐츠 실제 너비 316px (= 372-28-18-10) */
   overflow-y: scroll;
-  padding: 32px 24px 40px 28px;
+  padding: 32px 18px 40px 28px;
   /* Firefox */
   scrollbar-width: thin;
   scrollbar-color: transparent transparent;
@@ -214,12 +215,15 @@
   text-align: justify;
 }
 
-/* 아코디언 목록: 구분선 + 아코디언 블록을 세로로 배치, gap 24px */
+/* 영역 카드 목록: 회색 컨테이너 안에 흰색 영역 카드를 4px 간격으로 세로 배치 */
 .panel-ux__areas {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 4px;
   width: 100%;
+  background: #f5f5f5;
+  border-radius: 16px;
+  padding: 8px 12px; /* 펼침/접힘과 무관하게 상하 8px 좌우 12px 유지 */
 }
 
 /* 평가 요소 섹션: label + 항목 목록, gap 12px */
@@ -229,19 +233,15 @@
   gap: 12px;
 }
 
-/* 평가요소 항목 목록: UxEvaluationItem 세로 배치, gap 24px */
+/* 평가요소 항목 목록: 회색 배경 컨테이너 안에 UxEvaluationItem 카드를 4px 간격으로 배치
+   컨테이너: bg #f5f5f5, radius 16px, padding 상하 8 / 좌우 12 */
 .panel-ux__evaluation-items {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 4px;
   width: 100%;
-}
-
-/* 영역 구분선 */
-.panel-ux__divider {
-  border: none;
-  border-top: 1px solid var(--color-border);
-  margin: 0;
-  width: 100%;
-  flex-shrink: 0;
+  box-sizing: border-box;
+  background: var(--color-surface);
+  border-radius: var(--radius-container);
+  padding: 8px 12px;
 }

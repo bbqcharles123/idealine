@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import React from 'react'
 import IdeaSource from './panel/IdeaSource'
 import InputTopic from './panel/InputTopic'
 import ToolBadge from './panel/ToolBadge'
@@ -82,6 +81,15 @@ function SidePanel({ card, parentCard, tab, onTabChange, onClose }) {
 
   // UX 평가 데이터: 카드에 AI가 생성한 uxData가 있으면 사용, 없으면 더미로 폴백
   const uxData = card.data.uxData ?? UX_DUMMY
+
+  // 평가요소명 → 소속 영역명 매핑: evaluationItems에는 영역 정보가 없으므로
+  // areas[].criteria를 역참조해 각 항목이 어느 영역(Business/Human/Social)에 속하는지 파생
+  const areaByCriterion = {}
+  uxData.areas.forEach((area) => {
+    area.criteria.forEach((criterion) => {
+      areaByCriterion[criterion.name] = area.name
+    })
+  })
 
   // X 버튼 클릭: 슬라이드아웃 애니메이션(200ms) 실행 후 실제 닫기 호출
   const handleClose = () => {
@@ -187,16 +195,13 @@ function SidePanel({ card, parentCard, tab, onTabChange, onClose }) {
             </div>
 
             {/* 영역별 평가: Business / Human / Social 아코디언 */}
+            {/* 회색 컨테이너(.panel-ux__areas) 안에 흰색 영역 카드를 간격으로 구분해 나열 */}
             <div className="panel-ux__section panel-ux__section--areas">
               <p className="panel-label">영역별 평가</p>
               <div className="panel-ux__areas">
                 {uxData.areas.map((area) => (
-                  <React.Fragment key={area.key}>
-                    <hr className="panel-ux__divider" />
-                    <UxAreaAccordion area={area} defaultOpen={true} />
-                  </React.Fragment>
+                  <UxAreaAccordion key={area.key} area={area} defaultOpen={false} />
                 ))}
-                <hr className="panel-ux__divider" />
               </div>
             </div>
 
@@ -208,6 +213,7 @@ function SidePanel({ card, parentCard, tab, onTabChange, onClose }) {
                   <UxEvaluationItem
                     key={item.name}
                     name={item.name}
+                    area={areaByCriterion[item.name]}
                     needsImprovement={item.needsImprovement}
                     evaluation={item.evaluation}
                   />
