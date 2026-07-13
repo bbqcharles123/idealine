@@ -266,16 +266,58 @@ export async function generateWriteCard(title, description) {
   return { ...content, uxData }
 }
 
+// 공백을 무시하고 answer에서 문구 위치를 찾는다 (정확 일치 실패 시의 구제 수단)
+// AI는 answer를 그대로 복사하는 게 아니라 다시 생성하므로, 띄어쓰기가 달라지는 경우가 있다.
+// (사용자 "알림기능" → AI "알림 기능") 이런 차이로 하이라이트를 통째로 잃지 않도록 한다.
+// answer에서 공백을 뺀 문자열로 찾은 뒤, 원문 인덱스로 되돌려 반환한다.
+function findIgnoringWhitespace(answer, phrase) {
+  const strippedPhrase = phrase.replace(/\s+/g, '')
+  if (!strippedPhrase) return null
+
+  // 공백을 제거한 answer + "압축 문자열의 각 글자 → 원문 인덱스" 대응표를 만든다
+  let compact = ''
+  const indexMap = []
+  for (let i = 0; i < answer.length; i++) {
+    if (/\s/.test(answer[i])) continue
+    compact += answer[i]
+    indexMap.push(i)
+  }
+
+  const at = compact.indexOf(strippedPhrase)
+  if (at === -1) return null
+
+  // 압축 문자열에서의 위치를 원문 인덱스로 환산 (구간 안의 공백은 그대로 포함됨)
+  return {
+    start: indexMap[at],
+    end:   indexMap[at + strippedPhrase.length - 1] + 1,
+  }
+}
+
 // highlightPhrases(문구 배열)를 answer 기준 {start, end} 인덱스 배열로 변환
 // - answer에서 문구 위치를 찾아 인덱스로 계산 (LLM의 글자수 오류 회피)
-// - 찾지 못한 문구는 건너뜀, 겹치는 구간은 제거 (QAContent는 비중첩 구간 가정)
+// - 정확히 일치하지 않으면 공백을 무시하고 한 번 더 찾는다
+// - 그래도 못 찾은 문구는 건너뜀, 겹치는 구간은 제거 (QAContent는 비중첩 구간 가정)
 export function phrasesToHighlights(answer, phrases) {
   const found = []
   for (const phrase of phrases ?? []) {
     if (!phrase) continue
+
     const start = answer.indexOf(phrase)
-    if (start === -1) continue
-    found.push({ start, end: start + phrase.length })
+    if (start !== -1) {
+      found.push({ start, end: start + phrase.length })
+      continue
+    }
+
+    // 정확 일치 실패 → 공백 무시하고 재탐색
+    const loose = findIgnoringWhitespace(answer, phrase)
+    if (loose) {
+      found.push(loose)
+      continue
+    }
+
+    // 재탐색으로도 못 찾음 = AI가 answer에 없는 표현을 만들어낸 경우.
+    // 조용히 버리면 "하이라이트가 안 뜨는" 증상만 남아 원인 파악이 어려우므로 경고를 남긴다.
+    console.warn('[highlight] 답변에서 찾지 못한 문구라 하이라이트를 건너뜁니다:', phrase)
   }
   found.sort((a, b) => a.start - b.start)
 
