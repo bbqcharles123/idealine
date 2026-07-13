@@ -1,112 +1,16 @@
-// 확장/변형 모달에서 사용하는 AI 호출 함수 모음
-// seedCard.js와 동일한 fetch 패턴을 쓰되, 공통 호출 부분을 callOpenAI로 묶었다.
+// 확장/변형/직접작성 모달에서 사용하는 AI 호출 함수 모음
+// 본문 생성(창의)과 UX 평가(분석)를 분리하고, 공통 호출은 openaiClient의 callOpenAI를 사용한다.
 
 import { TOOL_LAYER_DESC } from '../data/toolLayerDesc.js'
 import { getFrameworkContext, getDirectionReasoning } from '../data/frameworkDesc.js'
-import { mockToolExamples, mockQuestion, mockDerivedCard, mockWriteCard } from './__mock__.js'
-
-// VITE_USE_AI_MOCK=true 이면 OpenAI를 호출하지 않고 mock 데이터를 즉시 반환
-const USE_MOCK = import.meta.env.VITE_USE_AI_MOCK === 'true'
-
-// OpenAI API 키 (.env의 VITE_OPENAI_API_KEY)
-const API_KEY = import.meta.env.VITE_OPENAI_API_KEY
-
-// 공통 OpenAI 호출 함수
-// messages: [{role, content}] 배열
-// schema:   { name, schema } 형태의 JSON Schema (Structured Outputs)
-// 반환값:   파싱된 JSON 객체
-async function callOpenAI(messages, schema) {
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o-mini',
-      // 아이디어 발산이라 다양성을 위해 약간 높게 설정 (seedCard와 동일)
-      temperature: 0.9,
-      messages,
-      response_format: {
-        type: 'json_schema',
-        json_schema: { name: schema.name, strict: true, schema: schema.schema },
-      },
-    }),
-  })
-
-  if (!response.ok) {
-    const errText = await response.text()
-    throw new Error(`OpenAI API 오류 (${response.status}): ${errText}`)
-  }
-
-  const data = await response.json()
-  return JSON.parse(data.choices[0].message.content)
-}
+import { mockToolExamples, mockQuestion, mockDerivedContent, mockWriteContent } from './__mock__.js'
+// UX 평가 전용 호출 (seedCard.js와 공유하는 공통 모듈)
+import { generateUxEval } from './uxEval.js'
+// 공통 OpenAI 클라이언트
+import { callOpenAI, USE_MOCK, TEMP_CREATIVE, TEMP_ANALYTIC } from './openaiClient.js'
 
 // 도구 유형별 한글 라벨 (프롬프트에 사용)
 const TOOL_TYPE_LABEL = { expand: '확장하기', transform: '변형하기' }
-
-// UX 평가 프레임워크 설명 (seedCard.js와 동일 규칙 — 프롬프트에 재사용)
-const UX_RULE = `[UX 평가 규칙]
-평가요소는 아래 7개로 고정되어 있으며, 새로운 항목을 만들지 마세요. 각 요소를 채점만 하세요.
-- Business 영역: 창의성, 실현 가능성
-- Human 영역: 사용 기대성, 효율 기대성, 명료성, 매력성
-- Social 영역: 사회적 도움성
-
-- areas: 위 3개 영역을 key(business/human/social) 순서대로 모두 포함하고, 각 영역의 criteria에는 그 영역에 속한 평가요소를 정확히 넣으세요.
-- area의 status: 그 영역 criteria 중 하나라도 needsImprovement가 true이면 'supplement', 모두 false이면 'satisfied'.
-- evaluationItems: 위 7개 평가요소를 모두 포함하고, needsImprovement 값은 areas의 criteria와 일치시키세요.
-- needsImprovement: 해당 평가요소가 보완이 필요하면 true, 충분하면 false.
-- 모든 평가 텍스트는 한국어로, 근거를 담아 구체적으로 작성하세요.`
-
-// UX 평가 JSON Schema 조각 (seedCard.js와 동일 — 여러 스키마에서 재사용)
-const UX_DATA_SCHEMA = {
-  type: 'object',
-  additionalProperties: false,
-  required: ['summary', 'areas', 'evaluationItems'],
-  properties: {
-    summary: { type: 'string', description: '종합요약 (2~3문장)' },
-    areas: {
-      type: 'array',
-      items: {
-        type: 'object',
-        additionalProperties: false,
-        required: ['key', 'name', 'status', 'evaluation', 'criteria'],
-        properties: {
-          key:        { type: 'string', enum: ['business', 'human', 'social'] },
-          name:       { type: 'string', enum: ['Business', 'Human', 'Social'] },
-          status:     { type: 'string', enum: ['satisfied', 'supplement'] },
-          evaluation: { type: 'string' },
-          criteria: {
-            type: 'array',
-            items: {
-              type: 'object',
-              additionalProperties: false,
-              required: ['name', 'needsImprovement'],
-              properties: {
-                name:             { type: 'string' },
-                needsImprovement: { type: 'boolean' },
-              },
-            },
-          },
-        },
-      },
-    },
-    evaluationItems: {
-      type: 'array',
-      items: {
-        type: 'object',
-        additionalProperties: false,
-        required: ['name', 'needsImprovement', 'evaluation'],
-        properties: {
-          name:             { type: 'string' },
-          needsImprovement: { type: 'boolean' },
-          evaluation:       { type: 'string' },
-        },
-      },
-    },
-  },
-}
 
 // ──────────────────────────────────────────────────────────
 // 호출 2: 도구별 예시 생성 (확장 모달 2단계 선택지)
@@ -234,13 +138,15 @@ ${toolName}${exampleSection}
 // 반환값: { title, description, highlightPhrases, uxData }
 //   - highlightPhrases: answer 안에서 강조할 문구(문자열) 배열
 //     → 호출하는 쪽에서 answer.indexOf()로 {start,end} 인덱스로 변환
+//   - 본문 생성(창의)과 UX 평가(분석)를 분리해 호출하고, 결과를 합쳐 반환한다.
 // ──────────────────────────────────────────────────────────
-const DERIVED_SCHEMA = {
+// 파생카드 "본문" 생성 스키마 (uxData 제외 — UX 평가는 generateUxEval로 분리)
+const DERIVED_CONTENT_SCHEMA = {
   name: 'derived_card',
   schema: {
     type: 'object',
     additionalProperties: false,
-    required: ['title', 'description', 'highlightPhrases', 'uxData'],
+    required: ['title', 'description', 'highlightPhrases'],
     properties: {
       title:       { type: 'string', description: '파생 아이디어 제목 (한 줄)' },
       description: { type: 'string', description: '파생 아이디어 본문 (2~3문장)' },
@@ -249,22 +155,21 @@ const DERIVED_SCHEMA = {
         description: 'answer(사용자 답변) 안에서 도구가 적용된 핵심 부분의 문구. 반드시 answer에 그대로 등장하는 부분 문자열이어야 함',
         items: { type: 'string' },
       },
-      uxData: UX_DATA_SCHEMA,
     },
   },
 }
 
-export async function generateDerivedCard(parentDescription, question, answer, toolName, toolType) {
-  if (USE_MOCK) return mockDerivedCard(toolName, answer)
+// 파생카드 본문 생성(창의): 부모 아이디어 + 사용자 답변으로 발전된 아이디어를 만든다.
+// 반환값: { title, description, highlightPhrases }
+async function generateDerivedContent(parentDescription, question, answer, toolName, toolType) {
+  if (USE_MOCK) return mockDerivedContent(toolName, answer)
   const system = `당신은 아이디어 발산 도구의 AI 어시스턴트입니다.
-사용자가 '${TOOL_TYPE_LABEL[toolType]}'의 '${toolName}' 도구로 답변한 내용을 바탕으로, 발전된 파생 아이디어 카드를 생성하고 UX 관점에서 평가합니다.
+사용자가 '${TOOL_TYPE_LABEL[toolType]}'의 '${toolName}' 도구로 답변한 내용을 바탕으로, 발전된 파생 아이디어 카드를 생성합니다.
 
 [아이디어 작성 규칙]
 - title: 발전된 아이디어를 한 줄로 표현한 제목
 - description: 부모 아이디어와 사용자 답변을 반영해 발전시킨 본문 2~3문장
-- highlightPhrases: 사용자 답변(answer)에서 '${toolName}' 도구가 적용된 핵심 부분을 그대로 발췌한 문구들. 반드시 answer에 글자 그대로 존재하는 부분 문자열만 넣으세요. 없으면 빈 배열.
-
-${UX_RULE}`
+- highlightPhrases: 사용자 답변(answer)에서 '${toolName}' 도구가 적용된 핵심 부분을 그대로 발췌한 문구들. 반드시 answer에 글자 그대로 존재하는 부분 문자열만 넣으세요. 없으면 빈 배열.`
 
   const user = `[부모 아이디어]
 ${parentDescription}
@@ -275,12 +180,23 @@ ${question}
 [사용자 답변]
 ${answer}
 
-이 답변을 반영한 파생 아이디어 카드와 UX 평가를 작성해주세요.`
+이 답변을 반영한 파생 아이디어 카드를 작성해주세요.`
 
   return callOpenAI(
     [{ role: 'system', content: system }, { role: 'user', content: user }],
-    DERIVED_SCHEMA
+    DERIVED_CONTENT_SCHEMA,
+    TEMP_CREATIVE,
   )
+}
+
+// 파생카드 생성(공개 함수): 본문 생성 → 생성된 본문으로 UX 평가를 순차 실행해 합쳐 반환한다.
+// 반환값: { title, description, highlightPhrases, uxData }  ← 기존과 동일
+export async function generateDerivedCard(parentDescription, question, answer, toolName, toolType) {
+  // 1) 본문 생성 (창의, temperature 높음)
+  const content = await generateDerivedContent(parentDescription, question, answer, toolName, toolType)
+  // 2) 생성된 본문을 대상으로 UX 평가 (분석, temperature 낮음)
+  const uxData = await generateUxEval(content.title, content.description)
+  return { ...content, uxData }
 }
 
 // ──────────────────────────────────────────────────────────
@@ -291,37 +207,38 @@ ${answer}
 //   - writeExpect: 추천 도구 적용 시 기대효과 (도구레이어 설명)
 //   - writeRecReason: 추천 이유 (상세패널)
 // ──────────────────────────────────────────────────────────
-const WRITE_SCHEMA = {
+// 직접작성 카드 "본문" 생성 스키마 (uxData 제외 — UX 평가는 generateUxEval로 분리)
+const WRITE_CONTENT_SCHEMA = {
   name: 'write_card',
   schema: {
     type: 'object',
     additionalProperties: false,
-    required: ['writeRec', 'writeExpect', 'writeRecReason', 'uxData'],
+    required: ['writeRec', 'writeExpect', 'writeRecReason'],
     properties: {
       writeRec:       { type: 'string', enum: ['expand', 'transform'] },
       writeExpect:    { type: 'string', description: '추천 도구로 이 아이디어를 발전시켰을 때의 기대효과 (1~2문장)' },
       writeRecReason: { type: 'string', description: '이 도구를 추천하는 이유 (1~2문장)' },
-      uxData: UX_DATA_SCHEMA,
     },
   },
 }
 
-export async function generateWriteCard(title, description) {
-  if (USE_MOCK) return mockWriteCard()
+// 직접작성 카드 추천 도구 생성(분석): 사용자 아이디어에 맞는 추천 도구·기대효과·추천이유를 만든다.
+// 새 아이디어 발산이 아니라 판단·근거 서술이므로 낮은 temperature(TEMP_ANALYTIC)를 사용한다.
+// (분류 성격인 writeRec의 일관성 확보 + expand/transform 영문 누출 억제 목적)
+// 반환값: { writeRec, writeExpect, writeRecReason }
+async function generateWriteContent(title, description) {
+  if (USE_MOCK) return mockWriteContent()
   const system = `당신은 아이디어 발산 도구의 AI 어시스턴트입니다.
-사용자가 직접 작성한 아이디어를 더 발전시키기 위해, 다음 두 접근 중 어떤 것이 더 적합한지 추천하고 그 아이디어를 UX 관점에서 평가합니다.
+사용자가 직접 작성한 아이디어를 더 발전시키기 위해, 다음 두 접근 중 어떤 것이 더 적합한지 추천합니다.
 
 [추천 대상 도구]
-- expand(확장하기): 요소의 구조와 관계를 재배치하는 접근 (없애기·합치기·뒤집기·외부에서 가져오기 등)
-- transform(변형하기): 요소의 강도와 존재를 조정하는 접근 (증가·감소·창출·제거)
+- ${TOOL_TYPE_LABEL.expand}: 요소의 구조와 관계를 재배치하는 접근 (없애기·합치기·뒤집기·외부에서 가져오기 등)
+- ${TOOL_TYPE_LABEL.transform}: 요소의 강도와 존재를 조정하는 접근 (증가·감소·창출·제거)
 
 [작성 규칙]
-- writeRec: 이 아이디어를 발전시키기에 더 적합한 'expand' 또는 'transform' 하나를 선택하세요.
-- writeExpect: 추천한 접근으로 이 아이디어를 발전시켰을 때 기대되는 효과를 1~2문장으로 작성하세요.
-- writeRecReason: 왜 그 접근을 추천하는지 이 아이디어의 특성에 근거해 1~2문장으로 작성하세요.
-- writeExpect와 writeRecReason 문장에는 'expand', 'transform' 같은 영문 코드를 절대 쓰지 말고, 반드시 한글 이름인 '확장하기' 또는 '변형하기'로 표현하세요.
-
-${UX_RULE}`
+- writeRec: 이 아이디어를 발전시키기에 더 적합한 쪽을 선택하세요. (${TOOL_TYPE_LABEL.expand} 선택 시 writeRec="expand", ${TOOL_TYPE_LABEL.transform} 선택 시 writeRec="transform")
+- writeExpect: 추천한 접근으로 이 아이디어를 발전시켰을 때 기대되는 효과를 1~2문장으로, 반드시 '${TOOL_TYPE_LABEL.expand}' 또는 '${TOOL_TYPE_LABEL.transform}'이라는 한글 이름만 사용해 작성하세요.
+- writeRecReason: 왜 그 접근을 추천하는지 이 아이디어의 특성에 근거해 1~2문장으로, 반드시 '${TOOL_TYPE_LABEL.expand}' 또는 '${TOOL_TYPE_LABEL.transform}'이라는 한글 이름만 사용해 작성하세요.`
 
   const user = `[아이디어 제목]
 ${title}
@@ -329,12 +246,24 @@ ${title}
 [아이디어 설명]
 ${description}
 
-이 아이디어에 적합한 발전 도구를 추천하고 UX 평가를 작성해주세요.`
+이 아이디어에 적합한 발전 도구를 추천해주세요.`
 
   return callOpenAI(
     [{ role: 'system', content: system }, { role: 'user', content: user }],
-    WRITE_SCHEMA
+    WRITE_CONTENT_SCHEMA,
+    TEMP_ANALYTIC,
   )
+}
+
+// 직접작성 카드 생성(공개 함수): 본문 생성과 UX 평가를 병렬 실행해 합쳐 반환한다.
+// (본문·UX 평가 모두 사용자가 직접 입력한 title·description을 입력으로 쓰므로 병렬 가능 → 지연 최소화)
+// 반환값: { writeRec, writeExpect, writeRecReason, uxData }  ← 기존과 동일
+export async function generateWriteCard(title, description) {
+  const [content, uxData] = await Promise.all([
+    generateWriteContent(title, description),  // 본문 생성 (창의)
+    generateUxEval(title, description),         // UX 평가 (분석)
+  ])
+  return { ...content, uxData }
 }
 
 // highlightPhrases(문구 배열)를 answer 기준 {start, end} 인덱스 배열로 변환

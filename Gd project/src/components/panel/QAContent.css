@@ -39,6 +39,7 @@
   color: var(--color-body2);
   line-height: normal;
   margin: 0;
+  text-align: justify;
 }
 
 /* 답변 박스: 회색 배경 카드 */
@@ -57,6 +58,7 @@
   color: var(--color-body2);
   line-height: 18px;
   margin: 0;
+  text-align: justify;
 }
 
 /* 하이라이트 마크: AI 연동 후 도구 적용 위치 표시

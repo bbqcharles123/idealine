@@ -49,16 +49,21 @@ export const MOCK_UX_DATA = {
   ],
 }
 
-// ── 호출 1: 씨드카드 생성 ────────────────────────────────────
-// generateSeedCard(topic) → { title, description, uxData }
-export function mockSeedCard(topic) {
+// ── UX 평가 전용 mock ────────────────────────────────────────
+// generateUxEval(title, description) → uxData
+export function mockUxData() {
+  return MOCK_UX_DATA
+}
+
+// ── 호출 1: 씨드카드 본문 생성 ───────────────────────────────
+// generateSeedContent(topic) → { title, description }  (uxData는 mockUxData로 분리)
+export function mockSeedContent(topic) {
   return {
     title: `[MOCK] ${topic} 기반 스마트 루틴 추천 앱`,
     description:
       `바쁜 현대인을 위해 ${topic} 관련 데이터를 분석하여 개인화된 일상 루틴을 자동으로 구성해주는 서비스입니다. ` +
       '사용자의 패턴을 학습하여 최적의 시간대에 맞춤형 활동을 제안하고, ' +
       '지속적인 피드백으로 루틴을 개선해 나갑니다.',
-    uxData: MOCK_UX_DATA,
   }
 }
 
@@ -79,9 +84,9 @@ export function mockQuestion(toolName) {
   }
 }
 
-// ── 호출 5: 파생카드 생성 ────────────────────────────────────
-// generateDerivedCard(...) → { title, description, highlightPhrases, uxData }
-export function mockDerivedCard(toolName, answer) {
+// ── 호출 5: 파생카드 본문 생성 ───────────────────────────────
+// generateDerivedContent(...) → { title, description, highlightPhrases }  (uxData는 mockUxData로 분리)
+export function mockDerivedContent(toolName, answer) {
   return {
     title: `[MOCK] ${toolName} 적용 아이디어`,
     description:
@@ -89,19 +94,17 @@ export function mockDerivedCard(toolName, answer) {
       '사용자의 입력을 바탕으로 더욱 구체화된 기능과 경험을 제공하며, ' +
       '새로운 관점에서 문제를 해결하는 방향으로 아이디어가 확장되었습니다.',
     highlightPhrases: answer ? [answer.slice(0, Math.min(20, answer.length))] : [],
-    uxData: MOCK_UX_DATA,
   }
 }
 
-// ── 호출 6: 직접작성 카드 생성 ───────────────────────────────
-// generateWriteCard(title, description) → { writeRec, writeExpect, writeRecReason, uxData }
-export function mockWriteCard() {
+// ── 호출 6: 직접작성 카드 본문 생성 ──────────────────────────
+// generateWriteContent(title, description) → { writeRec, writeExpect, writeRecReason }  (uxData는 mockUxData로 분리)
+export function mockWriteContent() {
   return {
     writeRec: 'expand',
     writeExpect:
       '[MOCK] 확장하기 도구를 활용하면 현재 아이디어의 구조를 재배치하여 더 풍부한 사용자 경험을 만들어낼 수 있습니다.',
     writeRecReason:
       '[MOCK] 이 아이디어는 이미 핵심 개념이 잘 잡혀 있어, 요소 간 관계를 재구성하는 확장하기 접근이 더 효과적입니다.',
-    uxData: MOCK_UX_DATA,
   }
 }

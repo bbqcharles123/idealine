@@ -69,16 +69,19 @@ answer: string | undefined               — 사용자가 모달 textarea에 직
 - 테두리 상태 변경은 border 두께 변경 대신 box-shadow 사용 (레이아웃 이동 방지)
 
 ## 파일 구조
+프로젝트 루트는 `Gd project/`.
 ```
-src/
+Gd project/src/
+├── ai/            — OpenAI 호출 (seedCard·deriveCard·uxEval / openaiClient / __mock__)
 ├── components/
-│   ├── SeedCard.jsx / SeedCard.css       ✅ 완료
-│   ├── DerivedCard.jsx / DerivedCard.css ✅ 완료
-│   ├── SidePanel.jsx                     ⬜ 미구현
-│   └── modals/                           ⬜ 미구현
-├── utils/
-│   └── layout.js                         ✅ 완료
-└── App.jsx                               ✅ 완료 (더미 데이터 포함)
+│   ├── modals/    — StartModal·ExpandModal·TransformModal·WriteModal + 공용 파트
+│   ├── panel/     — SidePanel 내부 파트 (UX 평가·추천도구·Q&A 등)
+│   └── *.jsx      — SeedCard·DerivedCard·LayerStackNode·SidePanel·Toolbar·CanvasCard·CanvasHeader
+├── data/          — BCC·ERRC 정적 데이터, 도구·프레임워크 설명 텍스트
+├── pages/         — HomePage (작업공간 목록)
+├── utils/         — layout.js (Dagre 트리 레이아웃)
+├── firebase.js    — Firestore 연동
+└── App.jsx        — 캔버스 화면, 카드/엣지 상태 관리
 ```
 
 ## 작업 방식
