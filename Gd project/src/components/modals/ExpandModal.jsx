@@ -35,6 +35,16 @@ function ExpandModal({ selectedCard, onClose, onSubmit }) {
   // 파생카드 생성(호출 5) 진행 중 여부 — 제출 버튼 로딩 표시
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  // 생성 결과가 "어떤 선택을 기준으로" 만들어졌는지 기록하는 키
+  // 앞으로 이동할 때 현재 선택과 비교해, 선택이 그대로면 AI를 다시 호출하지 않는다.
+  // (뒤로 갔다가 같은 선택으로 되돌아왔을 때 예시·질문이 바뀌는 것을 방지)
+  // AI 호출이 성공했을 때만 기록하므로, 실패한 경우에는 다음 진입 시 자동으로 재시도된다.
+  const [examplesKey, setExamplesKey] = useState(null)  // 예시 생성 기준: 방향성 인덱스
+  const [questionKey, setQuestionKey] = useState(null)  // 질문 생성 기준: '방향성-도구' 인덱스
+
+  // 현재 선택 기준으로 만든 질문 키 (도구 인덱스는 방향성마다 의미가 달라 방향성과 함께 묶는다)
+  const currentQuestionKey = `${selectedDirectionIdx}-${selectedToolIdx}`
+
   // 현재 선택된 방향성 객체
   const currentDirection = selectedDirectionIdx !== null ? BCC_DIRECTIONS[selectedDirectionIdx] : null
 
@@ -54,9 +64,13 @@ function ExpandModal({ selectedCard, onClose, onSubmit }) {
         toolNames: currentDirection.tools.map((t) => t.name),
       })
       setToolExamples(examples)
+      // 성공한 경우에만 생성 기준을 기록 → 이후 같은 방향성으로 재진입하면 재생성하지 않는다
+      setExamplesKey(selectedDirectionIdx)
     } catch (err) {
       console.error('예시 생성 실패:', err)
       setToolExamples([])
+      // 실패 시 기준을 비워, 다음에 2단계로 들어올 때 다시 시도하도록 한다
+      setExamplesKey(null)
     } finally {
       setIsLoadingExamples(false)
     }
@@ -72,33 +86,42 @@ function ExpandModal({ selectedCard, onClose, onSubmit }) {
       const selectedExample = toolExamples.find((e) => e.name === currentTool.name)?.example ?? ''
       const res = await generateQuestion(selectedCard?.data?.description ?? '', currentTool.name, 'expand', selectedExample)
       setAiQuestion(res.question)
+      // 성공한 경우에만 생성 기준을 기록 → 이후 같은 도구로 재진입하면 재생성하지 않는다
+      setQuestionKey(currentQuestionKey)
     } catch (err) {
       console.error('질문 생성 실패:', err)
       setAiQuestion('질문 생성에 실패했습니다. 재생성을 눌러주세요.')
+      // 실패 시 기준을 비워, 다음에 3단계로 들어올 때 다시 시도하도록 한다
+      setQuestionKey(null)
     } finally {
       setIsLoadingQuestion(false)
     }
   }
 
-  // 다음 단계로 이동: Step 1 → 2 진입 시 예시 생성, Step 2 → 3 진입 시 질문 생성
+  // 다음 단계로 이동
+  // 선택이 직전 생성 기준과 같으면 기존 결과를 그대로 재사용하고, 달라졌을 때만 AI를 다시 호출한다.
   const handleNext = () => {
     const next = step + 1
     setStep(next)
-    if (next === 2) fetchExamples()
-    if (next === 3) fetchQuestion()
-  }
 
-  // 이전 단계로 이동: Step 2 → 1로 돌아갈 때 도구 선택·생성된 예시 초기화
-  // Step 3 → 2로 돌아갈 때 답변·생성된 질문 초기화
-  const handleBack = () => {
-    if (step === 2) {
-      setSelectedToolIdx(null)
+    // Step 1 → 2: 방향성이 바뀐 경우에만 도구 예시를 새로 생성
+    if (next === 2 && examplesKey !== selectedDirectionIdx) {
       setToolExamples([])
+      fetchExamples()
     }
-    if (step === 3) {
+
+    // Step 2 → 3: 도구 선택이 바뀐 경우에만 질문을 새로 생성
+    // 질문이 바뀌면 이전 답변은 다른 질문에 대한 답이 되므로 함께 비운다
+    if (next === 3 && questionKey !== currentQuestionKey) {
       setAnswer('')
       setAiQuestion('')
+      fetchQuestion()
     }
+  }
+
+  // 이전 단계로 이동: 선택·생성 결과를 지우지 않고 단계만 되돌린다
+  // (지우지 않아야 같은 선택으로 되돌아왔을 때 기존 예시·질문·답변을 그대로 이어서 쓸 수 있음)
+  const handleBack = () => {
     setStep((s) => s - 1)
   }
 
@@ -153,7 +176,12 @@ function ExpandModal({ selectedCard, onClose, onSubmit }) {
                       key={i}
                       text={dir.label}
                       isSelected={selectedDirectionIdx === i}
-                      onClick={() => setSelectedDirectionIdx(i)}
+                      onClick={() => {
+                        // 방향성이 바뀌면 도구 목록 자체가 달라지므로 이전 도구 선택을 해제
+                        // (같은 인덱스가 다른 도구를 가리켜 선택이 잘못 유지되는 것을 방지)
+                        if (i !== selectedDirectionIdx) setSelectedToolIdx(null)
+                        setSelectedDirectionIdx(i)
+                      }}
                     />
                   ))}
                 </div>

@@ -87,8 +87,16 @@ function App() {
   // React Flow 노드 크기 측정 완료 여부
   const nodesInitialized = useNodesInitialized()
 
-  // React Flow 스토어에서 최신 노드 배열 가져오는 함수
-  const { getNodes } = useReactFlow()
+  // React Flow 스토어에서 최신 노드 배열 가져오는 함수 + 뷰포트를 노드에 맞추는 함수
+  const { getNodes, fitView } = useReactFlow()
+
+  // 캔버스 진입 후 화면 맞추기를 이미 실행했는지 여부
+  // 최초 1회만 true가 되며, 이후 파생카드 생성 시에는 사용자가 맞춰둔 위치·확대를 건드리지 않는다
+  const hasFitViewRef = useRef(false)
+
+  // 첫 화면 맞추기가 끝났는지 여부
+  // 카드가 좌측 상단에 그려진 프레임이 보이지 않도록, 이 값이 true가 될 때까지 캔버스를 감춰둔다
+  const [isViewportReady, setIsViewportReady] = useState(false)
 
   // Firestore에서 캔버스 데이터 초기 로드
   useEffect(() => {
@@ -130,6 +138,20 @@ function App() {
         return layouted ? { ...card, position: layouted.position } : card
       })
     )
+
+    // 캔버스 진입 직후 첫 레이아웃일 때만 화면을 카드에 맞춘다
+    // ReactFlow의 fitView prop은 Dagre 재배치 이전 좌표로 계산되어 카드가 화면 밖으로 밀리므로,
+    // 재배치가 화면에 반영된 다음 프레임에 직접 호출한다
+    // duration을 주지 않아 애니메이션 없이 즉시 중앙에 맞춘 뒤, 그 다음에 캔버스를 보여준다
+    // fitView가 뷰포트에 반영되는 것을 기다리고(await) 한 프레임 더 넘긴 뒤 공개해야
+    // 카드가 좌측 상단에 있는 프레임이 새어 나오지 않는다
+    if (!hasFitViewRef.current) {
+      hasFitViewRef.current = true
+      requestAnimationFrame(async () => {
+        await fitView({ padding: 0.2, maxZoom: 1 })
+        requestAnimationFrame(() => setIsViewportReady(true))
+      })
+    }
   }, [nodesInitialized]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // 선택된 파생카드의 바로 위 부모 카드 ID 계산
@@ -440,7 +462,9 @@ function App() {
           style: { stroke: '#9E9E9E', strokeWidth: 1.5 },
           pathOptions: { borderRadius: 8 },
         }}
-        fitView
+        // 첫 화면 맞추기 전까지 감춰서 카드가 좌측 상단에 있는 순간이 보이지 않게 한다
+        // 카드가 없는 새 캔버스는 맞출 대상이 없으므로 바로 보여준다
+        style={{ opacity: isViewportReady || cards.length === 0 ? 1 : 0 }}
       >
         {(selectedCardId || writeLayerCardId) && (
           <Panel position="bottom-center" style={{ marginBottom: '20px' }}>

@@ -29,6 +29,12 @@ function TransformModal({ selectedCard, onClose, onSubmit }) {
   // 파생카드 생성(호출 5) 진행 중 여부 — 제출 버튼 로딩 표시
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  // 질문이 "어떤 방향성을 기준으로" 만들어졌는지 기록하는 키
+  // Step 2 진입 시 현재 선택과 비교해, 선택이 그대로면 AI를 다시 호출하지 않는다.
+  // (뒤로 갔다가 같은 방향성으로 되돌아왔을 때 질문이 바뀌는 것을 방지)
+  // AI 호출이 성공했을 때만 기록하므로, 실패한 경우에는 다음 진입 시 자동으로 재시도된다.
+  const [questionKey, setQuestionKey] = useState(null)
+
   // 현재 선택된 방향성 객체 (도구 정보 포함)
   const currentDirection = selectedDirectionIdx !== null ? ERRC_DIRECTIONS[selectedDirectionIdx] : null
 
@@ -43,24 +49,33 @@ function TransformModal({ selectedCard, onClose, onSubmit }) {
     try {
       const res = await generateQuestion(selectedCard?.data?.description ?? '', currentTool.name, 'transform')
       setAiQuestion(res.question)
+      // 성공한 경우에만 생성 기준을 기록 → 이후 같은 방향성으로 재진입하면 재생성하지 않는다
+      setQuestionKey(selectedDirectionIdx)
     } catch (err) {
       console.error('질문 생성 실패:', err)
       setAiQuestion('질문 생성에 실패했습니다. 재생성을 눌러주세요.')
+      // 실패 시 기준을 비워, 다음에 2단계로 들어올 때 다시 시도하도록 한다
+      setQuestionKey(null)
     } finally {
       setIsLoadingQuestion(false)
     }
   }
 
-  // Step 1 → 2로 이동: 질문 생성 호출
+  // Step 1 → 2로 이동
+  // 방향성이 직전 질문의 생성 기준과 같으면 기존 질문을 그대로 재사용하고,
+  // 달라졌을 때만 질문을 새로 생성한다 (질문이 바뀌면 이전 답변도 함께 비움)
   const handleNext = () => {
     setStep(2)
-    fetchQuestion()
+    if (questionKey !== selectedDirectionIdx) {
+      setAnswer('')
+      setAiQuestion('')
+      fetchQuestion()
+    }
   }
 
-  // Step 2 → 1로 돌아갈 때 답변·생성된 질문 초기화
+  // Step 2 → 1로 이동: 답변·질문을 지우지 않고 단계만 되돌린다
+  // (지우지 않아야 같은 방향성으로 되돌아왔을 때 기존 질문·답변을 그대로 이어서 쓸 수 있음)
   const handleBack = () => {
-    setAnswer('')
-    setAiQuestion('')
     setStep(1)
   }
 
