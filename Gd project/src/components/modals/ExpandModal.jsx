@@ -226,8 +226,15 @@ function ExpandModal({ selectedCard, onClose, onSubmit }) {
                         <span>{currentTool.name}</span>
                       </div>
                     </div>
-                    {/* 재생성 버튼: 같은 도구로 질문을 다시 생성 (로딩 중 비활성화) */}
-                    <button className="expand-regenerate-btn" onClick={fetchQuestion} disabled={isLoadingQuestion}>
+                    {/* 재생성 버튼: 같은 도구로 질문을 다시 생성
+                        질문 생성 중(isLoadingQuestion)일 때는 물론, 파생카드 생성 중(isSubmitting)에도 비활성화한다.
+                        이미 제출한 답변으로 카드를 만드는 중이라 질문을 바꿀 이유가 없고,
+                        누르면 AI 호출이 중복으로 나가며 방금 제출한 답변과 무관한 질문으로 바뀐다 */}
+                    <button
+                      className="expand-regenerate-btn"
+                      onClick={fetchQuestion}
+                      disabled={isLoadingQuestion || isSubmitting}
+                    >
                       <img src="/repeat.svg" width={18} height={18} alt="" />
                       <span>재생성</span>
                     </button>
@@ -238,7 +245,10 @@ function ExpandModal({ selectedCard, onClose, onSubmit }) {
                   </div>
                 </div>
 
-                {/* 답변 섹션: 질문 생성 중에는 입력 비활성화 */}
+                {/* 답변 섹션: 질문 생성 중(isLoadingQuestion)과 파생카드 생성 중(isSubmitting)에는 입력 비활성화
+                    handleSubmit은 버튼을 누른 시점의 answer 값을 넘기므로,
+                    생성 중에 고친 내용은 AI에도 카드에도 반영되지 않고 사라진다.
+                    반영되지 않을 수정을 애초에 막아 사용자가 착각하지 않도록 한다 */}
                 <div className="expand-answer-section">
                   <label className="modal-label">답변</label>
                   <textarea
@@ -246,7 +256,7 @@ function ExpandModal({ selectedCard, onClose, onSubmit }) {
                     placeholder="질문에 답변을 작성해주세요"
                     value={answer}
                     onChange={(e) => setAnswer(e.target.value)}
-                    disabled={isLoadingQuestion}
+                    disabled={isLoadingQuestion || isSubmitting}
                   />
                 </div>
 

@@ -259,6 +259,21 @@ function App() {
     setWriteLayerCardId(null)
   }, [])
 
+  // 카드 생성 직후 새 카드로 선택을 옮긴다 (카드를 직접 클릭한 것과 같은 상태)
+  // 왜 부모 선택을 유지하지 않는가:
+  //  1) 화면을 건드리지 않고 "무엇이 생겼는지" 알리는 유일한 신호다.
+  //     파생카드는 파란 배경·테두리(isSelected), 부모는 노란 배경·테두리(isHighlighted)가 되어
+  //     생성 결과와 그 출처가 한눈에 구분된다. (뷰포트는 자동 조정하지 않기로 했으므로 카메라는 그대로 둔다)
+  //  2) 부모 선택을 유지하면 생성 직후 파란 카드가 방금 만든 카드가 아니라 예전 부모다.
+  //     그 상태에서 툴바의 확장하기를 누르면 새 카드가 아니라 부모에서 또 파생되어 대상이 어긋난다.
+  // 부모로 다른 도구를 쓰고 싶으면 노란색으로 표시된 부모를 한 번 클릭하면 된다.
+  const selectNewCard = useCallback((newId) => {
+    setSelectedCardId(newId)
+    setInfoCardId(null)
+    setWriteRecTool(null)
+    setWriteLayerCardId(null)
+  }, [])
+
   // 툴바 및 모달 연산의 기준 카드 ID
   const effectiveCardId = selectedCardId ?? writeLayerCardId
 
@@ -310,7 +325,9 @@ function App() {
     setEdges(nextEdges)
     syncToFirestore(canvasId, nextCards, nextEdges)
     setActiveModal(null)
-  }, [effectiveCardId, canvasId, cards, edges])
+    // 모달을 닫으면서 방금 만든 파생카드를 선택 상태로 만든다
+    selectNewCard(newId)
+  }, [effectiveCardId, canvasId, cards, edges, selectNewCard])
 
   // 확장하기 모달 완료
   const handleExpandSubmit = useCallback(async (answer, toolName, question) => {
@@ -364,11 +381,13 @@ function App() {
       setEdges(nextEdges)
       syncToFirestore(canvasId, nextCards, nextEdges)
       setActiveModal(null)
+      // 모달을 닫으면서 방금 만든 직접작성 카드를 선택 상태로 만든다
+      selectNewCard(newId)
     } catch (err) {
       console.error('직접작성 카드 생성 실패:', err)
       alert('카드 생성에 실패했습니다. 다시 시도해주세요.')
     }
-  }, [effectiveCardId, canvasId, cards, edges])
+  }, [effectiveCardId, canvasId, cards, edges, selectNewCard])
 
   // 카드 드래그 등 React Flow 내부 노드 변경사항 처리
   const handleNodesChange = useCallback((changes) => {
