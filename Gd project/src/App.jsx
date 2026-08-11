@@ -477,6 +477,8 @@ function App() {
         onPaneClick={handlePaneClick}
         defaultEdgeOptions={{
           type: 'smoothstep',
+          // 엣지 선 색: --color-disabled와 값이 같지만 엣지는 '비활성 상태'가 아니므로
+          // 의미가 맞지 않아 토큰을 쓰지 않고 값으로 둔다
           style: { stroke: '#9E9E9E', strokeWidth: 1.5 },
           pathOptions: { borderRadius: 8 },
         }}

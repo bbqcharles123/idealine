@@ -6,72 +6,6 @@ import CanvasCard from '../components/CanvasCard'
 import { generateSeedCard } from '../ai/seedCard'
 import './HomePage.css'
 
-// 기존 더미 캔버스 데이터 — Firestore에 한 번 심기 위한 임시 seed 데이터
-const SEED_CANVAS = {
-  title: 'AI 생활 루틴 코치 앱',
-  topic: 'AI 기술 기반 혁신적인 제품 및 서비스 아이디어',
-  expandCount: 1,
-  transformCount: 1,
-  writeCount: 1,
-  cards: [
-    {
-      id: 'seed-1',
-      type: 'seed',
-      position: { x: 400, y: 100 },
-      data: {
-        title: 'AI 생활 루틴 코치 앱',
-        description: 'AI가 사용자의 하루 일정, 위치, 생활 패턴 데이터를 분석해 개인 맞춤형 생활 루틴을 제안하는 서비스이다. 사용자의 피로도와 집중 시간대를 고려해 업무, 휴식, 운동 시간을 자동으로 추천하고 루틴을 지속적으로 최적화한다.',
-        topic: 'AI 기술 기반 혁신적인 제품 및 서비스 아이디어',
-      },
-    },
-    {
-      id: 'derived-1',
-      type: 'layerstack',
-      position: { x: 200, y: 400 },
-      data: {
-        title: '근무 유형별 루틴 자동 전환',
-        description: '재택·출근 등 그날의 근무 유형을 감지해 각각에 맞는 루틴으로 자동 전환되는 기능. 출근일에는 아침 준비 시간을 반영해 운동을 저녁으로 재배치하고, 재택일에는 이동 시간이 없는 만큼 오전 루틴을 더 촘촘하게 구성한다.',
-        answer: '재택근무 하는 날이랑 출근하는 날 루틴이 완전히 달라요. 출근 날은 아침에 준비 시간이 필요해서 운동을 저녁으로 밀어야 하는데, 앱은 매일 같은 시간에 운동하라고 추천하거든요.',
-        highlights: [{ start: 0, end: 18 }, { start: 75, end: 98 }],
-        toolType: 'expand',
-        tagName: '복제',
-        question: '지금 하나의 루틴으로 관리하기 어렵다고 느끼는 상황이 있다면 어떤 경우인가요?',
-      },
-    },
-    {
-      id: 'derived-write-1',
-      type: 'layerstack',
-      position: { x: 900, y: 400 },
-      data: {
-        title: '이 아이디어는 기능 구성이 이미 갖춰진 상태입니다.',
-        description: '무엇을 더 밀고 무엇을 덜어낼지 재조정하면, 이 앱만의 경쟁력 있는 포지션이 선명해질 수 있습니다.',
-        toolType: 'write',
-        writeRec: 'transform',
-        writeRecReason: '변형하기는 기존 요소 중 무엇을 더 밀고 무엇을 덜어낼지 질문하는 방법론입니다.',
-      },
-    },
-    {
-      id: 'derived-2',
-      type: 'layerstack',
-      position: { x: 600, y: 400 },
-      data: {
-        title: '온디맨드 루틴 피드',
-        description: '푸시 알림을 제거하고 사용자가 앱을 여는 순간 현재 시간·위치·패턴 데이터를 즉시 분석해 지금 이 순간에 맞는 루틴을 바로 제시하는 방식.',
-        answer: '알림이요. 아침에 일어나자마자 루틴 알림이 오는데 그냥 무시하게 되더라고요. 차라리 알림 없이 앱을 열면 지금 상태에 맞는 루틴이 바로 보이는 게 나을 것 같아요.',
-        highlights: [{ start: 0, end: 4 }, { start: 17, end: 42 }, { start: 47, end: 52 }],
-        toolType: 'transform',
-        tagName: '제거',
-        question: '루틴 앱에서 당연하게 제공되는 알림, 일정 직접 입력, 피로도 수동 체크 중 없애도 오히려 사용 경험이 더 나아질 것 같은 요소가 있나요?',
-      },
-    },
-  ],
-  edges: [
-    { id: 'e-seed1-derived1',   source: 'seed-1', target: 'derived-1' },
-    { id: 'e-seed1-derived2',   source: 'seed-1', target: 'derived-2' },
-    { id: 'e-seed1-write1',     source: 'seed-1', target: 'derived-write-1' },
-  ],
-}
-
 function HomePage() {
   const navigate = useNavigate()
 
@@ -89,20 +23,6 @@ function HomePage() {
 
   // 제출 중 중복 클릭 방지
   const [isSubmitting, setIsSubmitting] = useState(false)
-
-  // 샘플 데이터를 Firestore에 한 번 심는 임시 함수 (seed 완료 후 이 함수와 버튼 삭제 예정)
-  const handleSeedData = async () => {
-    try {
-      const docRef = await addDoc(collection(db, 'canvases'), {
-        ...SEED_CANVAS,
-        createdAt: serverTimestamp(),
-      })
-      alert(`샘플 데이터가 추가되었습니다. (id: ${docRef.id})`)
-    } catch (err) {
-      console.error('샘플 데이터 추가 실패:', err)
-      alert('추가 실패 — 콘솔을 확인하세요.')
-    }
-  }
 
   // Firestore canvases 컬렉션 실시간 구독
   // 컴포넌트 마운트 시 구독 시작, 언마운트 시 자동 해제
@@ -239,17 +159,6 @@ function HomePage() {
 
         {/* 카드 본문: 접힘 → 잘림, 펼침 → 내부 스크롤 */}
         <div className="home-page__workspace-body">
-          {/* 임시 seed 버튼: 캔버스가 0개일 때만 표시, 샘플 데이터 추가 후 이 블록 삭제 */}
-          {!loading && canvases.length === 0 && (
-            <div style={{ padding: '24px' }}>
-              <button
-                onClick={handleSeedData}
-                style={{ padding: '10px 20px', background: '#589cfe', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '14px' }}
-              >
-                샘플 데이터 추가 (테스트용)
-              </button>
-            </div>
-          )}
           <div className="home-page__canvas-grid">
             {canvases.map((canvas) => (
               <CanvasCard key={canvas.id} {...canvas} />

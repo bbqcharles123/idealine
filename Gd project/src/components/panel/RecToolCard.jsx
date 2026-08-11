@@ -1,6 +1,9 @@
 import './RecToolCard.css'
 
 // 도구 유형별 색상·아이콘·레이블·설명 설정 (설명은 고정 문구)
+// color는 테두리·액센트 바 배경·레이블 글자 세 곳에 함께 쓰인다.
+// --color-expand-text / --color-transform-text와 값이 같지만 그 토큰은 '텍스트 색'이라
+// 테두리·배경 용도까지 포괄하지 않으므로 토큰을 쓰지 않고 값으로 둔다.
 const TOOL_CONFIG = {
   expand: {
     color: '#2E7D32',

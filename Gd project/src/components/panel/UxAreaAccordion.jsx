@@ -29,6 +29,8 @@ function UxAreaAccordion({ area, defaultOpen = true }) {
           <span className="ux-area-accordion__name">{area.name}</span>
           <UxStatusBadge needsImprovement={needsImprovement} />
         </div>
+        {/* 화살표 아이콘 색: --color-label과 값이 같지만 그 토큰은 '라벨 텍스트 색'이므로
+            아이콘에는 토큰을 쓰지 않고 값으로 둔다 */}
         {isOpen
           ? <ChevronUp size={20} color="#555" strokeWidth={1.5} />
           : <ChevronDown size={20} color="#555" strokeWidth={1.5} />
