@@ -2,6 +2,7 @@ import { useState } from 'react'
 import ModalButton from './ModalButton'
 import ModalOption from './ModalOption'
 import ModalProgress from './ModalProgress'
+import ModalSkeleton from './ModalSkeleton'
 import { BCC_DIRECTIONS } from '../../data/bccData'
 import { generateQuestion, generateToolExamples } from '../../ai/deriveCard'
 import './WriteModal.css'
@@ -194,7 +195,8 @@ function ExpandModal({ selectedCard, onClose, onSubmit }) {
                 <p className="expand-modal-question">어떤 방식이 좋을지 선택해주세요</p>
                 <div className="expand-modal-options">
                   {isLoadingExamples ? (
-                    <p className="expand-modal-loading">예시 생성 중…</p>
+                    // 스켈레톤 개수는 방향성마다 도구 수가 다르므로 실제 선택지 개수에 맞춰 넘긴다
+                    <ModalSkeleton count={currentDirection.tools.length} />
                   ) : (
                     currentDirection.tools.map((tool, i) => (
                       <ModalOption
@@ -239,9 +241,12 @@ function ExpandModal({ selectedCard, onClose, onSubmit }) {
                       <span>재생성</span>
                     </button>
                   </div>
-                  {/* 질문 텍스트 박스: 생성 중에는 로딩 문구, 완료되면 AI 질문 표시 */}
+                  {/* 질문 텍스트 박스: 생성 중에는 로딩 문구, 완료되면 AI 질문 표시
+                      로딩 문구는 실제 질문과 같은 크기·굵기를 쓰되 색만 낮춰 임시 문구임을 구분한다 */}
                   <div className="expand-question-box">
-                    <p>{isLoadingQuestion ? '질문 생성 중…' : aiQuestion}</p>
+                    <p className={isLoadingQuestion ? 'expand-question-placeholder' : undefined}>
+                      {isLoadingQuestion ? '질문 생성 중…' : aiQuestion}
+                    </p>
                   </div>
                 </div>
 

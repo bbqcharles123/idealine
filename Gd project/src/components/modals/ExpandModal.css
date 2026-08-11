@@ -90,14 +90,6 @@
   gap: 12px;
 }
 
-/* Step 2 예시 생성 중 로딩 문구 */
-.expand-modal-loading {
-  font-size: var(--font-size-body2);
-  color: var(--color-disabled);
-  margin: 0;
-  padding: 12px 0;
-}
-
 /* ---- Step 3 전용 스타일 ---- */
 
 /* 질문 섹션: 헤더 행 + 질문 박스 */
@@ -172,6 +164,12 @@
   color: var(--color-body1);
   text-align: justify;
   margin: 0;
+}
+
+/* 질문 생성 중 임시 문구: 크기·굵기는 실제 질문과 동일하게 두고 색만 낮춰 콘텐츠가 아님을 알린다
+   위 .expand-question-box p 규칙보다 우선하도록 부모 클래스를 함께 명시 */
+.expand-question-box p.expand-question-placeholder {
+  color: var(--color-caption);
 }
 
 /* 답변 섹션: 라벨 + textarea */

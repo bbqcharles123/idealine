@@ -166,9 +166,12 @@ function TransformModal({ selectedCard, onClose, onSubmit }) {
                       <span>재생성</span>
                     </button>
                   </div>
-                  {/* 질문 텍스트 박스: 생성 중에는 로딩 문구, 완료되면 AI 질문 표시 */}
+                  {/* 질문 텍스트 박스: 생성 중에는 로딩 문구, 완료되면 AI 질문 표시
+                      로딩 문구는 실제 질문과 같은 크기·굵기를 쓰되 색만 낮춰 임시 문구임을 구분한다 */}
                   <div className="transform-question-box">
-                    <p>{isLoadingQuestion ? '질문 생성 중…' : aiQuestion}</p>
+                    <p className={isLoadingQuestion ? 'transform-question-placeholder' : undefined}>
+                      {isLoadingQuestion ? '질문 생성 중…' : aiQuestion}
+                    </p>
                   </div>
                 </div>
 

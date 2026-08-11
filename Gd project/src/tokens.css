@@ -57,9 +57,6 @@
   --line-height-heading1: 36px;
   --line-height-label:    18px;
 
-  /* ── 자간 ── */
-  --letter-spacing: 0%;
-
   /* ── 폰트 굵기 ── */
   --font-weight-bold:     700;
   --font-weight-semibold: 600;

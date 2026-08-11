@@ -1,0 +1,36 @@
+/* 스켈레톤 박스 목록: 실제 선택지 목록(.expand-modal-options)과 동일한 세로 12px 간격 */
+.modal-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* 스켈레톤 박스 1개: 시안 기준 높이 52px, 테두리 없이 배경색만
+   #F0F0F0은 확장하기 모달 2단계에서만 쓰는 일회성 색이라 토큰으로 올리지 않고 직접 지정 */
+.modal-skeleton-item {
+  height: 52px;
+  background: #F0F0F0;
+  border-radius: var(--radius-element);
+  /* 1.4초 주기로 투명도를 오르내려 로딩 중임을 표현 (무한 반복) */
+  animation: modal-skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+/* 진한 상태 → 흐린 상태 → 다시 진한 상태로 돌아오는 한 사이클 */
+@keyframes modal-skeleton-pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* 동작 줄이기 설정이 켜진 환경에서는 깜빡임을 끄고 정적인 회색 박스로만 표시 */
+@media (prefers-reduced-motion: reduce) {
+  .modal-skeleton-item {
+    animation: none;
+  }
+}
