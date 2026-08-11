@@ -4,7 +4,6 @@ import { doc, getDoc, updateDoc } from 'firebase/firestore'
 import { db } from './firebase'
 import { ReactFlow, applyNodeChanges, Panel, useNodesInitialized, useReactFlow } from '@xyflow/react'
 import SeedCard from './components/SeedCard'
-import DerivedCard from './components/DerivedCard'
 import LayerStackNode from './components/LayerStackNode'
 import Toolbar from './components/Toolbar'
 import WriteModal from './components/modals/WriteModal'
@@ -17,9 +16,9 @@ import { getLayoutedElements } from './utils/layout'
 import { generateDerivedCard, phrasesToHighlights, generateWriteCard } from './ai/deriveCard'
 
 // React Flow에 커스텀 노드 타입 등록
+// seed: 씨드카드 / layerstack: 파생카드(레이어 스택 방식)
 const nodeTypes = {
   seed: SeedCard,
-  derived: DerivedCard,
   layerstack: LayerStackNode,
 }
 

@@ -16,8 +16,12 @@
 - 캔버스 배경색: #F1F3F4 / 카드 width: 356px 고정, height: 가변
 
 ## 카드 종류
-- 씨드카드 (type: 'seed'): Handle source — Position.Bottom
-- 파생카드 (type: 'derived'): Handle target — Position.Top, source — Position.Bottom
+- 씨드카드 (type: 'seed' → SeedCard): Handle source — Position.Bottom
+- 파생카드 (type: 'layerstack' → LayerStackNode): Handle target — Position.Top
+  - source Handle은 도구 레이어 안쪽(peek 하단)에 배치
+    → 펼침/접힘 시에도 "보이는 하단"을 따라가므로 엣지가 끊기지 않음
+  - 레이어 구조(서랍 방식): 아이디어 레이어(z:2) + 도구 레이어(z:1 idle → z:3 expanded)
+  - useUpdateNodeInternals로 전환 애니메이션(480ms) 동안 핸들 위치를 매 프레임 재측정
 
 ## App.jsx 상태 구조
 ```
@@ -34,27 +38,50 @@ modalUserInput: string
 ```
 
 ## 카드 data 구조
-```
-// SeedCard / DerivedCard 공통
-title: string
-description: string
-isSelected: boolean    — App.jsx에서 주입 (selectedCardId || infoCardId)
-isHighlighted: boolean — App.jsx에서 주입 (선택된 카드의 부모)
-onInfoClick: fn
 
-// DerivedCard 추가
-tagType: 'expand' | 'transform' | null   — null이면 태그 버튼 없음 (직접쓰기)
-tagName: string | null                   — 도구명 (예: '복제', '제거')
-question: string | undefined             — 확장/변형 모달 도구에 연결된 질문 텍스트
-answer: string | undefined               — 사용자가 모달 textarea에 직접 입력한 원문 (사이드패널 Q&A에 표시)
-// description: AI가 answer를 프롬프트에 넘겨 생성한 카드 본문 (캔버스 카드에 표시)
-// AI 연동 전에는 description = answer 값을 임시로 사용
+### 공통 (씨드·파생)
+```
+title: string
+description: string       — 캔버스 카드에 표시되는 본문 (AI 생성)
+uxData: object            — UX 평가 탭 데이터 (AI 생성)
+```
+
+### 씨드카드 추가
+```
+topic: string             — 사용자가 입력한 원문 주제 (사이드패널 '입력 주제')
+```
+
+### 파생카드 — 확장/변형 (toolType: 'expand' | 'transform')
+```
+toolType: 'expand' | 'transform'
+tagName: string           — 도구명 (예: '복제', '제거')
+question: string          — 모달에서 제시한 질문 (사이드패널 Q&A)
+answer: string            — 사용자가 textarea에 입력한 원문 (사이드패널 Q&A)
+highlights: {start,end}[] — AI 강조 문구를 answer 인덱스로 변환한 값
+```
+
+### 파생카드 — 직접작성 (toolType: 'write')
+```
+toolType: 'write'
+writeRec: 'expand' | 'transform'  — AI 추천 카테고리 (도구레이어·RecToolCard)
+writeExpect: string               — 기대효과 (도구레이어 설명)
+writeRecReason: string            — 추천 이유 (사이드패널)
+```
+※ write 카드는 question/answer/tagName 없음
+
+### App.jsx가 렌더링 시 주입 (App.jsx:403-409)
+```
+isSelected: boolean          — selectedCardId || infoCardId
+isHighlighted: boolean       — 선택된 카드의 직속 부모
+onInfoClick: fn
+onToolOpen / onToolExpand / onToolCollapse: fn   — 도구 레이어 서랍 제어
+onWriteLayerToggle: fn                            — toolType === 'write'일 때만 주입
 ```
 
 ## ReactFlow 설정
 - deleteKeyCode={null}
 - base.css import (style.css 아님)
-- nodeTypes: { seed: SeedCard, derived: DerivedCard }
+- nodeTypes: { seed: SeedCard, layerstack: LayerStackNode }
 - ReactFlowProvider로 App 전체 감싸기 (main.jsx)
 - defaultEdgeOptions: type smoothstep / stroke #9E9E9E / strokeWidth 1.5 / borderRadius 8
 - React Flow 내장 selected prop 미사용 → data.isSelected로 직접 관리
@@ -76,7 +103,7 @@ Gd project/src/
 ├── components/
 │   ├── modals/    — StartModal·ExpandModal·TransformModal·WriteModal + 공용 파트
 │   ├── panel/     — SidePanel 내부 파트 (UX 평가·추천도구·Q&A 등)
-│   └── *.jsx      — SeedCard·DerivedCard·LayerStackNode·SidePanel·Toolbar·CanvasCard·CanvasHeader
+│   └── *.jsx      — SeedCard·LayerStackNode·SidePanel·Toolbar·CanvasCard·CanvasHeader
 ├── data/          — BCC·ERRC 정적 데이터, 도구·프레임워크 설명 텍스트
 ├── pages/         — HomePage (작업공간 목록)
 ├── utils/         — layout.js (Dagre 트리 레이아웃)
