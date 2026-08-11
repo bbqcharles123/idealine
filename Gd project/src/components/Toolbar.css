@@ -38,7 +38,7 @@
 
 /* active: 해당 모달이 열려 있는 동안 유지 */
 .toolbar-btn.active {
-  background-color: var(--color-selected-border);
+  background-color: var(--color-primary);
 }
 
 /* active 상태에서 아이콘을 흰색으로 변환 */

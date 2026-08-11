@@ -20,7 +20,7 @@
    두께 변화가 없으므로 box-shadow 링이 필요 없다 (링을 쓰면 총 2px가 되어 시안과 어긋남) */
 .modal-option--selected {
   background: var(--color-selected-bg);
-  border-color: var(--color-selected-border);
+  border-color: var(--color-primary);
   color: var(--color-heading2-3);
   font-weight: var(--font-weight-medium);
 }

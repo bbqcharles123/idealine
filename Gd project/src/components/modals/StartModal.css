@@ -110,7 +110,7 @@
 
 /* 생성 버튼: 활성 (입력값 있을 때) */
 .start-modal-btn--active {
-  background-color: var(--color-selected-border);
+  background-color: var(--color-primary);
   color: var(--color-white);
   cursor: pointer;
 }

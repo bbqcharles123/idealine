@@ -121,7 +121,7 @@
 }
 
 .home-page__input-btn--active {
-  background: #589cfe;
+  background: var(--color-primary);
 }
 
 .home-page__input-btn--active:hover {

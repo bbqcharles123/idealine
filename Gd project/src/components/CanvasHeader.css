@@ -2,7 +2,7 @@
    CanvasHeader — 캔버스 상단 고정 헤더
    Figma 스펙: left 28px, top 24px
    홈버튼(pill형) + gap 28px + 제목(Bold 22px, 편집 가능)
-   편집 시: 텍스트 너비 + padding 8px 범위만 파란 밑줄(#589cfe)
+   편집 시: 텍스트 너비 + padding 8px 범위만 파란 밑줄(--color-primary)
    ============================================================ */
 
 .canvas-header {
@@ -74,7 +74,7 @@
 
 /* 편집 모드: 파란 밑줄. 박스 너비(= 텍스트+padding 8px)는 JS 인라인 스타일로 결정 */
 .canvas-header__title-box--editing {
-  border-bottom-color: var(--color-selected-border);
+  border-bottom-color: var(--color-primary);
   overflow: visible; /* 텍스트가 박스보다 길어질 때 clip 방지 */
 }
 

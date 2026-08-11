@@ -17,8 +17,8 @@
    → border 1px + ring 1px = 총 2px */
 .seed-card.selected {
   background-color: var(--color-selected-bg);
-  border-color: var(--color-selected-border);
-  box-shadow: 0 4px 18px 0 rgba(0, 0, 0, 0.12), 0 0 0 1px var(--color-selected-border);
+  border-color: var(--color-primary);
+  box-shadow: 0 4px 18px 0 rgba(0, 0, 0, 0.12), 0 0 0 1px var(--color-primary);
 }
 
 .seed-card.highlighted {
