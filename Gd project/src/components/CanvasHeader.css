@@ -25,7 +25,8 @@
   border-radius: var(--radius-pill);
   border: 1px solid var(--color-border);
   background: var(--color-white);
-  box-shadow: 0 0 18px 0 rgba(0, 0, 0, 0.12);
+  /* 캔버스 위에 떠 있는 pill 버튼: 사방 균등(y=0)한 은은한 그림자 — 카드 그림자와 다른 값 */
+  box-shadow: 0 0 15px 0 rgba(0, 0, 0, 0.05);
   cursor: pointer;
   flex-shrink: 0;
 }

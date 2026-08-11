@@ -27,16 +27,21 @@
   box-sizing: border-box;
 }
 
+/* 선택/하이라이트 시 테두리는 기본 1px → 총 2px로 두꺼워진다.
+   border를 2px로 키우면 box-sizing: border-box 때문에 content 영역이 줄어
+   카드 내부 레이아웃이 밀리므로(CSS border = Figma의 stroke inside),
+   border는 1px로 고정하고 늘어나는 1px만 box-shadow 링으로 바깥에 덧댄다
+   (= Figma의 stroke outside). → border 1px + ring 1px = 총 2px */
 .lsn--selected .lsn__card {
   background: var(--color-selected-bg);
   border-color: var(--color-selected-border);
-  box-shadow: 0 4px 18px 0 rgba(0, 0, 0, 0.12), 0 0 0 2px var(--color-selected-border);
+  box-shadow: 0 4px 18px 0 rgba(0, 0, 0, 0.12), 0 0 0 1px var(--color-selected-border);
 }
 
 .lsn--highlighted .lsn__card {
   background: var(--color-highlighted-bg);
   border-color: var(--color-highlighted-border);
-  box-shadow: 0 4px 18px 0 rgba(0, 0, 0, 0.12), 0 0 0 2px var(--color-highlighted-border);
+  box-shadow: 0 4px 18px 0 rgba(0, 0, 0, 0.12), 0 0 0 1px var(--color-highlighted-border);
 }
 
 .lsn__info {
