@@ -414,11 +414,11 @@ function App() {
 
   // Firestore 로드 완료 전에는 빈 화면 표시
   if (loadingCanvas) {
-    return <div style={{ width: '100%', height: '100vh', background: '#F1F3F4' }} />
+    return <div style={{ width: '100%', height: '100vh', background: 'var(--color-background)' }} />
   }
 
   return (
-    <div style={{ width: '100%', height: '100vh', background: '#F1F3F4' }}>
+    <div style={{ width: '100%', height: '100vh', background: 'var(--color-background)' }}>
       {/* 캔버스 상단 고정 헤더 */}
       <CanvasHeader title={canvasTitle} onTitleChange={setCanvasTitle} />
 

@@ -32,7 +32,9 @@
 }
 
 .canvas-header__home-btn:hover {
-  background: var(--color-surface);
+  /* 시안에 hover 상태가 정의되어 있지 않다. 구현 임시값이므로 토큰화하지 않는다.
+     (--color-surface는 '내부 박스·섹션 배경'용이라 의미가 맞지 않아 값으로 되돌림) */
+  background: #F5F5F5;
 }
 
 /* ── 보이지 않는 측정 span ──

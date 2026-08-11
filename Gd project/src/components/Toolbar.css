@@ -32,7 +32,8 @@
 }
 
 .toolbar-btn:hover {
-  background-color: var(--color-hover);
+  /* 시안에 hover 상태가 정의되어 있지 않다. 구현 임시값이므로 토큰화하지 않는다. */
+  background-color: #E4E4E4;
 }
 
 /* active: 해당 모달이 열려 있는 동안 유지 */

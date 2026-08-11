@@ -17,10 +17,10 @@
   --color-highlighted-border: #F59E0B;
 
   /* ── 표면 색상 ── */
+  --color-background: #F1F3F4; /* 앱 바탕 (홈 화면·캔버스 화면 공통) */
   --color-white:    #FFFFFF;   /* 카드·모달·버튼·input 기본 배경 */
   --color-surface:  #F5F5F5;   /* 연한 회색 내부 박스·섹션·칩 배경 */
   --color-track:    #EBEBEB;   /* 비활성 pill·프로그레스 바 트랙 */
-  --color-hover:    #E4E4E4;   /* 버튼 hover 배경 */
 
   /* ── 테두리 색상 ── */
   --color-border:      #D5D5D5;   /* 표준 테두리·구분선 */
