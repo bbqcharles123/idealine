@@ -13,7 +13,7 @@
 ## 디자인 시안
 - Figma: https://www.figma.com/design/yZ41AtAYIZrZvdfuUmhFbL/%EC%BA%A1%EC%8A%A4%ED%86%A4-%EA%B2%A8%EC%9A%B8?node-id=1066-8207&p=f&t=4raZ6r5rqtZmFPXD-0
 - 디자인 구현 노트: https://www.notion.so/3612a8746cb180a4b58bd4d919515690
-- 캔버스 배경색: #F1F3F4 / 카드 width: 356px 고정, height: 가변
+- 캔버스 배경색: #F1F3F4 (`--color-background`) / 카드 width: 356px 고정, height: 가변
 
 ## 카드 종류
 - 씨드카드 (type: 'seed' → SeedCard): Handle source — Position.Bottom
@@ -92,8 +92,22 @@ onWriteLayerToggle: fn                            — toolType === 'write'일 �
 - onPaneClick: selectedCardId, infoCardId 모두 null
 
 ## CSS 규칙
-- 컴포넌트명을 클래스 접두사로 사용 (`.seed-card`, `.derived-card`)
-- 테두리 상태 변경은 border 두께 변경 대신 box-shadow 사용 (레이아웃 이동 방지)
+- 컴포넌트명을 클래스 접두사로 사용 (`.seed-card`, `.lsn`)
+- 테두리가 두꺼워지는 상태(카드 선택·하이라이트)는 border 두께를 바꾸지 않는다.
+  border를 키우면 `box-sizing: border-box` 때문에 content 영역이 줄어 내부 레이아웃이 밀린다.
+  border는 1px로 고정한 채 색만 바꾸고, 늘어나는 두께만 box-shadow 링으로 바깥에 덧댄다.
+  (CSS border = Figma의 stroke inside / box-shadow 링 = stroke outside)
+  → 카드 선택: border 1px + ring 1px = 총 2px
+- 두께가 변하지 않는 상태(모달 선택지)는 border-color만 바꾸고 링을 쓰지 않는다.
+
+## 디자인 토큰 원칙
+- 단일 출처는 `src/tokens.css` (design-tokens.json은 삭제됨)
+- 시안에 근거가 있는 값만 토큰으로 둔다. 시안에 없는 구현 임시값은 컴포넌트 CSS에
+  지역값으로 두고, 왜 토큰이 아닌지 주석을 남긴다.
+- 값이 같아도 의미가 다르면 토큰을 재사용하지 않는다.
+  (예: 엣지 선 `#9E9E9E`는 `--color-disabled`와 값이 같지만 '비활성'이 아니므로 하드코딩)
+- 아직 체계가 없어 **의도적으로 토큰화하지 않은** 영역 — 누락이 아니라 미정의:
+  그림자(elevation) / 인터랙션 상태(hover·active·focus) / spacing
 
 ## 파일 구조
 프로젝트 루트는 `Gd project/`.
