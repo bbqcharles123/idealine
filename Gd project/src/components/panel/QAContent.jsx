@@ -21,8 +21,8 @@ function buildSegments(text, highlights) {
 
 // 도구 유형별 하이라이트 배경색
 const HIGHLIGHT_COLOR = {
-  expand:    '#E8F5E9',
-  transform: '#EDE8F9',
+  expand:    'var(--color-expand-bg)',
+  transform: 'var(--color-transform-bg)',
 }
 
 // 질문 & 응답 컴포넌트

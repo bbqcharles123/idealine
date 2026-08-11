@@ -39,18 +39,18 @@ const TAG_ICON = {
 
 const TOOL_CONFIG = {
   expand: {
-    textColor: '#2E7D32',
+    textColor: 'var(--color-expand-text)',
     label: '확장하기',
     desc: '이미 있는 요소를 하나 더 추가하되 조금 다르게 변형해보세요. 같은 듯 다른 요소가 새로운 가능성을 열어줍니다.',
   },
   transform: {
-    textColor: '#7B61C4',
+    textColor: 'var(--color-transform-text)',
     label: '변형하기',
     desc: '기존 요소를 증가·감소·창출·제거해보세요. 변형을 통해 새로운 아이디어를 발견할 수 있습니다.',
   },
   // 직접작성: AI 추천 결과(writeRec)에 따라 레이블이 결정됨. 아이콘 없음
   write: {
-    textColor: '#00695C',
+    textColor: 'var(--color-write-text)',
     label: '직접작성',
     desc: '아이디어를 더 구체적으로 작성하면 더 정확한 도구를 추천받을 수 있습니다.',
   },
