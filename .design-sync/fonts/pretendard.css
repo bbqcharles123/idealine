@@ -1,0 +1,15 @@
+/*
+ * design-sync 전용 폰트 정의 (cfg.extraFonts)
+ *
+ * 앱은 Pretendard를 index.html의 CDN <link>로 불러오기 때문에
+ * 컴포넌트 CSS를 긁어도 @font-face가 잡히지 않는다. 그러면
+ * claude.ai/design에서 만들어지는 시안이 전부 fallback 폰트로 렌더된다.
+ * 여기서 가변 폰트 파일 하나를 번들에 직접 실어 외부 요청 없이 동작하게 한다.
+ */
+@font-face {
+  font-family: 'Pretendard';
+  font-style: normal;
+  font-weight: 45 920;
+  font-display: swap;
+  src: url('./PretendardVariable.woff2') format('woff2');
+}

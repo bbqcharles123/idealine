@@ -1,0 +1,6 @@
+# design-sync 작업 산출물 — 재생성 가능하므로 커밋하지 않는다
+.ds-sync/
+ds-bundle/
+.design-sync/.cache/
+.design-sync/learnings/
+.design-sync/node_modules
