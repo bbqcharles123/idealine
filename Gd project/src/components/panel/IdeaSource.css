@@ -13,11 +13,14 @@
   transition: background 0.15s;
 }
 
+/* 부모카드 제목: 시안의 label 텍스트 스타일
+   (Pretendard SemiBold 14px / line-height 18px / #555)
+   같은 버튼 안의 아이콘도 --color-label을 쓰므로 텍스트와 아이콘 색이 일치한다 */
 .idea-source__title {
-  font-size: var(--font-size-body2);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-body1);  /* #333 */
-  line-height: 18px;
+  font-size: var(--font-size-label);        /* 14px */
+  font-weight: var(--font-weight-semibold); /* 600 */
+  color: var(--color-label);                /* #555555 */
+  line-height: var(--line-height-label);    /* 18px */
   text-align: left;           /* 버튼 기본 가운데 정렬 → 줄바꿈 시 왼쪽 정렬 */
   word-break: break-word;     /* 공백 없는 긴 문자열도 강제 줄바꿈 (Figma 시안 기준) */
 }

@@ -46,6 +46,15 @@
   --color-status-ok-bg:     #DCFCE7;   /* 충족 */
   --color-status-ok-text:   #166534;
 
+  /* ── 오류 상태 색상 (AI 질문 생성 실패 안내) ── */
+  /* text 색은 안내 문구와 '다시 생성' 버튼 배경에 함께 쓴다 (둘 다 '오류'라는 같은 의미) */
+  /* bg는 시안 변경으로 붉은 배경(#FFEBEE) → 중립 회색이 됐다.
+     값은 회색이지만 용도는 '오류 안내 박스 배경'이므로 토큰 이름은 그대로 둔다.
+     로딩 스켈레톤(ModalSkeleton.css)도 같은 #F0F0F0을 쓰지만 '로딩 중 자리를 채우는 면'이라
+     의미가 달라 이 토큰을 공유하지 않는다. --color-surface·--color-track과도 값·의미 모두 다르다. */
+  --color-error-bg:   #F0F0F0;
+  --color-error-text: #C62828;
+
   /* ── 툴팁 ── */
   --color-tooltip-bg: rgba(26, 26, 26, 0.72);   /* opacity 적용 다크 배경 (Figma pass-through) */
 

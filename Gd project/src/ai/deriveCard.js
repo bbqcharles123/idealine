@@ -18,27 +18,58 @@ const TOOL_TYPE_LABEL = { expand: '확장하기', transform: '변형하기' }
 // direction: { label, toolNames: ['제거','대체', ...] } — 선택한 방향성과 그 도구명들
 // 반환값: [{ name, example }] — 입력한 도구 순서대로
 // ──────────────────────────────────────────────────────────
-const EXAMPLES_SCHEMA = {
-  name: 'tool_examples',
-  schema: {
-    type: 'object',
-    additionalProperties: false,
-    required: ['examples'],
-    properties: {
-      examples: {
-        type: 'array',
-        items: {
-          type: 'object',
-          additionalProperties: false,
-          required: ['name', 'example'],
-          properties: {
-            name:    { type: 'string', description: '도구명 (입력한 도구명 그대로)' },
-            example: { type: 'string', description: '이 도구를 아이디어에 적용했을 때의 구체적 예시 (1~2문장)' },
+// 도구명 목록을 enum으로 주입해 예시 생성 스키마를 만든다.
+// name을 자유 문자열로 두면 모델이 '분할·분리'를 '분할/분리'처럼 살짝 다르게 써도 스키마를 통과하고,
+// 화면에서 도구와 예시를 짝지을 때(find) 매칭에 실패해 빈 선택지가 된다.
+// enum으로 고정하면 이름이 어긋나는 경우 자체가 사라진다. (strict 모드가 지원하는 키워드)
+function buildExamplesSchema(toolNames) {
+  return {
+    name: 'tool_examples',
+    schema: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['examples'],
+      properties: {
+        examples: {
+          type: 'array',
+          items: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['name', 'example'],
+            properties: {
+              name:    { type: 'string', enum: toolNames, description: '도구명 (입력한 도구명 그대로)' },
+              example: { type: 'string', description: '이 도구를 아이디어에 적용했을 때의 구체적 예시 (1~2문장)' },
+            },
           },
         },
       },
     },
-  },
+  }
+}
+
+// 응답 검증 + 정렬: 도구 수만큼 예시가 모두 채워졌는지 확인하고, 도구 순서대로 재정렬해 반환한다.
+//
+// strict 모드 Structured Outputs는 타입과 필수 필드만 보장할 뿐 배열 길이는 보장하지 않는다.
+// (minItems/maxItems는 strict 모드가 지원하지 않아 스키마로 개수를 강제할 방법이 없다)
+// 그래서 도구가 3개인데 예시가 2개만 오는 '부분 누락'이 실제로 발생할 수 있고,
+// 이 경우 통신은 성공했으므로 호출부의 catch에도 걸리지 않는다.
+// 그대로 넘기면 예시를 못 찾은 도구가 빈 선택지로 렌더되고 클릭까지 되므로,
+// 하나라도 비면 호출 실패와 동일하게 throw해 모달의 오류 처리로 넘긴다.
+// → 화면이 가질 수 있는 상태를 로딩/실패/정상 3가지로 고정한다.
+function normalizeExamples(examples, toolNames) {
+  const ordered = toolNames.map((name) => ({
+    name,
+    example: examples.find((e) => e.name === name)?.example?.trim() ?? '',
+  }))
+
+  const missing = ordered.filter((e) => e.example === '').map((e) => e.name)
+  if (missing.length > 0) {
+    throw new Error(
+      `도구 예시 누락 (${toolNames.length}개 중 ${toolNames.length - missing.length}개 수신): ${missing.join(', ')}`
+    )
+  }
+
+  return ordered
 }
 
 export async function generateToolExamples(cardDescription, direction) {
@@ -49,6 +80,7 @@ export async function generateToolExamples(cardDescription, direction) {
   const system = `당신은 아이디어 발산 도구의 AI 어시스턴트입니다.
 사용자가 선택한 발전 방향성에 속한 각 사고도구를, 주어진 아이디어에 실제로 적용하면 어떤 결과가 나올지 구체적인 예시를 작성합니다.
 - 입력으로 주어진 도구만, 입력된 도구명 그대로 사용하세요.
+- 도구 ${direction.toolNames.length}개 전부에 대해 하나씩 빠짐없이 작성하세요. 개수가 부족하면 응답 전체가 폐기됩니다.
 - example은 해당 도구를 이 아이디어에 적용한 결과를 1~2문장으로 구체적으로 묘사하세요.
 - 각 도구의 고유한 사고 방향이 예시에 분명히 드러나도록 작성하세요.`
 
@@ -66,9 +98,10 @@ ${direction.toolNames.join(', ')}
 
   const result = await callOpenAI(
     [{ role: 'system', content: system }, { role: 'user', content: user }],
-    EXAMPLES_SCHEMA
+    buildExamplesSchema(direction.toolNames)
   )
-  return result.examples
+  // 개수가 모자라면 여기서 throw → 호출부(모달)의 catch가 통신 실패와 동일하게 처리한다
+  return normalizeExamples(result.examples, direction.toolNames)
 }
 
 // ──────────────────────────────────────────────────────────

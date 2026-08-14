@@ -25,7 +25,6 @@
 
 ## App.jsx 상태 구조
 ```
-isStartModalOpen: boolean        — 시작 모달 (초기값 true)
 cards: Node[]                    — 전체 카드 배열
 edges: Edge[]                    — 전체 엣지 배열
 selectedCardId: string | null    — 카드 직접 클릭 → 파란 테두리 + 툴바
@@ -115,7 +114,7 @@ onWriteLayerToggle: fn                            — toolType === 'write'일 �
 Gd project/src/
 ├── ai/            — OpenAI 호출 (seedCard·deriveCard·uxEval / openaiClient / __mock__)
 ├── components/
-│   ├── modals/    — StartModal·ExpandModal·TransformModal·WriteModal + 공용 파트
+│   ├── modals/    — ExpandModal·TransformModal·WriteModal + 공용 파트
 │   ├── panel/     — SidePanel 내부 파트 (UX 평가·추천도구·Q&A 등)
 │   └── *.jsx      — SeedCard·LayerStackNode·SidePanel·Toolbar·CanvasCard·CanvasHeader
 ├── data/          — BCC·ERRC 정적 데이터, 도구·프레임워크 설명 텍스트

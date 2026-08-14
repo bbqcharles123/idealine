@@ -1,0 +1,94 @@
+/* 오류 안내 박스 공통: 배경·모서리·오류 색은 두 형태(bar·panel)가 동일하고
+   배치와 크기만 형태별 수식자에서 달라진다 */
+.modal-error-notice {
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  border-radius: var(--radius-element);
+  background: var(--color-error-bg);
+  /* 아이콘(lucide 기본 color: currentColor)과 문구가 함께 상속받는 오류 색 */
+  color: var(--color-error-text);
+}
+
+/* bar: 질문 텍스트 박스 자리를 대신한다. 아이콘 / 문구(가변) / 버튼 한 줄 배치.
+   높이는 시안의 51px 고정값을 그대로 쓴다. 세로 패딩 대신 높이를 고정한 이유는
+   버튼(26px)이 시안의 상하 패딩 16px보다 커서 패딩으로는 같은 높이가 나오지 않기 때문.
+   높이를 고정하고 align-items: center로 세로 가운데 정렬하면 시안과 동일한 결과가 된다. */
+.modal-error-notice--bar {
+  gap: 12px;
+  height: 51px;
+  padding: 0 16px;
+}
+
+/* panel: 선택지 목록 자리를 통째로 대신한다. 시안 높이 240px에 내용은 상하좌우 가운데.
+   선택지 개수(방향성마다 2~3개)와 무관하게 높이가 일정해야 재시도 전후로 모달이 덜 흔들린다. */
+.modal-error-notice--panel {
+  flex-direction: column;
+  justify-content: center;
+  gap: 24px;
+  height: 240px;
+}
+
+/* 아이콘 + 문구 묶음 */
+.modal-error-notice__head {
+  display: flex;
+  align-items: center;
+}
+
+/* bar에서는 남는 가로 공간을 모두 차지해 버튼을 오른쪽 끝으로 밀어낸다.
+   min-width: 0은 문구가 길어졌을 때 이 묶음이 버튼을 밀어내지 않고 줄어들게 한다 */
+.modal-error-notice--bar .modal-error-notice__head {
+  flex: 1;
+  min-width: 0;
+  gap: 12px;
+}
+
+.modal-error-notice--panel .modal-error-notice__head {
+  gap: 8px;
+}
+
+/* 안내 문구 */
+.modal-error-notice__text {
+  margin: 0;
+  font-weight: var(--font-weight-medium);
+}
+
+.modal-error-notice--bar .modal-error-notice__text {
+  font-size: var(--font-size-body1);
+  line-height: 20px;
+}
+
+/* panel은 넓은 빈 영역의 중심 문구라 한 단계 큰 글자를 쓴다 */
+.modal-error-notice--panel .modal-error-notice__text {
+  font-size: var(--font-size-heading3);
+  line-height: 24px;
+}
+
+/* 다시 생성 버튼: 오류 색을 배경으로 채운 강조 버튼 (형태별로 패딩만 다르다) */
+.modal-error-notice__retry {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: var(--radius-element);
+  background: var(--color-error-text);
+  color: var(--color-white);
+  cursor: pointer;
+}
+
+.modal-error-notice--bar .modal-error-notice__retry {
+  padding: 4px 8px;
+}
+
+/* panel은 클릭 대상이 이 버튼 하나뿐이라 bar보다 크게 둔다 (시안 106×34) */
+.modal-error-notice--panel .modal-error-notice__retry {
+  padding: 8px 16px;
+}
+
+.modal-error-notice__retry span {
+  font-size: var(--font-size-label);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-label);
+  text-align: center;
+}

@@ -30,10 +30,12 @@ function UxAreaAccordion({ area, defaultOpen = true }) {
           <UxStatusBadge needsImprovement={needsImprovement} />
         </div>
         {/* 화살표 아이콘 색: --color-label과 값이 같지만 그 토큰은 '라벨 텍스트 색'이므로
-            아이콘에는 토큰을 쓰지 않고 값으로 둔다 */}
+            아이콘에는 토큰을 쓰지 않고 값으로 둔다.
+            absoluteStrokeWidth: strokeWidth를 화면상 px로 고정한다.
+            이게 없으면 size(20)에 비례해 얇아져 1.25px로 렌더된다 */}
         {isOpen
-          ? <ChevronUp size={20} color="#555" strokeWidth={1.5} />
-          : <ChevronDown size={20} color="#555" strokeWidth={1.5} />
+          ? <ChevronUp size={20} color="#555" strokeWidth={2} absoluteStrokeWidth />
+          : <ChevronDown size={20} color="#555" strokeWidth={2} absoluteStrokeWidth />
         }
       </button>
 

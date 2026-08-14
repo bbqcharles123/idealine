@@ -9,7 +9,6 @@ import Toolbar from './components/Toolbar'
 import WriteModal from './components/modals/WriteModal'
 import ExpandModal from './components/modals/ExpandModal'
 import TransformModal from './components/modals/TransformModal'
-import StartModal from './components/modals/StartModal'
 import SidePanel from './components/SidePanel'
 import CanvasHeader from './components/CanvasHeader'
 import { getLayoutedElements } from './utils/layout'
@@ -49,9 +48,6 @@ async function syncToFirestore(canvasId, nextCards, nextEdges) {
 function App() {
   // URL 파라미터에서 캔버스 id 추출 (/canvas/:id)
   const { id: canvasId } = useParams()
-
-  // 시작 모달 표시 여부
-  const [isStartModalOpen, setIsStartModalOpen] = useState(false)
 
   // 캔버스 제목
   const [canvasTitle, setCanvasTitle] = useState('')
@@ -99,9 +95,10 @@ function App() {
 
   // Firestore에서 캔버스 데이터 초기 로드
   useEffect(() => {
+    // 유효한 캔버스 id가 없으면 로드할 것이 없다
+    // 씨드카드 생성은 홈 화면에서 이루어지므로, 정상 흐름에서는 이 분기에 도달하지 않는다
     if (!canvasId || canvasId === 'new') {
       setLoadingCanvas(false)
-      setIsStartModalOpen(true)
       return
     }
 
@@ -348,11 +345,6 @@ function App() {
     }
   }, [createDerivedCard])
 
-  // 시작 모달 완료
-  const handleStartSubmit = useCallback(() => {
-    setIsStartModalOpen(false)
-  }, [])
-
   // 직접작성 모달 완료(호출 6): AI로 추천 도구·기대효과·추천이유·UX평가를 받아 카드 추가
   const handleWriteSubmit = useCallback(async (title, description) => {
     try {
@@ -421,14 +413,6 @@ function App() {
     <div style={{ width: '100%', height: '100vh', background: 'var(--color-background)' }}>
       {/* 캔버스 상단 고정 헤더 */}
       <CanvasHeader title={canvasTitle} onTitleChange={setCanvasTitle} />
-
-      {/* 시작 카드 생성 모달 */}
-      {isStartModalOpen && (
-        <StartModal
-          onClose={() => setIsStartModalOpen(false)}
-          onSubmit={handleStartSubmit}
-        />
-      )}
 
       {/* 확장하기 모달 */}
       {activeModal === 'expand' && (

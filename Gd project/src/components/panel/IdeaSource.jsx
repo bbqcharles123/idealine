@@ -34,7 +34,10 @@ function IdeaSource({ parentCard }) {
   return (
     <button className="idea-source" onClick={handleNavigate}>
       <span className="idea-source__title">{parentCard.data.title}</span>
-      <MoveUpRight className="idea-source__icon" size={16} />
+      {/* absoluteStrokeWidth: strokeWidth를 화면상 px로 고정한다.
+          이게 없으면 size(16)에 비례해 얇아져 1.33px로 렌더된다.
+          1.67px는 파생카드 도구 레이어 헤더 아이콘과 같은 두께 */}
+      <MoveUpRight className="idea-source__icon" size={16} strokeWidth={1.67} absoluteStrokeWidth />
     </button>
   )
 }

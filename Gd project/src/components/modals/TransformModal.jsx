@@ -2,6 +2,7 @@ import { useState } from 'react'
 import ModalButton from './ModalButton'
 import ModalOption from './ModalOption'
 import ModalProgress from './ModalProgress'
+import ModalErrorNotice from './ModalErrorNotice'
 import { ERRC_DIRECTIONS } from '../../data/transformData'
 import { generateQuestion } from '../../ai/deriveCard'
 import './WriteModal.css'
@@ -26,6 +27,12 @@ function TransformModal({ selectedCard, onClose, onSubmit }) {
   const [aiQuestion, setAiQuestion] = useState('')
   const [isLoadingQuestion, setIsLoadingQuestion] = useState(false)
 
+  // 질문 생성 실패 여부 — 오류 안내 UI 표시 조건
+  // 오류 문구를 aiQuestion에 넣지 않고 별도 상태로 두는 이유:
+  // aiQuestion은 파생카드 생성 AI의 입력이자 카드에 저장되는 '질문' 데이터라서,
+  // 오류 문구를 넣으면 그 문구가 질문으로 취급돼 카드에 그대로 남는다.
+  const [questionError, setQuestionError] = useState(false)
+
   // 파생카드 생성(호출 5) 진행 중 여부 — 제출 버튼 로딩 표시
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -46,6 +53,8 @@ function TransformModal({ selectedCard, onClose, onSubmit }) {
   const fetchQuestion = async () => {
     if (!currentTool) return
     setIsLoadingQuestion(true)
+    // 재시도를 시작하는 순간 오류 상태를 풀어 로딩 문구가 보이게 한다
+    setQuestionError(false)
     try {
       const res = await generateQuestion(selectedCard?.data?.description ?? '', currentTool.name, 'transform')
       setAiQuestion(res.question)
@@ -53,7 +62,11 @@ function TransformModal({ selectedCard, onClose, onSubmit }) {
       setQuestionKey(selectedDirectionIdx)
     } catch (err) {
       console.error('질문 생성 실패:', err)
-      setAiQuestion('질문 생성에 실패했습니다. 재생성을 눌러주세요.')
+      // 질문은 비워둔 채 오류 상태만 켠다.
+      // aiQuestion이 빈 문자열이어야 '파생 카드 생성하기'가 비활성 상태로 유지되어,
+      // 질문 없이 카드가 만들어지는 것을 막을 수 있다.
+      setAiQuestion('')
+      setQuestionError(true)
       // 실패 시 기준을 비워, 다음에 2단계로 들어올 때 다시 시도하도록 한다
       setQuestionKey(null)
     } finally {
@@ -153,26 +166,38 @@ function TransformModal({ selectedCard, onClose, onSubmit }) {
                         <span>{currentTool.name}</span>
                       </div>
                     </div>
-                    {/* 재생성 버튼: 같은 도구로 질문을 다시 생성
+                    {/* 재생성 버튼: 이미 생성된 질문이 마음에 들지 않을 때 새 질문을 받는 용도.
+                        오류 상태에서는 바꿀 질문 자체가 없으므로 숨기고, 복구는 오류 UI의 '다시 생성'이 맡는다.
                         질문 생성 중(isLoadingQuestion)일 때는 물론, 파생카드 생성 중(isSubmitting)에도 비활성화한다.
                         이미 제출한 답변으로 카드를 만드는 중이라 질문을 바꿀 이유가 없고,
                         누르면 AI 호출이 중복으로 나가며 방금 제출한 답변과 무관한 질문으로 바뀐다 */}
-                    <button
-                      className="transform-regenerate-btn"
-                      onClick={fetchQuestion}
-                      disabled={isLoadingQuestion || isSubmitting}
-                    >
-                      <img src="/repeat.svg" width={18} height={18} alt="" />
-                      <span>재생성</span>
-                    </button>
+                    {!questionError && (
+                      <button
+                        className="transform-regenerate-btn"
+                        onClick={fetchQuestion}
+                        disabled={isLoadingQuestion || isSubmitting}
+                      >
+                        <img src="/repeat.svg" width={18} height={18} alt="" />
+                        <span>재생성</span>
+                      </button>
+                    )}
                   </div>
-                  {/* 질문 텍스트 박스: 생성 중에는 로딩 문구, 완료되면 AI 질문 표시
+                  {/* 실패했을 때는 질문 박스 대신 오류 안내 UI로 교체한다.
+                      생성 중에는 로딩 문구, 완료되면 AI 질문 표시.
                       로딩 문구는 실제 질문과 같은 크기·굵기를 쓰되 색만 낮춰 임시 문구임을 구분한다 */}
-                  <div className="transform-question-box">
-                    <p className={isLoadingQuestion ? 'transform-question-placeholder' : undefined}>
-                      {isLoadingQuestion ? '질문 생성 중…' : aiQuestion}
-                    </p>
-                  </div>
+                  {questionError ? (
+                    <ModalErrorNotice
+                      variant="bar"
+                      message="질문을 만들지 못했어요"
+                      onRetry={fetchQuestion}
+                    />
+                  ) : (
+                    <div className="transform-question-box">
+                      <p className={isLoadingQuestion ? 'transform-question-placeholder' : undefined}>
+                        {isLoadingQuestion ? '질문 생성 중…' : aiQuestion}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {/* 답변 섹션: 질문 생성 중(isLoadingQuestion)과 파생카드 생성 중(isSubmitting)에는 입력 비활성화

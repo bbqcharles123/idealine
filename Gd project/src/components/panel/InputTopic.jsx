@@ -13,7 +13,11 @@ function InputTopic({ topic }) {
           아이콘 색은 --color-body2와 값이 같지만 그 토큰은 '본문 텍스트 색'이므로
           아이콘에는 토큰을 쓰지 않고 값으로 둔다 */}
       <div className="input-topic-box">
-        <Lightbulb className="input-topic-icon" size={18} strokeWidth={2} color="#4d4d4d" />
+        {/* 아이콘 래퍼: 주제가 2줄 이상일 때만 아이콘을 1px 내리는 역할.
+            줄 수를 세지 않고 CSS만으로 처리한다 (원리는 InputTopic.css 참고) */}
+        <span className="input-topic-icon-wrap">
+          <Lightbulb className="input-topic-icon" size={18} strokeWidth={2} color="#4d4d4d" />
+        </span>
         <p className="input-topic-text">{topic}</p>
       </div>
     </section>

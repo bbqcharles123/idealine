@@ -403,7 +403,7 @@ Figma MCP로 생성 정보 탭(1267:4973), UX 평가 탭(1267:5003), 탭 버튼(
   - `selectedCardIds: string[]` 추가, React Flow `onSelectionChange` 활용
   - `selectedCardIds.length === 1` → 기존 툴바 / `> 1` → 다중 툴바 / `=== 0` → 숨김
 - [x] **사이드패널 (SidePanel)** ✅
-- [ ] **시작 모달 (StartModal)**: 앱 진입 시 씨드카드 초기 아이디어 입력 (AI API 연동 필요)
+- [x] ~~**시작 모달 (StartModal)**~~ — 폐기. 홈 화면(`HomePage`)의 주제 입력창이 이 역할을 대체하며, 씨드카드 생성 후 `/canvas/:id`로 이동한다. `StartModal.jsx`/`.css` 및 App.jsx의 관련 상태는 삭제됨
 - [ ] **태그 버튼 Popover**: DerivedCard 태그 버튼 클릭 시 도구 설명 팝오버
 
 ### 기능
@@ -432,4 +432,3 @@ Figma MCP로 생성 정보 탭(1267:4973), UX 평가 탭(1267:5003), 탭 버튼(
 
 1. **다중 선택 툴바** — Shift+클릭 다중 선택, onSelectionChange 연동, N개 선택 툴바 UI
 2. **태그 버튼 Popover** — DerivedCard 태그 버튼 클릭 시 도구 설명 팝오버
-3. **시작 모달 + AI API 연동** — Claude API 연동, 질문/아이디어 자동 생성

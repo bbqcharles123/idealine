@@ -45,7 +45,7 @@ const [edges, setEdges] = useState(DUMMY_EDGES)  // 연결선 배열
 |------|------|------|
 | `title` | `string` | 카드 제목 (아이디어명) |
 | `description` | `string` | 카드 본문 |
-| `topic` | `string` | 시작 모달에서 입력한 주제 (사이드패널 생성정보 탭 표시용) |
+| `topic` | `string` | 홈 화면에서 입력한 주제 (사이드패널 생성정보 탭 표시용) |
 
 #### 파생카드 (`type: 'layerstack'`) — 확장/변형 생성
 
@@ -115,7 +115,6 @@ const [edges, setEdges] = useState(DUMMY_EDGES)  // 연결선 배열
 **`App.jsx` — 단일 컴포넌트 로컬 state (전역 상태 관리 없음)**
 
 ```js
-isStartModalOpen   : boolean        // 시작 모달 표시 여부
 canvasTitle        : string         // 캔버스 제목 (헤더 표시)
 cards              : Node[]         // 전체 카드 배열
 edges              : Edge[]         // 전체 엣지 배열
