@@ -18,8 +18,9 @@ export const TEMP_ANALYTIC = 0.4
 // messages:    [{role, content}] 배열
 // schema:      { name, schema } 형태의 JSON Schema (Structured Outputs)
 // temperature: 응답 무작위성 (0~2). 생략 시 창의(0.9) 기본값
+// signal:      AbortSignal (생략 가능) — 모달에서 생성 중 X 아이콘으로 취소 시 fetch 자체를 중단시키는 데 사용
 // 반환값:      파싱된 JSON 객체
-export async function callOpenAI(messages, schema, temperature = TEMP_CREATIVE) {
+export async function callOpenAI(messages, schema, temperature = TEMP_CREATIVE, signal) {
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -35,6 +36,7 @@ export async function callOpenAI(messages, schema, temperature = TEMP_CREATIVE) 
         json_schema: { name: schema.name, strict: true, schema: schema.schema },
       },
     }),
+    signal,
   })
 
   if (!response.ok) {

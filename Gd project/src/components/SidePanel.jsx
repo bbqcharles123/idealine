@@ -9,7 +9,11 @@ import UxAreaAccordion from './panel/UxAreaAccordion'
 import UxEvaluationItem from './panel/UxEvaluationItem'
 import './SidePanel.css'
 
-// UX 평가 더미 데이터 — AI 연동 전 UI 확인용 (실제 서비스에서는 카드 data에서 받아옴)
+// UX 평가 더미 데이터 — UI 확인용 가상 텍스트 (실제 서비스에서는 카드 data에서 받아옴)
+// AI 연동이 끝난 뒤로는 화면에 연결하지 않는다. 실제 평가가 없을 때 이 값으로 대신 채우면
+// 사용자가 자기 아이디어와 무관한 평가를 진짜 결과로 읽게 되기 때문이다. (아래 uxData 주석 참고)
+// 레이아웃을 눈으로 확인할 때만 uxData 자리에 잠시 끼워 쓰는 용도로 남겨둔다.
+// eslint-disable-next-line no-unused-vars
 const UX_DUMMY = {
   summary:
     '알림 피로 문제를 해결하는 방향성은 명확하고 사용자 경험 측면의 잠재력이 높습니다. 다만 실시간 컨텍스트 분석 구현의 기술적 복잡도가 이 아이디어의 핵심 변수입니다.',
@@ -79,14 +83,20 @@ function SidePanel({ card, parentCard, tab, onTabChange, onClose }) {
   // 직접작성 파생카드 = 사용 도구 섹션 제거, 추천 도구·추천 이유 섹션으로 대체
   const isWriteCard = isDerivedCard && card.data.toolType === 'write'
 
-  // UX 평가 데이터: 카드에 AI가 생성한 uxData가 있으면 사용, 없으면 더미로 폴백
-  const uxData = card.data.uxData ?? UX_DUMMY
+  // UX 평가 데이터: 카드에 AI가 생성한 uxData를 그대로 사용한다.
+  // UX_DUMMY로 폴백하지 않는 이유:
+  // 카드는 UX 평가까지 성공해야 만들어지므로(실패 시 모달이 카드를 만들지 않음) 값이 없을 수 없다.
+  // 그런데도 비어 있다면 그 규칙이 깨졌다는 뜻인데, 더미로 채우면 사용자가 자기 아이디어와 무관한
+  // 평가를 진짜 결과로 읽게 된다. 실패를 가리지 않도록 탭을 비운 채 경고만 남긴다.
+  // (AI 연동 이전에 만들어져 Firestore에 남아 있는 옛 카드가 여기에 해당할 수 있다)
+  const uxData = card.data.uxData
+  if (!uxData) console.warn('[SidePanel] uxData가 없는 카드입니다:', card.id)
 
   // areas 순서대로 evaluationItems를 그룹핑: { 'Business': [...], 'Human': [...], 'Social': [...] }
   // areas[].criteria를 기준으로 각 항목이 어느 영역에 속하는지 파악해 배열에 push
   const itemsByArea = {}
-  uxData.areas.forEach((area) => { itemsByArea[area.name] = [] })
-  uxData.evaluationItems.forEach((item) => {
+  uxData?.areas.forEach((area) => { itemsByArea[area.name] = [] })
+  uxData?.evaluationItems.forEach((item) => {
     uxData.areas.forEach((area) => {
       if (area.criteria.some((c) => c.name === item.name)) {
         itemsByArea[area.name].push(item)
@@ -185,8 +195,9 @@ function SidePanel({ card, parentCard, tab, onTabChange, onClose }) {
         )}
 
         {/* ── UX 평가 탭 ── */}
-        {/* 카드의 uxData(AI 생성)를 표시, 없으면 UX_DUMMY로 폴백 */}
-        {tab === 'ux' && (
+        {/* 카드의 uxData(AI 생성)를 표시. uxData가 없으면 아무것도 그리지 않는다
+            (없을 수 없는 값이라 빈 상태 화면을 따로 두지 않고, 원인은 위의 콘솔 경고로 확인한다) */}
+        {tab === 'ux' && uxData && (
           <div className="panel-ux">
 
             {/* 종합요약 */}

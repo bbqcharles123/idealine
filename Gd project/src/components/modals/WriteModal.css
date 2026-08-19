@@ -22,6 +22,13 @@
   align-items: center;
 }
 
+/* 카드 생성 실패 시: 하단에 오류 문구 한 줄(18px)과 그 아래 간격(8px)이 더해지므로
+   본문과의 간격을 52px에서 26px로 줄여 26px을 되돌려준다.
+   이렇게 하면 오류가 떠도 버튼 위치와 모달 전체 높이가 그대로라 화면이 흔들리지 않는다 (시안 gap 26px) */
+.write-modal--submit-error {
+  gap: 26px;
+}
+
 /* 상단 그룹: 헤더 행 + 입력 필드 묶음 */
 .write-modal-top-group {
   display: flex;
@@ -67,6 +74,19 @@
   flex-shrink: 0;
 }
 
+/* 필드 + 생성 중 진행 영역 묶음 (node-id 2611-2005). 기본은 필드만 있으므로 gap이 보이지 않고,
+   생성 중엔 진행 영역이 추가되며 22px로 좁아진다 (ExpandModal의 expand-modal-body와 동일 패턴) */
+.write-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  width: 100%;
+}
+
+.write-modal-body--generating {
+  gap: 22px;
+}
+
 /* 입력 필드 묶음: 제목 필드와 설명 필드 사이 간격 */
 .write-modal-fields {
   display: flex;
@@ -94,10 +114,12 @@
   gap: 8px;
 }
 
-/* 하단 버튼 영역 */
+/* 하단 영역: 오류 문구(있을 때) 위 / 버튼 아래 세로 배치 */
 .write-modal-footer {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
 }
 
 /* ---- 공통 텍스트 스타일 (ExpandModal, TransformModal에서도 재사용) ---- */

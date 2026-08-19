@@ -113,7 +113,7 @@
   width: 40px;
   height: 40px;
   border-radius: var(--radius-pill);
-  background: var(--color-border);
+  background: var(--color-white);
   border: none;
   padding: 0;
   display: flex;

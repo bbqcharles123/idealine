@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { ArrowUp } from 'lucide-react'
 import { collection, onSnapshot, addDoc, serverTimestamp, query, orderBy } from 'firebase/firestore'
 import { db } from '../firebase'
 import CanvasCard from '../components/CanvasCard'
@@ -81,6 +82,10 @@ function HomePage() {
     } catch (err) {
       console.error('씨드카드 생성 실패:', err)
       alert('아이디어 생성에 실패했습니다. 잠시 후 다시 시도해주세요.')
+      // 잠금 해제를 finally가 아니라 catch에 둔 이유:
+      // 성공하면 navigate로 캔버스 화면에 넘어가 이 화면 자체가 사라지므로 풀어줄 대상이 없다.
+      // (다시 홈으로 들어오면 화면이 새로 만들어지면서 isSubmitting도 false부터 시작한다)
+      // 실패했을 때만 홈 화면에 그대로 남으므로, 여기서 풀어야 같은 자리에서 다시 시도할 수 있다.
       setIsSubmitting(false)
     }
   }
@@ -124,15 +129,8 @@ function HomePage() {
             disabled={isSubmitting}
             aria-label="아이디어 생성"
           >
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-              <path
-                d="M10 15V5M10 5L5.5 9.5M10 5L14.5 9.5"
-                stroke="white"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+            {/* 준비 안 됨(입력 없음) → --color-unready-text, 입력 있음(active) → 흰색 */}
+            <ArrowUp size={20} color={inputValue.trim() ? 'var(--color-white)' : 'var(--color-unready-text)'} />
           </button>
         </div>
 

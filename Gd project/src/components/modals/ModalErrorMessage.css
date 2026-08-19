@@ -1,0 +1,15 @@
+/* 아이콘 + 문구 한 줄 (배경 없음) */
+.modal-error-message {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  /* 아이콘과 문구가 함께 상속받는 오류 색 */
+  color: var(--color-error-text);
+}
+
+.modal-error-message p {
+  margin: 0;
+  font-size: var(--font-size-label);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-label);
+}

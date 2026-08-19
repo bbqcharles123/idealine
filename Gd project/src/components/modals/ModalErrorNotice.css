@@ -40,7 +40,7 @@
 .modal-error-notice--bar .modal-error-notice__head {
   flex: 1;
   min-width: 0;
-  gap: 12px;
+  gap: 8px;
 }
 
 .modal-error-notice--panel .modal-error-notice__head {

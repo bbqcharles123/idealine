@@ -1,8 +1,10 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import ModalButton from './ModalButton'
 import ModalOption from './ModalOption'
 import ModalProgress from './ModalProgress'
 import ModalErrorNotice from './ModalErrorNotice'
+import ModalErrorMessage from './ModalErrorMessage'
+import GenerationProgress from './GenerationProgress'
 import { ERRC_DIRECTIONS } from '../../data/transformData'
 import { generateQuestion } from '../../ai/deriveCard'
 import './WriteModal.css'
@@ -11,7 +13,8 @@ import './TransformModal.css'
 // 변형하기 모달: ERRC 프레임워크를 활용해 선택된 아이디어 카드에서 파생카드를 생성하는 2단계 플로우
 // selectedCard: 현재 선택된 카드 데이터 (AI 연동 시 Step 2 질문 생성에 사용 예정)
 // onClose: X 버튼 클릭 시 모달 닫기
-// onSubmit(answer, toolName): 파생 카드 생성하기 클릭 시 호출
+// onSubmit(answer, toolName, question, signal, onProgress): 파생 카드 생성하기 클릭 시 호출
+//   onProgress(stage): 'content' | 'uxEval' | 'cardAdded' 완료 시 호출 — 생성 중 체크리스트 갱신용
 function TransformModal({ selectedCard, onClose, onSubmit }) {
   // 현재 진행 단계 (1: 방향성 선택 / 2: 질문 & 답변)
   const [step, setStep] = useState(1)
@@ -35,6 +38,18 @@ function TransformModal({ selectedCard, onClose, onSubmit }) {
 
   // 파생카드 생성(호출 5) 진행 중 여부 — 제출 버튼 로딩 표시
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // 생성 중 대기 UI 체크리스트 진행 상태 — 아이디어 생성(호출 A)/UX 평가(호출 B)/카드 추가 각 완료 여부.
+  // content·uxEval은 generateDerivedCard가, cardAdded는 App의 createDerivedCard가 알려준다.
+  const [genProgress, setGenProgress] = useState({ content: false, uxEval: false, cardAdded: false })
+
+  // 파생카드 생성 실패 여부 — 하단에 오류 문구를 띄우고 제출 버튼을 '다시 생성하기'로 바꾼다
+  // 실패해도 모달을 닫지 않으므로 사용자가 쓴 답변은 그대로 남아 바로 재시도할 수 있다
+  const [submitError, setSubmitError] = useState(false)
+
+  // 진행 중인 파생카드 생성 요청의 AbortController.
+  // ref로 두는 이유: X 아이콘 클릭 시 렌더링을 거치지 않고 "지금 날아가고 있는 그 요청"을 바로 중단시켜야 하기 때문
+  const abortControllerRef = useRef(null)
 
   // 질문이 "어떤 방향성을 기준으로" 만들어졌는지 기록하는 키
   // Step 2 진입 시 현재 선택과 비교해, 선택이 그대로면 AI를 다시 호출하지 않는다.
@@ -93,21 +108,49 @@ function TransformModal({ selectedCard, onClose, onSubmit }) {
   }
 
   // 파생 카드 생성 제출: AI 생성(호출 5)이 끝날 때까지 버튼 로딩 표시
-  // 성공 시 부모(App)가 모달을 닫음, 실패 시 모달 유지하고 버튼 복구
+  // 성공 시 부모(App)가 모달을 닫음, 실패 시 모달을 유지한 채 하단 오류 문구로 알리고 재시도를 받는다
   const handleSubmit = async () => {
     if (!answer.trim() || !currentTool || !aiQuestion) return
+    const controller = new AbortController()
+    abortControllerRef.current = controller
     setIsSubmitting(true)
+    // 재시도를 시작하는 순간 이전 오류 표시를 지운다 (다시 실패하면 catch에서 다시 켜진다)
+    setSubmitError(false)
+    // 재시도 시 체크리스트를 처음부터 다시 채워나가도록 초기화
+    setGenProgress({ content: false, uxEval: false, cardAdded: false })
     try {
-      await onSubmit(answer.trim(), currentTool.name, aiQuestion)
+      await onSubmit(answer.trim(), currentTool.name, aiQuestion, controller.signal, (stage) => {
+        setGenProgress((prev) => ({ ...prev, [stage]: true }))
+      })
+    } catch (err) {
+      // X 아이콘으로 사용자가 직접 중단시킨 경우(AbortError)는 실패가 아니라 취소이므로
+      // 오류 문구를 띄우지 않는다 (아래 handleCloseOrCancel이 답변 화면으로 되돌려준다)
+      if (err.name !== 'AbortError') {
+        console.error('파생 카드 생성 실패:', err)
+        setSubmitError(true)
+      }
     } finally {
       setIsSubmitting(false)
+      abortControllerRef.current = null
+    }
+  }
+
+  // X 아이콘 클릭: 생성 중이면 진행 중인 AI 호출만 중단하고 질문-답변 화면에 그대로 남긴다.
+  // (모달을 닫아버리면 요청이 배경에서 계속 진행되다 뒤늦게 카드가 생기는 문제가 있었음)
+  // 생성 중이 아니면 기존과 동일하게 모달을 닫는다.
+  const handleCloseOrCancel = () => {
+    if (isSubmitting) {
+      abortControllerRef.current?.abort()
+    } else {
+      onClose()
     }
   }
 
   return (
     // 오버레이: 캔버스 전체를 덮어 모달 외부 클릭을 차단
     <div className="modal-overlay">
-      <div className="transform-modal">
+      {/* 생성 실패 시에는 본문과 하단 사이 간격을 줄여, 오류 문구가 늘린 만큼을 상쇄한다 */}
+      <div className={`transform-modal${submitError ? ' transform-modal--submit-error' : ''}`}>
 
         {/* 상단 그룹: 헤더 행 + 진행도/단계 본문 */}
         <div className="transform-modal-top-group">
@@ -118,20 +161,23 @@ function TransformModal({ selectedCard, onClose, onSubmit }) {
               <h2 className="transform-modal-title">변형하기</h2>
               <p className="modal-subtitle">아이디어의 요소를 조정해 더 나은 방향을 찾습니다</p>
             </div>
-            <button className="transform-close-btn" onClick={onClose}>
+            <button className="transform-close-btn" onClick={handleCloseOrCancel}>
               <img src="/close_modal.svg" width={26} height={26} alt="닫기" />
             </button>
           </div>
 
-          {/* 진행도 + 단계 본문 */}
-          <div className="transform-modal-body">
+          {/* 진행도 + 단계 본문
+              생성 중엔 간격이 22px로 좁아진다 (ExpandModal과 동일, Figma node-id 2611-2157 기준) */}
+          <div className={`transform-modal-body${isSubmitting ? ' transform-modal-body--generating' : ''}`}>
 
-            {/* 2단계 진행도 바 */}
-            <ModalProgress
-              stepLabel={['방향 선택', '아이디어 발전'][step - 1]}
-              totalSteps={2}
-              currentStep={step}
-            />
+            {/* 2단계 진행도 바 — 생성 중엔 체크리스트가 그 역할을 대신하므로 숨긴다 */}
+            {!isSubmitting && (
+              <ModalProgress
+                stepLabel={['방향 선택', '아이디어 발전'][step - 1]}
+                totalSteps={2}
+                currentStep={step}
+              />
+            )}
 
             {/* Step 1: 방향성 선택 (= 도구 결정) */}
             {step === 1 && (
@@ -218,40 +264,65 @@ function TransformModal({ selectedCard, onClose, onSubmit }) {
               </div>
             )}
 
+            {/* 생성 중: 2단계 체크리스트(아이디어 생성/UX 평가/카드 추가) + 취소 버튼(완료되면 완료 배지로 전환) */}
+            {isSubmitting && (
+              <GenerationProgress
+                stepStates={[
+                  genProgress.content ? 'done' : 'run',
+                  genProgress.content ? (genProgress.uxEval ? 'done' : 'run') : 'wait',
+                  genProgress.uxEval ? (genProgress.cardAdded ? 'done' : 'run') : 'wait',
+                ]}
+                allDone={genProgress.cardAdded}
+                onCancel={handleCloseOrCancel}
+              />
+            )}
+
           </div>
         </div>
 
-        {/* 하단 버튼 영역 */}
+        {/* 하단 영역: 오류 문구(생성 실패 시) + 버튼 행
+            생성 중엔 취소 버튼이 GenerationProgress 안에 있고 이 영역엔 그릴 게 없으므로,
+            아예 렌더링하지 않는다 (ExpandModal과 동일 — 비워두기만 하면 .transform-modal의 gap이 그대로 남아 하단에 빈 공간이 생긴다) */}
+        {!isSubmitting && (
         <div className="transform-modal-footer">
-          {/* Step 1: 다음으로 버튼만 */}
-          {step === 1 && (
-            <ModalButton
-              variant="filled"
-              disabled={selectedDirectionIdx === null}
-              width={209}
-              onClick={handleNext}
-            >
-              다음으로
-            </ModalButton>
-          )}
 
-          {/* Step 2: 이전으로 + 파생 카드 생성하기 */}
-          {step === 2 && (
-            <>
-              <ModalButton variant="outline" width={209} onClick={handleBack} disabled={isSubmitting}>
-                이전으로
-              </ModalButton>
+          {/* 파생카드 생성 실패 안내: 재시도 수단은 아래 '다시 생성하기' 버튼이 맡으므로 문구만 둔다 */}
+          {submitError && <ModalErrorMessage message="파생 카드를 만들지 못했어요" />}
+
+          <div className="transform-modal-footer-buttons">
+            {/* Step 1: 다음으로 버튼만 */}
+            {step === 1 && (
               <ModalButton
                 variant="filled"
-                disabled={answer.trim() === '' || isLoadingQuestion || !aiQuestion || isSubmitting}
+                disabled={selectedDirectionIdx === null}
                 width={209}
-                onClick={handleSubmit}
+                onClick={handleNext}
               >
-                {isSubmitting ? '생성 중…' : '파생 카드 생성하기'}
+                다음으로
               </ModalButton>
-            </>
-          )}
+            )}
+
+            {/* Step 2: 생성 중엔 취소 버튼이 GenerationProgress 안으로 옮겨갔으므로 여기선 아무것도 그리지 않는다.
+                (생성 중엔 단계 이동 자체가 의미 없고, 취소 수단은 X 아이콘과 같은 handleCloseOrCancel로 충분하다)
+                생성 중이 아니면 이전으로 + 파생 카드 생성하기(실패 시 빨간 '다시 생성하기'로 전환). */}
+            {step === 2 && !isSubmitting && (
+              <>
+                <ModalButton variant="outline" width={209} onClick={handleBack}>
+                  이전으로
+                </ModalButton>
+                <ModalButton
+                  variant={submitError ? 'danger' : 'filled'}
+                  disabled={answer.trim() === '' || isLoadingQuestion || !aiQuestion}
+                  width={209}
+                  onClick={handleSubmit}
+                >
+                  {submitError ? '다시 생성하기' : '파생 카드 생성하기'}
+                </ModalButton>
+              </>
+            )}
+          </div>
         </div>
+        )}
 
       </div>
     </div>

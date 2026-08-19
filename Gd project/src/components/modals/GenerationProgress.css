@@ -1,0 +1,131 @@
+/* 체크리스트(좌상단) + 취소 버튼/완료 배지(하단 중앙)를 담는 150px 높이 영역
+   Figma Frame 1697(진행 중)·Frame 1710(완료), node-id 2582-2473 기준 */
+.generation-progress {
+  position: relative;
+  width: 100%;
+  height: 150px;
+}
+
+/* 체크리스트: 좌상단 고정 */
+.generation-checklist {
+  position: absolute;
+  left: 4px;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.generation-checklist-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 12px;
+}
+
+.generation-checklist-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+}
+
+.generation-checklist-label {
+  font-size: var(--font-size-caption);
+  line-height: normal;
+  white-space: nowrap;
+  color: var(--color-heading1);
+  font-weight: var(--font-weight-medium);
+}
+
+/* 대기: 빈 회색 링 */
+.generation-checklist-ring {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1.5px solid var(--color-border);
+  box-sizing: border-box;
+}
+.generation-checklist-item--wait .generation-checklist-label {
+  color: var(--color-disabled);
+}
+
+/* 진행중: 가운데 고정 8px 원 + 배경에서 8px↔12px을 오가며 opacity 0.9↔0.3으로 함께 변하는 반투명 원
+   Figma node 2582-2152 SVG(Ellipse 13/14, 고정 8px + 배경 12px)를 기준으로, opacity 대비만 더 키운 값 */
+.generation-checklist-pulse {
+  position: relative;
+  width: 12px;
+  height: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* 배경 원: 기준 크기 12px에서 8px(0.667배)까지 줄었다가 12px(1배)까지 다시 커지기를 반복한다.
+   width/height 대신 transform: scale을 쓰는 이유 — 중심을 고정한 채 커지고 줄어야 하는데,
+   transform-origin 기본값이 center라 별도 위치 보정 없이 자동으로 중심 기준 확대·축소된다. */
+.generation-checklist-pulse-halo {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  animation: generation-halo 1.6s ease-in-out infinite;
+}
+/* 고정 원: 8px, 항상 불투명 — 애니메이션 없음 */
+.generation-checklist-pulse-dot {
+  position: relative;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-primary);
+}
+.generation-checklist-item--run .generation-checklist-label {
+  color: var(--color-heading1);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* 완료: lucide CircleCheck, 진행중과 같은 파란색 (완료 배지의 초록과는 다른 의미 — 개별 단계 vs 전체 완료) */
+.generation-checklist-item--done .generation-checklist-indicator {
+  color: var(--color-primary);
+}
+
+@keyframes generation-halo {
+  0%, 100% { transform: scale(0.667); opacity: 0.9; }
+  50% { transform: scale(1); opacity: 0.3; }
+}
+
+/* 취소 버튼 / 완료 배지: 하단 중앙 고정 (같은 자리를 서로 교대로 차지) */
+.generation-progress-action {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+}
+
+/* 완료 배지: 버튼과 같은 자리·높이(44px)를 차지하지만 배경 없는 정보 표시일 뿐 클릭 대상이 아니다 */
+.generation-done-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 44px;
+  color: var(--color-status-ok-text);
+  pointer-events: none;
+  cursor: default;
+}
+.generation-done-badge span {
+  font-size: var(--font-size-body1);
+  font-weight: var(--font-weight-semibold);
+  line-height: 20px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .generation-checklist-pulse-halo {
+    animation: none;
+  }
+}

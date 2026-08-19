@@ -193,8 +193,9 @@ const DERIVED_CONTENT_SCHEMA = {
 }
 
 // 파생카드 본문 생성(창의): 부모 아이디어 + 사용자 답변으로 발전된 아이디어를 만든다.
+// signal: AbortSignal (생략 가능) — 생성 중 X 아이콘으로 취소 시 이 호출을 중단
 // 반환값: { title, description, highlightPhrases }
-async function generateDerivedContent(parentDescription, question, answer, toolName, toolType) {
+async function generateDerivedContent(parentDescription, question, answer, toolName, toolType, signal) {
   if (USE_MOCK) return mockDerivedContent(toolName, answer)
   const system = `당신은 아이디어 발산 도구의 AI 어시스턴트입니다.
 사용자가 '${TOOL_TYPE_LABEL[toolType]}'의 '${toolName}' 도구로 답변한 내용을 바탕으로, 발전된 파생 아이디어 카드를 생성합니다.
@@ -219,16 +220,21 @@ ${answer}
     [{ role: 'system', content: system }, { role: 'user', content: user }],
     DERIVED_CONTENT_SCHEMA,
     TEMP_CREATIVE,
+    signal,
   )
 }
 
 // 파생카드 생성(공개 함수): 본문 생성 → 생성된 본문으로 UX 평가를 순차 실행해 합쳐 반환한다.
+// signal: AbortSignal (생략 가능) — 모달에서 생성 중 X 아이콘으로 취소 시 두 호출 모두 중단시키기 위해 그대로 전달
+// onProgress: 생략 가능 — 대기 UI 체크리스트 갱신용. 호출 A 완료 시 'content', 호출 B 완료 시 'uxEval'을 넘긴다.
 // 반환값: { title, description, highlightPhrases, uxData }  ← 기존과 동일
-export async function generateDerivedCard(parentDescription, question, answer, toolName, toolType) {
+export async function generateDerivedCard(parentDescription, question, answer, toolName, toolType, signal, onProgress) {
   // 1) 본문 생성 (창의, temperature 높음)
-  const content = await generateDerivedContent(parentDescription, question, answer, toolName, toolType)
+  const content = await generateDerivedContent(parentDescription, question, answer, toolName, toolType, signal)
+  onProgress?.('content')
   // 2) 생성된 본문을 대상으로 UX 평가 (분석, temperature 낮음)
-  const uxData = await generateUxEval(content.title, content.description)
+  const uxData = await generateUxEval(content.title, content.description, signal)
+  onProgress?.('uxEval')
   return { ...content, uxData }
 }
 
@@ -258,8 +264,9 @@ const WRITE_CONTENT_SCHEMA = {
 // 직접작성 카드 추천 도구 생성(분석): 사용자 아이디어에 맞는 추천 도구·기대효과·추천이유를 만든다.
 // 새 아이디어 발산이 아니라 판단·근거 서술이므로 낮은 temperature(TEMP_ANALYTIC)를 사용한다.
 // (분류 성격인 writeRec의 일관성 확보 + expand/transform 영문 누출 억제 목적)
+// signal: AbortSignal (생략 가능) — 생성 중 X 아이콘/취소 버튼으로 취소 시 이 호출을 중단
 // 반환값: { writeRec, writeExpect, writeRecReason }
-async function generateWriteContent(title, description) {
+async function generateWriteContent(title, description, signal) {
   if (USE_MOCK) return mockWriteContent()
   const system = `당신은 아이디어 발산 도구의 AI 어시스턴트입니다.
 사용자가 직접 작성한 아이디어를 더 발전시키기 위해, 다음 두 접근 중 어떤 것이 더 적합한지 추천합니다.
@@ -285,17 +292,26 @@ ${description}
     [{ role: 'system', content: system }, { role: 'user', content: user }],
     WRITE_CONTENT_SCHEMA,
     TEMP_ANALYTIC,
+    signal,
   )
 }
 
 // 직접작성 카드 생성(공개 함수): 본문 생성과 UX 평가를 병렬 실행해 합쳐 반환한다.
 // (본문·UX 평가 모두 사용자가 직접 입력한 title·description을 입력으로 쓰므로 병렬 가능 → 지연 최소화)
+// signal: AbortSignal (생략 가능) — 모달에서 생성 중 X 아이콘/취소 버튼으로 취소 시 두 호출 모두 중단시키기 위해 그대로 전달
+// onProgress: 생략 가능 — 대기 UI 체크리스트 갱신용. 두 호출은 병렬이라 완료 순서가 정해져 있지 않으므로,
+//   각자 끝나는 즉시 'content'/'uxEval'을 알린다 (Promise.all에 바로 넘기면 둘 다 끝나야만 알 수 있어 개별 완료 시점을 잃는다)
 // 반환값: { writeRec, writeExpect, writeRecReason, uxData }  ← 기존과 동일
-export async function generateWriteCard(title, description) {
-  const [content, uxData] = await Promise.all([
-    generateWriteContent(title, description),  // 본문 생성 (창의)
-    generateUxEval(title, description),         // UX 평가 (분석)
-  ])
+export async function generateWriteCard(title, description, signal, onProgress) {
+  const contentP = generateWriteContent(title, description, signal).then((r) => {
+    onProgress?.('content')
+    return r
+  })
+  const uxP = generateUxEval(title, description, signal).then((r) => {
+    onProgress?.('uxEval')
+    return r
+  })
+  const [content, uxData] = await Promise.all([contentP, uxP])
   return { ...content, uxData }
 }
 

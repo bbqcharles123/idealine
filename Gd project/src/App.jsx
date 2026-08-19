@@ -289,10 +289,13 @@ function App() {
 
   // 파생카드 생성 공통 로직(호출 5): AI로 본문·하이라이트·UX평가를 받아 카드 추가
   // toolType: 'expand' | 'transform'
-  const createDerivedCard = useCallback(async (answer, toolName, question, toolType) => {
+  // signal: 모달이 생성 중 X 아이콘으로 취소하면 전달되는 AbortSignal
+  // onProgress: 생략 가능 — 대기 UI 체크리스트 갱신용. 호출 A/B 완료는 generateDerivedCard가 직접 넘기고,
+  //   카드가 실제로 캔버스에 추가된 시점은 여기서 'cardAdded'로 알려준다.
+  const createDerivedCard = useCallback(async (answer, toolName, question, toolType, signal, onProgress) => {
     // 부모 카드 본문을 AI 입력으로 사용
     const parent = cards.find((c) => c.id === effectiveCardId)
-    const result = await generateDerivedCard(parent?.data?.description ?? '', question, answer, toolName, toolType)
+    const result = await generateDerivedCard(parent?.data?.description ?? '', question, answer, toolName, toolType, signal, onProgress)
 
     // AI가 반환한 강조 문구를 answer 기준 {start,end} 인덱스로 변환
     const highlights = phrasesToHighlights(answer, result.highlightPhrases)
@@ -320,64 +323,63 @@ function App() {
     setCards(nextCards)
     setEdges(nextEdges)
     syncToFirestore(canvasId, nextCards, nextEdges)
+    // 카드는 이미 추가됐지만, 대기 UI가 "생성완료" 배지를 스치듯 보여줄 시간을 준 뒤에 모달을 닫는다
+    // (배지 없이 곧바로 닫히면 화면이 갑자기 바뀌는 느낌을 준다)
+    onProgress?.('cardAdded')
+    await new Promise((resolve) => setTimeout(resolve, 1300))
     setActiveModal(null)
     // 모달을 닫으면서 방금 만든 파생카드를 선택 상태로 만든다
     selectNewCard(newId)
   }, [effectiveCardId, canvasId, cards, edges, selectNewCard])
 
   // 확장하기 모달 완료
-  const handleExpandSubmit = useCallback(async (answer, toolName, question) => {
-    try {
-      await createDerivedCard(answer, toolName, question, 'expand')
-    } catch (err) {
-      console.error('파생 카드 생성 실패:', err)
-      alert('파생 카드 생성에 실패했습니다. 다시 시도해주세요.')
-    }
+  // 실패를 여기서 잡지 않고 그대로 모달로 던진다.
+  // 모달이 하단에 오류 문구와 '다시 생성하기' 버튼을 띄워, 사용자가 작성한 답변을 유지한 채
+  // 그 자리에서 재시도할 수 있게 한다 (alert은 답변 화면 밖으로 나가는 안내라 재시도로 이어지지 않는다)
+  const handleExpandSubmit = useCallback(async (answer, toolName, question, signal, onProgress) => {
+    await createDerivedCard(answer, toolName, question, 'expand', signal, onProgress)
   }, [createDerivedCard])
 
-  // 변형하기 모달 완료
-  const handleTransformSubmit = useCallback(async (answer, toolName, question) => {
-    try {
-      await createDerivedCard(answer, toolName, question, 'transform')
-    } catch (err) {
-      console.error('파생 카드 생성 실패:', err)
-      alert('파생 카드 생성에 실패했습니다. 다시 시도해주세요.')
-    }
+  // 변형하기 모달 완료 (실패 처리는 확장하기와 동일하게 모달이 맡는다)
+  const handleTransformSubmit = useCallback(async (answer, toolName, question, signal, onProgress) => {
+    await createDerivedCard(answer, toolName, question, 'transform', signal, onProgress)
   }, [createDerivedCard])
 
   // 직접작성 모달 완료(호출 6): AI로 추천 도구·기대효과·추천이유·UX평가를 받아 카드 추가
-  const handleWriteSubmit = useCallback(async (title, description) => {
-    try {
-      const result = await generateWriteCard(title, description)
-      const newId = `derived-${Date.now()}`
-      const newCard = {
-        id: newId,
-        type: 'layerstack',
-        position: { x: 0, y: 0 },
-        data: {
-          title,
-          description,
-          toolType: 'write',
-          writeRec: result.writeRec,             // 추천 카테고리 (도구레이어·RecToolCard)
-          writeExpect: result.writeExpect,       // 기대효과 (도구레이어 설명)
-          writeRecReason: result.writeRecReason, // 추천 이유 (상세패널)
-          uxData: result.uxData,                 // UX 평가 탭
-        },
-      }
-      const newEdge = { id: `e-${effectiveCardId}-${newId}`, source: effectiveCardId, target: newId }
-      const nextCards = [...cards, newCard]
-      const nextEdges = [...edges, newEdge]
-
-      setCards(nextCards)
-      setEdges(nextEdges)
-      syncToFirestore(canvasId, nextCards, nextEdges)
-      setActiveModal(null)
-      // 모달을 닫으면서 방금 만든 직접작성 카드를 선택 상태로 만든다
-      selectNewCard(newId)
-    } catch (err) {
-      console.error('직접작성 카드 생성 실패:', err)
-      alert('카드 생성에 실패했습니다. 다시 시도해주세요.')
+  // 실패를 여기서 잡지 않고 그대로 모달로 던진다 (확장·변형과 동일하게 모달이 오류 UI로 알리고 재시도를 받는다)
+  // onProgress: 생략 가능 — 대기 UI 체크리스트 갱신용. content/uxEval 완료는 generateWriteCard가 직접 넘기고,
+  //   카드가 실제로 캔버스에 추가된 시점은 여기서 'cardAdded'로 알려준다.
+  const handleWriteSubmit = useCallback(async (title, description, signal, onProgress) => {
+    const result = await generateWriteCard(title, description, signal, onProgress)
+    const newId = `derived-${Date.now()}`
+    const newCard = {
+      id: newId,
+      type: 'layerstack',
+      position: { x: 0, y: 0 },
+      data: {
+        title,
+        description,
+        toolType: 'write',
+        writeRec: result.writeRec,             // 추천 카테고리 (도구레이어·RecToolCard)
+        writeExpect: result.writeExpect,       // 기대효과 (도구레이어 설명)
+        writeRecReason: result.writeRecReason, // 추천 이유 (상세패널)
+        uxData: result.uxData,                 // UX 평가 탭
+      },
     }
+    const newEdge = { id: `e-${effectiveCardId}-${newId}`, source: effectiveCardId, target: newId }
+    const nextCards = [...cards, newCard]
+    const nextEdges = [...edges, newEdge]
+
+    setCards(nextCards)
+    setEdges(nextEdges)
+    syncToFirestore(canvasId, nextCards, nextEdges)
+    // 카드는 이미 추가됐지만, 대기 UI가 "생성완료" 배지를 스치듯 보여줄 시간을 준 뒤에 모달을 닫는다
+    // (배지 없이 곧바로 닫히면 화면이 갑자기 바뀌는 느낌을 준다)
+    onProgress?.('cardAdded')
+    await new Promise((resolve) => setTimeout(resolve, 1300))
+    setActiveModal(null)
+    // 모달을 닫으면서 방금 만든 직접작성 카드를 선택 상태로 만든다
+    selectNewCard(newId)
   }, [effectiveCardId, canvasId, cards, edges, selectNewCard])
 
   // 카드 드래그 등 React Flow 내부 노드 변경사항 처리

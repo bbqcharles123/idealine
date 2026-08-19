@@ -110,7 +110,7 @@
   width: 32px;
   height: 32px;
   border-radius: var(--radius-pill);
-  background: var(--color-disabled-bg);
+  background: var(--color-unready-bg);
   border: none;
   cursor: pointer;
   display: flex;

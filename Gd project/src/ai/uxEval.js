@@ -181,8 +181,9 @@ function toUxData(res) {
 
 // UX 평가 전용 호출: 이미 만들어진 아이디어(title, description)를 UX 관점에서만 평가한다.
 // 낮은 temperature(TEMP_ANALYTIC)로 규칙 준수·평가 일관성을 우선한다.
+// signal: AbortSignal (생략 가능) — 생성 중 X 아이콘으로 취소 시 이 호출도 함께 중단
 // 반환값: uxData 객체 (summary, areas, evaluationItems)
-export async function generateUxEval(title, description) {
+export async function generateUxEval(title, description, signal) {
   if (USE_MOCK) return mockUxData()
 
   const system = `당신은 초기 단계의 제품/서비스 아이디어를 사전적 UX 관점에서 평가하는 전문가입니다.
@@ -202,6 +203,7 @@ ${description}
     [{ role: 'system', content: system }, { role: 'user', content: user }],
     UX_EVAL_SCHEMA,
     TEMP_ANALYTIC,
+    signal,
   )
   return toUxData(res)
 }
