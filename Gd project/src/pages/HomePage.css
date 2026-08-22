@@ -28,19 +28,36 @@
 /* ── 콘텐츠 영역 ── */
 
 /*
-  flex:1 로 작업공간 위 남은 공간을 전부 차지.
-  padding-bottom: 475px → 작업공간 패널 높이만큼 하단을 비워
-  justify-content:center 의 중앙 기준점이 패널 위쪽에 맞춰짐.
-  창이 커지든 작아지든 히어로+입력창이 패널 위 공간에서 세로 중앙 정렬됨.
+  기존 flex:1 + justify-content:center(중앙 분배) 방식은 로고~히어로 여백과
+  히어로~작업공간 여백이 뷰포트 높이에 비례해 "항상 1:1로 똑같이" 벌어졌다.
+  이 1:1 비율 자체가 Figma 시안과 시각적으로 맞아 보이는 핵심이므로,
+  상한을 걸 때도 이 비율을 절대 깨뜨리면 안 된다.
+  (히어로 쪽만 얼리고 작업공간은 실제 화면 하단에 그대로 붙어 있으면
+   두 여백의 비율이 깨져서 오히려 더 어색해 보인다 — 실제로 겪은 실패.)
+
+  660px = 작업공간 패널 높이(475px) + 히어로~입력창 콘텐츠 자체 높이(185px:
+  hero 73px + content gap 48px + input-wrap 64px).
+
+  해결: 뷰포트 높이 대신 "min(실제 뷰포트 높이, 1600px)"를 계산에 사용한다.
+  1600px 이하에서는 min()이 그대로 실제 높이를 반환하므로 기존 동작과 100%
+  동일 — 즉 지금 보기 좋다고 확인한 비율이 그대로 유지된다.
+  1600px를 넘는 초대형 화면에서만 이 값이 1600으로 고정되어, 로고~히어로
+  여백도 그 지점에서 함께 얼어붙는다. 이때 작업공간 패널(.home-page__workspace)
+  쪽도 동일한 1600px 기준으로 얼어붙게 맞춰줘야 두 여백의 1:1 비율이
+  깨지지 않는다 (아래 .home-page__workspace의 bottom 계산 참고).
+  진짜 초과분(1600px를 넘는 실제 화면 크기)은 작업공간 패널 아래,
+  화면 맨 밑의 여백으로만 빠진다 — 콘텐츠 사이가 아니라 화면 가장자리라
+  상대적으로 눈에 덜 띈다.
 */
 .home-page__content {
-  flex: 1;
+  position: absolute;
+  top: max(20px, calc((min(100vh, 1600px) - 660px) / 2));
+  left: 0;
+  right: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   gap: 48px;
-  padding-bottom: 475px;
 }
 
 /* ── 타이틀 + 서브타이틀 ── */
@@ -167,12 +184,17 @@
 /* ── 작업공간 패널 ── */
 
 /*
-  position absolute + bottom:0 → flex 흐름 밖에서 하단 고정.
+  position absolute + bottom → flex 흐름 밖에서 하단 고정.
   확장 시 위로 커지며 콘텐츠 영역을 자연스럽게 덮음(의도된 동작).
+
+  bottom: max(0px, 100vh - 1600px) — 뷰포트가 1600px 이하면 0(기존과 동일,
+  실제 화면 맨 아래 고정). 1600px를 넘으면 그 초과분만큼 bottom을 띄워서
+  패널이 "뷰포트 1600px 기준 위치"에 얼어붙게 만든다. 이게 .home-page__content
+  의 min(100vh, 1600px) 계산과 짝을 이뤄야 두 여백의 1:1 비율이 유지된다.
 */
 .home-page__workspace {
   position: absolute;
-  bottom: 0;
+  bottom: max(0px, calc(100vh - 1600px));
   left: 50%;
   transform: translateX(-50%);
   width: 1280px;

@@ -458,6 +458,8 @@ function App() {
         edges={edges}
         nodeTypes={nodeTypes}
         deleteKeyCode={null}
+        // 기본값(0.5)이면 카드가 많아졌을 때 최대로 축소해도 전체 트리가 화면에 안 담김
+        minZoom={0.05}
         onNodesChange={handleNodesChange}
         onNodeClick={handleNodeClick}
         onPaneClick={handlePaneClick}
