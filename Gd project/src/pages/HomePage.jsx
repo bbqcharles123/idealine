@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowUp } from 'lucide-react'
+import { ArrowUp, LoaderCircle } from 'lucide-react'
 import { collection, onSnapshot, addDoc, serverTimestamp, query, orderBy } from 'firebase/firestore'
 import { db } from '../firebase'
 import CanvasCard from '../components/CanvasCard'
+import GradientBorder from '../components/GradientBorder'
 import { generateSeedCard } from '../ai/seedCard'
 import './HomePage.css'
 
@@ -112,16 +113,18 @@ function HomePage() {
           </p>
         </div>
 
-        {/* 입력창 */}
+        {/* 입력창: 생성 중(isSubmitting)일 때만 회전 그라디언트 링(F1 Mono Blue) 표시 */}
         <div className="home-page__input-wrap">
-          <input
-            className="home-page__input"
-            placeholder="AI 기술 기반 혁신적인 제품 및 서비스 아이디어"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyDown={handleKeyDown}
-            disabled={isSubmitting}
-          />
+          <GradientBorder active={isSubmitting} radius="var(--radius-container)">
+            <input
+              className="home-page__input"
+              placeholder="AI 기술 기반 혁신적인 제품 및 서비스 아이디어"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={handleKeyDown}
+              disabled={isSubmitting}
+            />
+          </GradientBorder>
           {/* 입력값 있으면 파란색, 없으면 회색 */}
           <button
             className={`home-page__input-btn${inputValue.trim() ? ' home-page__input-btn--active' : ''}`}
@@ -129,9 +132,24 @@ function HomePage() {
             disabled={isSubmitting}
             aria-label="아이디어 생성"
           >
-            {/* 준비 안 됨(입력 없음) → --color-unready-text, 입력 있음(active) → 흰색 */}
-            <ArrowUp size={20} color={inputValue.trim() ? 'var(--color-white)' : 'var(--color-unready-text)'} />
+            {/* 생성 중엔 회전하는 로더로 교체, 그 외엔 기존 화살표.
+                준비 안 됨(입력 없음) → --color-unready-text, 입력 있음(active) → 흰색 */}
+            {isSubmitting ? (
+              <LoaderCircle
+                size={20}
+                color="var(--color-white)"
+                className="home-page__input-btn-icon--spin"
+              />
+            ) : (
+              <ArrowUp size={20} color={inputValue.trim() ? 'var(--color-white)' : 'var(--color-unready-text)'} />
+            )}
           </button>
+          {/* 생성 중 안내 문구 — Figma node 2633:23362, 입력창 하단 12px·가운데 정렬 */}
+          {isSubmitting && (
+            <p className="home-page__input-status" aria-live="polite">
+              아이디어를 만들고 있어요
+            </p>
+          )}
         </div>
 
       </main>
@@ -150,6 +168,7 @@ function HomePage() {
           <button
             className="home-page__workspace-toggle"
             onClick={() => setIsExpanded((prev) => !prev)}
+            disabled={isSubmitting}
           >
             {isExpanded ? '간소화 ↓' : '전체보기 ↑'}
           </button>
@@ -159,10 +178,14 @@ function HomePage() {
         <div className="home-page__workspace-body">
           <div className="home-page__canvas-grid">
             {canvases.map((canvas) => (
-              <CanvasCard key={canvas.id} {...canvas} />
+              <CanvasCard key={canvas.id} {...canvas} locked={isSubmitting} />
             ))}
           </div>
         </div>
+
+        {/* 생성 중 dim 스크림 — Figma node 2630:23176, 패널 전체를 덮되
+            pointer-events:none으로 클릭은 그대로 카드까지 통과시킨다 */}
+        {isSubmitting && <div className="home-page__workspace-dim" />}
 
       </section>
     </div>

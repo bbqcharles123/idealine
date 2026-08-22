@@ -1,6 +1,7 @@
 /* ── CanvasCard: 홈 작업공간 캔버스 카드 ── */
 
 .canvas-card {
+  position: relative;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-element);
@@ -11,6 +12,50 @@
   cursor: pointer;
   box-sizing: border-box;
   overflow: hidden;
+}
+
+/* 잠금 안내가 떠 있는 동안엔 카드 자체 테두리를 투명하게 —
+   오버레이가 자기 테두리를 따로 그리므로 겹쳐서 두꺼워지는 걸 막는다 */
+.canvas-card--hint-active {
+  border-color: transparent;
+}
+
+/* 잠금 안내 오버레이 — Figma Frame 1731 스펙 그대로 (카드 전체를 덮음).
+   z-index로 HomePage의 작업공간 전체 dim 스크림보다 항상 위에 오도록 고정 */
+.canvas-card__lock-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-element);
+  animation: canvas-card-lock-hint-in 180ms ease-out both;
+}
+
+.canvas-card__lock-text {
+  margin: 0;
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-body2);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-label);
+  color: var(--color-primary);
+  text-align: center;
+}
+
+@keyframes canvas-card-lock-hint-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .canvas-card__lock-overlay {
+    animation: none;
+  }
 }
 
 /* 제목: 1~2줄, flex-grow로 나머지 공간 점유 → 하단 정보가 자연스럽게 아래로 */

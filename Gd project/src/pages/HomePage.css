@@ -101,6 +101,12 @@
   font-weight: var(--font-weight-semibold);
 }
 
+/* 생성 중(GradientBorder 활성)일 때 안쪽 1px 테두리가 바깥 그라디언트 링과
+   겹쳐 보이지 않도록 색만 투명하게. 두께는 그대로 둬 레이아웃 밀림이 없다. */
+.home-page__input:disabled {
+  border-color: transparent;
+}
+
 /* 제출 버튼 */
 .home-page__input-btn {
   position: absolute;
@@ -127,6 +133,35 @@
 .home-page__input-btn--active:hover {
   /* 시안에 hover 상태가 정의되어 있지 않다. 구현 임시값이므로 토큰화하지 않는다. */
   background: #3d85f0;
+}
+
+/* 생성 중 안내 문구 (Figma node 2633:23362) — 입력창 하단 12px, 가운데 정렬 */
+.home-page__input-status {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  margin: 12px 0 0;
+  text-align: center;
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-regular);
+  color: var(--color-caption);
+}
+
+/* 생성 중 로더 회전 (Figma lucide/loader-circle, node 2634:23363) */
+@keyframes home-page-spin {
+  to { transform: rotate(360deg); }
+}
+
+.home-page__input-btn-icon--spin {
+  animation: home-page-spin 0.8s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-page__input-btn-icon--spin {
+    animation: none;
+  }
 }
 
 /* ── 작업공간 패널 ── */
@@ -203,6 +238,20 @@
   /* 시안에 hover 상태가 정의되어 있지 않다. 구현 임시값이므로 토큰화하지 않는다.
      (--color-heading1은 '제목 텍스트 색'용이라 의미가 맞지 않아 값으로 되돌림) */
   color: #1A1A1A;
+}
+
+.home-page__workspace-toggle:disabled {
+  cursor: not-allowed;
+}
+
+/* 생성 중 dim 스크림 (Figma node 2630:23176) — 패널 전체(헤더+토글+카드)를
+   흰색 반투명으로 덮어 "지금은 상호작용 안 됨"을 예고. pointer-events:none이라
+   클릭은 그대로 통과해 캔버스 카드의 잠금 안내는 계속 동작한다. */
+.home-page__workspace-dim {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.5);
+  pointer-events: none;
 }
 
 /* 카드 본문: 접힘→overflow hidden(잘림), 펼침→overflow-y auto(스크롤) */
