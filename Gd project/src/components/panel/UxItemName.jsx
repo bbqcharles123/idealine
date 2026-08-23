@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import Tooltip from './Tooltip'
+import Tooltip from '../Tooltip'
 import './UxItemName.css'
 
 // 평가요소명 pill: 회색 배경 라벨 + (보완 필요 시 경고 아이콘 + 클릭 tooltip)
@@ -23,11 +23,15 @@ function UxItemName({ name, needsImprovement = false }) {
             <img src="/ux_warn.svg" width={18} height={18} alt="" />
           </button>
 
-          {/* 아이콘 위에 나타나는 tooltip: 삼각형 왼쪽 정렬 (아이콘 위치에 맞춤) */}
+          {/* 아이콘 위에 나타나는 tooltip.
+              위치는 Tooltip 이 스스로 잡는다 — icon-wrap 의 position: relative 가 기준점.
+              arrowPosition="left" 라 삼각형이 아이콘 중심을 가리키고 몸통은 오른쪽으로 뻗는다. */}
           {isTooltipOpen && (
-            <div className="ux-item-name__tooltip">
-              <Tooltip text="보완이 필요한 항목" arrowPosition="left" />
-            </div>
+            <Tooltip
+              text="보완이 필요한 항목"
+              placement="top"
+              arrowPosition="left"
+            />
           )}
         </div>
       )}

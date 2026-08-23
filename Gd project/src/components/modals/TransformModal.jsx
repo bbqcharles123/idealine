@@ -240,7 +240,7 @@ function TransformModal({ selectedCard, onClose, onSubmit }) {
                   ) : (
                     <div className="transform-question-box">
                       <p className={isLoadingQuestion ? 'transform-question-placeholder' : undefined}>
-                        {isLoadingQuestion ? '질문 생성 중…' : aiQuestion}
+                        {isLoadingQuestion ? '질문 생성 중' : aiQuestion}
                       </p>
                     </div>
                   )}

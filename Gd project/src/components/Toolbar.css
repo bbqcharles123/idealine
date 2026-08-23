@@ -11,7 +11,8 @@
   box-sizing: border-box;
 }
 
-/* 버튼 감싸는 wrapper: tooltip 위치 기준점 */
+/* 버튼 감싸는 wrapper: tooltip 위치 기준점.
+   Tooltip 이 자기 위치를 스스로 계산하므로 여기서는 position: relative 만 제공한다. */
 .toolbar-btn-wrap {
   position: relative;
 }
@@ -71,40 +72,4 @@
 
 .toolbar-btn.rec .toolbar-btn-label {
   color: var(--color-write-text);
-}
-
-/* tooltip: 추천 버튼 위에 표시
-   bottom: calc(100% + 12px) = 버튼 wrapper 상단 기준
-   + 4px(툴바 padding-top) + 4px(삼각형 높이) + 4px(툴바와의 간격)
-   → 삼각형 끝이 툴바 상단에서 4px 위에 위치 */
-.toolbar-tooltip {
-  position: absolute;
-  bottom: calc(100% + 12px);
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--color-tooltip-bg);
-  color: var(--color-white);
-  font-size: var(--font-size-nano);
-  font-weight: var(--font-weight-regular);
-  line-height: 18px;
-  text-align: center;
-  padding: 3px 8px;
-  border-radius: var(--radius-element);
-  white-space: nowrap;
-  pointer-events: none;
-  z-index: 10;
-}
-
-/* 아래쪽 삼각형: 4px 높이, 가운데 정렬 */
-.toolbar-tooltip::after {
-  content: '';
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 0;
-  height: 0;
-  border-left: 6px solid transparent;
-  border-right: 6px solid transparent;
-  border-top: 4px solid var(--color-tooltip-bg);
 }

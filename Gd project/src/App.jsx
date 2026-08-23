@@ -22,6 +22,22 @@ const nodeTypes = {
 }
 
 // Firestore 문서를 업데이트하는 헬퍼
+// 제목 저장이 이 시간을 넘기면 '지연'으로 본다.
+//
+// 측정으로 정한 값이다 (2026-08-23, Playwright 자동 측정):
+//   현재 회선(연결 유지)     50회 — 중앙값 36ms  / 최대 96ms
+//   Slow 4G(연결 유지)       15회 — 중앙값 335ms / 최대 358ms
+//   Slow 3G(연결 유지)       10회 — 중앙값 279ms / 최대 288ms
+//   Slow 4G 콜드 스타트       3회 — 1324 / 1287 / 1254ms
+//
+// 회선 속도보다 '연결 수립' 여부가 지배적이다. Firestore가 열어둔 롱폴링 연결을
+// 재사용하는 동안에는 Slow 3G에서도 300ms 안팎이고, 페이지를 새로 연 직후
+// 첫 저장만 1.3초대로 튄다. 그래서 실질 최댓값은 콜드 스타트의 약 1.3초.
+//
+// 3초 = 실질 최댓값의 약 2.3배. 거짓 양성(정상인데 지연 표시)이 훨씬 비싸므로
+// 여유를 두되, 진짜 지연을 3초 안에 알린다. 2초는 마진이 부족해 권하지 않는다
+const TITLE_SAVE_PENDING_MS = 3000
+
 // cards/edges 배열을 저장할 때, expandCount/transformCount/writeCount도 함께 갱신
 async function syncToFirestore(canvasId, nextCards, nextEdges) {
   if (!canvasId || canvasId === 'new') return
@@ -51,6 +67,13 @@ function App() {
 
   // 캔버스 제목
   const [canvasTitle, setCanvasTitle] = useState('')
+
+  // 제목 저장 상태: 'idle' | 'pending'(지연) | 'failed'(영구 실패)
+  // 헤더의 40px 슬롯에 무엇을 그릴지 결정한다
+  const [titleSaveState, setTitleSaveState] = useState('idle')
+
+  // 지연 판정 타이머 — 저장이 끝나거나 화면을 떠날 때 정리한다
+  const titlePendingTimerRef = useRef(null)
 
   // Firestore 로드 상태
   const [loadingCanvas, setLoadingCanvas] = useState(true)
@@ -255,6 +278,54 @@ function App() {
     setWriteLayerCardId(null)
   }, [])
 
+  // 캔버스 제목 변경: 화면에 먼저 반영한 뒤 Firestore에 저장하고,
+  // 저장 상태를 헤더 배지로 알린다.
+  //
+  // 제목은 어떤 경우에도 되돌리지 않는다.
+  // 되돌리면 두 가지가 어긋난다 — (1) 지연은 네트워크가 돌아오면 저절로 성공하므로,
+  // 되돌려 두면 나중에 화면과 DB가 반대로 어긋난다. (2) 영구 실패에서도 사용자가 쓴 이름이
+  // 화면에 남아 있어야 다시 시도할 마음이 생긴다. 조용히 되돌리면 무슨 일이 있었는지 알 수 없다.
+  const handleTitleChange = useCallback(async (nextTitle) => {
+    // 값이 그대로면 저장할 것이 없다
+    // (편집 후 고치지 않고 확정했거나, 빈 입력이라 원래 제목으로 되돌아온 경우)
+    if (nextTitle === canvasTitle) return
+
+    // 화면 먼저 갱신 — 저장을 기다리는 동안 입력이 멈춘 것처럼 보이지 않게 한다
+    setCanvasTitle(nextTitle)
+
+    // 유효한 캔버스 id가 없으면 저장할 대상이 없다 (정상 흐름에서는 도달하지 않음)
+    if (!canvasId || canvasId === 'new') return
+
+    // 새 저장을 시작하면 직전 시도의 표시와 타이머를 먼저 지운다.
+    // 실패 배지가 떠 있었다면 여기서 사라지고, 이번 결과로 다시 판정된다
+    clearTimeout(titlePendingTimerRef.current)
+    setTitleSaveState('idle')
+
+    // 임계시간을 넘길 때만 '지연'을 띄운다.
+    // 성공하는 저장도 수백 ms의 대기를 지나므로, 즉시 띄우면 정상 저장마다 깜빡인다
+    titlePendingTimerRef.current = setTimeout(() => {
+      setTitleSaveState('pending')
+    }, TITLE_SAVE_PENDING_MS)
+
+    try {
+      // title 필드만 갱신한다. cards/edges까지 통째로 다시 쓰는 syncToFirestore를 쓰지 않는 이유는
+      // 제목과 무관한 데이터를 함께 덮어써, 그 시점의 상태가 최신이 아닐 경우 되돌릴 위험이 있기 때문이다
+      await updateDoc(doc(db, 'canvases', canvasId), { title: nextTitle })
+      clearTimeout(titlePendingTimerRef.current)
+      setTitleSaveState('idle')
+    } catch (err) {
+      // 여기에 도달하는 것은 권한 오류처럼 기다려도 해결되지 않는 실패뿐이다.
+      // 네트워크 단절은 Firestore가 큐에 넣고 재시도하므로 reject되지 않는다 —
+      // 그 경우는 위 타이머가 '지연'으로 잡는다
+      console.error('캔버스 제목 저장 실패:', err)
+      clearTimeout(titlePendingTimerRef.current)
+      setTitleSaveState('failed')
+    }
+  }, [canvasId, canvasTitle])
+
+  // 화면을 떠날 때 지연 판정 타이머를 정리한다 (언마운트 후 상태 갱신 방지)
+  useEffect(() => () => clearTimeout(titlePendingTimerRef.current), [])
+
   // 카드 생성 직후 새 카드로 선택을 옮긴다 (카드를 직접 클릭한 것과 같은 상태)
   // 왜 부모 선택을 유지하지 않는가:
   //  1) 화면을 건드리지 않고 "무엇이 생겼는지" 알리는 유일한 신호다.
@@ -414,7 +485,11 @@ function App() {
   return (
     <div style={{ width: '100%', height: '100vh', background: 'var(--color-background)' }}>
       {/* 캔버스 상단 고정 헤더 */}
-      <CanvasHeader title={canvasTitle} onTitleChange={setCanvasTitle} />
+      <CanvasHeader
+        title={canvasTitle}
+        onTitleChange={handleTitleChange}
+        saveState={titleSaveState}
+      />
 
       {/* 확장하기 모달 */}
       {activeModal === 'expand' && (

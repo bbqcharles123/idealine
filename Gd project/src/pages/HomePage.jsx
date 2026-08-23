@@ -162,7 +162,7 @@ function HomePage() {
           <div>
             <p className="home-page__workspace-title">작업공간</p>
             <p className="home-page__workspace-meta">
-              {loading ? '불러오는 중…' : `${canvases.length}개 캔버스`}
+              {loading ? '불러오는 중' : `${canvases.length}개 캔버스`}
             </p>
           </div>
           <button

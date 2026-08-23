@@ -128,3 +128,69 @@
 .canvas-header__title-group:hover .canvas-header__edit-btn {
   opacity: 1;
 }
+
+/* ── 저장 상태 배지 ────────────────────────────────────────
+   편집 버튼과 같은 40px 슬롯을 쓴다. 연필과 배지는 상호배타적이라
+   자리를 다투지 않고, 슬롯 크기가 고정이라 헤더 폭도 변하지 않는다.
+   Figma: 7DEMsJmnb2OKxzjjilqbJH / Desktop-375·376 */
+.canvas-header__badge {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-pill);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative; /* Tooltip 위치 기준점 */
+  /* 누를 수 없는 상태 표시다. pointer로 두면 눌러도 아무 일이 없어 혼란스럽다 */
+  cursor: default;
+}
+
+/* 지연: 흰 원 + 회색 스피너. 캔버스 배경(#F1F3F4)에서 떠 보이는 최소한의 처리 */
+.canvas-header__badge--pending {
+  background: var(--color-white);
+}
+
+/* 실패: 빨강을 가득 채운다. 셋 중 유일하게 사용자가 알아야 하는 상태이고
+   가장 드물기 때문에 시각적 예산을 여기에 쓴다 */
+.canvas-header__badge--failed {
+  background: var(--color-error-text);
+}
+
+/* 키보드 포커스 링 — tabIndex로 포커스를 받으므로 위치를 알 수 있어야 한다 */
+.canvas-header__badge:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* 툴팁은 hover·focus에서만 보인다.
+   Tooltip 컴포넌트에 pointer-events: none이 있어 hover를 가로채지 않는다 */
+.canvas-header__badge .tooltip {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.canvas-header__badge:hover .tooltip,
+.canvas-header__badge:focus-visible .tooltip {
+  opacity: 1;
+}
+
+/* 스피너 회전: 지연 상태의 유일한 움직임 신호 */
+@keyframes canvas-header-spin {
+  to { transform: rotate(360deg); }
+}
+
+.canvas-header__badge--pending svg {
+  animation: canvas-header-spin 1s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .canvas-header__badge--pending svg { animation: none; }
+  .canvas-header__badge .tooltip { transition: none; }
+}
+
+/* 실패: 제목 빨간 밑줄. 배지가 제목에서 20px 떨어져 있어
+   밑줄이 없으면 "캔버스 어딘가의 경고"로 읽힐 수 있다 */
+.canvas-header__title-box--failed {
+  border-bottom-color: var(--color-error-text);
+}

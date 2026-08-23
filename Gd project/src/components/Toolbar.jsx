@@ -1,3 +1,4 @@
+import Tooltip from './Tooltip'
 import './Toolbar.css'
 
 // 각 버튼의 설정값: id, 아이콘 경로, 표시 텍스트, 연결된 activeModal 값
@@ -25,9 +26,16 @@ function Toolbar({ activeModal, onExpand, onTransform, onWrite, recTool }) {
         const isRec = !isActive && recTool === modal
         return (
           <div key={id} className="toolbar-btn-wrap">
-            {/* tooltip: rec 상태인 버튼 위에만 표시 */}
+            {/* tooltip: rec 상태인 버튼 위에만 표시.
+                offset={8} — 삼각형 끝이 툴바 상단에서 4px 위에 놓이려면
+                버튼 기준으로 툴바 padding-top 4px 만큼 더 띄워야 한다 (4 + 4). */}
             {isRec && (
-              <div className="toolbar-tooltip">추천하는 도구</div>
+              <Tooltip
+                text="추천하는 도구"
+                placement="top"
+                arrowPosition="center"
+                offset={8}
+              />
             )}
             <button
               className={`toolbar-btn${isActive ? ' active' : ''}${isRec ? ' rec' : ''}`}

@@ -1,0 +1,95 @@
+/* ── tooltip 몸통 ─────────────────────────────────────────────
+   Figma 실측: 높이 20px / radius 4px / 좌우 padding 8px / 10px Regular 흰색
+   폭은 텍스트 길이에 따라 가변이다 (시안 3종이 91·71·42px 로 모두 다름).
+   그래서 Figma 에서 union 으로 합쳐진 도형을 SVG 로 그대로 쓰지 않고,
+   몸통(가변) + 삼각형(고정) 으로 다시 나눠 구현한다. */
+.tooltip {
+  position: absolute;
+  z-index: 10;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 20px;
+  padding: 0 8px;
+  background: var(--color-tooltip-bg);
+  /* radius 스케일(8/16/28)에 4px 이 없다. 시안 근거가 있는 값이지만
+     현재 tooltip 에서만 쓰이므로 스케일을 넓히지 않고 지역값으로 둔다. */
+  border-radius: 4px;
+  white-space: nowrap;
+  font-size: var(--font-size-nano);
+  font-weight: var(--font-weight-regular);
+  color: var(--color-white);
+  line-height: normal;
+  pointer-events: none; /* 툴팁 자체는 이벤트 차단 */
+}
+
+/* ── 삼각형 ───────────────────────────────────────────────────
+   시안에서는 12 × 8px 삼각형의 절반이 몸통에 잠긴 형태(union)이고,
+   실제로 밖에 드러나는 부분은 약 7 × 4px 이다.
+   배경이 반투명(0.72)이라 몸통과 겹치면 겹친 부분만 진해지므로,
+   겹치지 않고 정확히 맞대는 방식으로 노출 형상만 그린다. */
+.tooltip__arrow {
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-left: 3.5px solid transparent;  /* 7px / 2 */
+  border-right: 3.5px solid transparent;
+}
+
+/* ── placement: tooltip 이 트리거의 어느 쪽에 뜨는가 ──────────
+   offset 계산 = 삼각형 높이 4px + 트리거와의 간격(--tooltip-offset) */
+.tooltip--top {
+  bottom: calc(100% + 4px + var(--tooltip-offset));
+}
+
+.tooltip--top .tooltip__arrow {
+  top: 100%; /* 몸통 바로 아래 */
+  border-top: 4px solid var(--color-tooltip-bg);
+}
+
+.tooltip--bottom {
+  top: calc(100% + 4px + var(--tooltip-offset));
+}
+
+.tooltip--bottom .tooltip__arrow {
+  bottom: 100%; /* 몸통 바로 위 */
+  border-bottom: 4px solid var(--color-tooltip-bg);
+}
+
+/* ── arrowPosition: 삼각형이 몸통의 어디에 붙는가 ─────────────
+   두 값 모두 삼각형 끝은 트리거의 수평 중심을 가리킨다.
+   arrowPosition 은 "몸통이 어느 쪽으로 뻗는가"만 정하는 값이다.
+
+   배치는 두 단계로 이뤄진다.
+   1) left: 50%     — 몸통의 '왼쪽 끝'을 트리거 중심에 놓는다
+   2) margin-left   — 삼각형이 몸통 왼쪽에서 떨어진 거리만큼 되민다
+   → 결과적으로 삼각형이 트리거 중심에 온다.
+   되미는 값이 삼각형의 몸통 내 위치와 항상 같아야 하므로,
+   삼각형 위치를 바꾸면 이 값도 함께 바꾼다. */
+
+/* 왼쪽: 몸통이 오른쪽으로 뻗는다. 삼각형 중심은 몸통 왼쪽에서 10px (Figma 실측) */
+.tooltip--arrow-left {
+  left: 50%;
+  margin-left: -10px; /* 삼각형의 몸통 내 위치를 상쇄 */
+}
+
+.tooltip--arrow-left .tooltip__arrow {
+  left: 6.5px; /* 중심 10px - 폭의 절반 3.5px */
+}
+
+/* 가운데: 몸통이 좌우 대칭으로 뻗는다.
+   삼각형이 몸통 중앙에 있으므로 되미는 값이 '폭의 절반' = translateX(-50%) */
+.tooltip--arrow-center {
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.tooltip--arrow-center .tooltip__arrow {
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* 'right' 는 두지 않는다.
+   시안(Section 7)에 없고, 사이드패널 폭 316px 기준으로 가장 긴 평가요소명
+   '사회적 도움성'에서도 툴팁이 x≈87~178 에 놓여 오른쪽으로 138px 남는다.
+   즉 몸통을 왼쪽으로 뻗어야 할 상황이 생기지 않는다. 필요해지면 그때 추가한다. */
