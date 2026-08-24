@@ -1,0 +1,32 @@
+/* ============================================================
+   AutoLayoutButton — 캔버스 우측 상단 '자동 정렬' pill 버튼
+   시안에 정의된 컴포넌트가 아니다. 캔버스 위에 떠 있는 조작 버튼이라는
+   점이 CanvasHeader의 홈 버튼과 같으므로, 그 형태(pill + 흰 배경 +
+   테두리 + 사방 균등 그림자)를 따라 캔버스 전체의 일관성을 맞춘다.
+   ============================================================ */
+
+.auto-layout-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 20px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border);
+  background: var(--color-white);
+  /* 홈 버튼과 동일한 그림자 — 카드 그림자와는 다른 값 */
+  box-shadow: 0 0 15px 0 rgba(0, 0, 0, 0.05);
+  font-family: inherit;
+  font-size: var(--font-size-body1);
+  color: var(--color-heading2-3);
+  cursor: pointer;
+}
+
+.auto-layout-btn:hover {
+  /* 시안에 hover 상태가 없다. 홈 버튼과 같은 구현 임시값이므로 토큰화하지 않는다 */
+  background: #F5F5F5;
+}
+
+.auto-layout-btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}

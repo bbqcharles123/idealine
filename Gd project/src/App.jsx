@@ -11,6 +11,7 @@ import ExpandModal from './components/modals/ExpandModal'
 import TransformModal from './components/modals/TransformModal'
 import SidePanel from './components/SidePanel'
 import CanvasHeader from './components/CanvasHeader'
+import AutoLayoutButton from './components/AutoLayoutButton'
 import { getLayoutedElements } from './utils/layout'
 import { generateDerivedCard, phrasesToHighlights, generateWriteCard } from './ai/deriveCard'
 
@@ -48,8 +49,10 @@ async function syncToFirestore(canvasId, nextCards, nextEdges) {
 
   // React Flow 내부 전용 필드(measured, selected 등)와 함수 props는 Firestore에 저장하지 않음
   // JSON 직렬화/역직렬화로 함수와 undefined 값을 한 번에 제거 (Firestore는 undefined 거부)
-  const serializableCards = nextCards.map(({ id, type, position, data }) =>
-    JSON.parse(JSON.stringify({ id, type, position, data }))
+  // manual: 사용자가 직접 옮긴 카드 표시. 이 목록에 없으면 저장되지 않아
+  //         새로고침 후 Dagre가 그 카드를 다시 덮어쓴다 (B-1-c)
+  const serializableCards = nextCards.map(({ id, type, position, data, manual }) =>
+    JSON.parse(JSON.stringify({ id, type, position, data, manual }))
   )
 
   await updateDoc(doc(db, 'canvases', canvasId), {
@@ -145,18 +148,69 @@ function App() {
   }, [canvasId])
 
   // 모든 노드 크기 측정 완료 시 Dagre 레이아웃 재계산
+  //
+  // 계산은 전부 하되, 적용은 골라서 한다 (B-1-a / 설계 결정 로그 「확정 5」)
+  // Dagre를 끄면 새 카드가 놓일 자리를 직접 계산해야 한다. 카드 높이가 가변이라
+  // 그 규칙을 손으로 쓰는 것은 Dagre 절반을 다시 만드는 일이므로, 계산은 그대로 두고
+  // 결과를 카드에 써넣는 단계에만 조건을 건다.
+  //   - manual 카드(사용자가 직접 옮긴 카드): Dagre 좌표를 무시하고 현재 위치 유지
+  //   - 그 외 카드: Dagre 좌표 + '부모가 원래 자리에서 벗어난 양'
+  // 부모의 이동량을 자손에게 대물림하므로, 부모를 옮기면 그 아래 가지 전체가
+  // 모양을 유지한 채 따라온다. 깊이 제한은 없다
   useEffect(() => {
     if (!nodesInitialized) return
 
     const measuredNodes = getNodes()
     const { nodes: layoutedNodes } = getLayoutedElements(measuredNodes, edges)
+    const dagrePos = new Map(layoutedNodes.map((n) => [n.id, n.position]))
 
-    setCards((prev) =>
-      prev.map((card) => {
-        const layouted = layoutedNodes.find((n) => n.id === card.id)
-        return layouted ? { ...card, position: layouted.position } : card
+    // 자식 → 부모 조회표. 트리 구조이므로 부모는 최대 1개
+    const parentOf = new Map(edges.map((e) => [e.target, e.source]))
+    // 부모를 따라 올라가며 깊이를 센다 (씨드카드 = 0)
+    const depthOf = (id) => {
+      let depth = 0
+      let p = parentOf.get(id)
+      while (p) {
+        depth += 1
+        p = parentOf.get(p)
+      }
+      return depth
+    }
+
+    setCards((prev) => {
+      // 카드별 이동량(실제 좌표 - Dagre 좌표). 자식은 여기서 부모 값을 꺼내 쓴다
+      const offset = new Map()
+      const next = new Map(prev.map((c) => [c.id, c]))
+
+      // 부모의 이동량이 먼저 정해져 있어야 자식이 물려받을 수 있으므로 깊이순으로 처리
+      const ordered = [...prev].sort((x, y) => depthOf(x.id) - depthOf(y.id))
+
+      ordered.forEach((card) => {
+        const auto = dagrePos.get(card.id)
+        const inherited = offset.get(parentOf.get(card.id)) ?? { x: 0, y: 0 }
+
+        // 직접 옮긴 카드: 위치를 건드리지 않고, 얼마나 벗어났는지만 기록해 자손에게 물려준다
+        if (card.manual && auto) {
+          offset.set(card.id, {
+            x: card.position.x - auto.x,
+            y: card.position.y - auto.y,
+          })
+          return
+        }
+
+        // 나머지: 부모의 이동량을 그대로 이어받아 Dagre 좌표를 평행이동
+        // x·y에 같은 값을 더하므로 '부모 아래에 자식' 관계(rankdir: TB)는 그대로 유지된다
+        offset.set(card.id, inherited)
+        if (auto) {
+          next.set(card.id, {
+            ...card,
+            position: { x: auto.x + inherited.x, y: auto.y + inherited.y },
+          })
+        }
       })
-    )
+
+      return prev.map((c) => next.get(c.id))
+    })
 
     // 캔버스 진입 직후 첫 레이아웃일 때만 화면을 카드에 맞춘다
     // ReactFlow의 fitView prop은 Dagre 재배치 이전 좌표로 계산되어 카드가 화면 밖으로 밀리므로,
@@ -458,6 +512,51 @@ function App() {
     setCards((prev) => applyNodeChanges(changes, prev))
   }, [])
 
+  // 카드 드래그 종료: 옮겨진 좌표를 Firestore에 저장하고 manual 표시를 붙인다 (B-1-c)
+  // 드래그 '중'에는 저장하지 않는다. 매 프레임 쓰기가 발생해 요금과 지연이 커진다.
+  // 세 번째 인자 draggedNodes는 여러 카드를 함께 옮겼을 때의 전체 목록이다.
+  // 한 장만 옮겼을 때도 배열로 들어오지만, 값이 없는 경우를 대비해 node로 대체한다.
+  const handleNodeDragStop = useCallback((_, node, draggedNodes) => {
+    const moved = new Map(
+      (draggedNodes?.length ? draggedNodes : [node]).map((n) => [n.id, n.position])
+    )
+    const next = cards.map((card) =>
+      moved.has(card.id)
+        ? { ...card, position: moved.get(card.id), manual: true }
+        : card
+    )
+    setCards(next)
+    // 저장 실패는 콘솔로만 알린다. 제목과 달리 좌표는 화면에 이미 반영되어 있어
+    // 배지를 띄우면 캔버스 조작 중에 시선을 뺏는다 (실패 시 새로고침하면 이전 위치로 복귀)
+    syncToFirestore(canvasId, next, edges).catch((err) =>
+      console.error('카드 위치 저장 실패:', err)
+    )
+  }, [cards, edges, canvasId])
+
+  // 자동 정렬: 사용자가 옮겨둔 위치를 모두 버리고 Dagre 기본 배치로 되돌린다 (B-1-b)
+  // manual 표시를 전부 지운 뒤 Dagre 좌표를 그대로 적용하므로, 대물림 계산 없이
+  // 캔버스 진입 직후와 동일한 트리 모양이 된다
+  const handleAutoLayout = useCallback(() => {
+    const measuredNodes = getNodes()
+    const { nodes: layoutedNodes } = getLayoutedElements(measuredNodes, edges)
+    const dagrePos = new Map(layoutedNodes.map((n) => [n.id, n.position]))
+
+    const next = cards.map((card) => {
+      const auto = dagrePos.get(card.id)
+      // manual: undefined — Firestore 저장 시 JSON 직렬화가 undefined 필드를 지운다
+      return { ...card, position: auto ?? card.position, manual: undefined }
+    })
+
+    setCards(next)
+    syncToFirestore(canvasId, next, edges).catch((err) =>
+      console.error('자동 정렬 저장 실패:', err)
+    )
+
+    // 정렬된 좌표가 화면에 반영된 다음 프레임에 화면을 맞춘다
+    // (카드를 멀리 옮겨 길을 잃은 상태에서도 전체 트리로 돌아올 수 있게 한다)
+    requestAnimationFrame(() => fitView({ padding: 0.2, maxZoom: 1, duration: 300 }))
+  }, [cards, edges, canvasId, getNodes, fitView])
+
   // 렌더링 직전 카드 배열에 동적 상태값 주입
   const nodes = useMemo(
     () =>
@@ -536,6 +635,7 @@ function App() {
         // 기본값(0.5)이면 카드가 많아졌을 때 최대로 축소해도 전체 트리가 화면에 안 담김
         minZoom={0.05}
         onNodesChange={handleNodesChange}
+        onNodeDragStop={handleNodeDragStop}
         onNodeClick={handleNodeClick}
         onPaneClick={handlePaneClick}
         defaultEdgeOptions={{
@@ -549,6 +649,13 @@ function App() {
         // 카드가 없는 새 캔버스는 맞출 대상이 없으므로 바로 보여준다
         style={{ opacity: isViewportReady || cards.length === 0 ? 1 : 0 }}
       >
+        {/* 자동 정렬 — 카드가 있을 때만. 헤더(top 24 / left 28)와 같은 여백으로 우측 상단에 둔다 */}
+        {cards.length > 0 && (
+          <Panel position="top-right" style={{ margin: '24px 28px 0 0' }}>
+            <AutoLayoutButton onClick={handleAutoLayout} />
+          </Panel>
+        )}
+
         {(selectedCardId || writeLayerCardId) && (
           <Panel position="bottom-center" style={{ marginBottom: '20px' }}>
             <Toolbar
