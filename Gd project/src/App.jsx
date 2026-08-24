@@ -154,9 +154,12 @@ function App() {
   // 그 규칙을 손으로 쓰는 것은 Dagre 절반을 다시 만드는 일이므로, 계산은 그대로 두고
   // 결과를 카드에 써넣는 단계에만 조건을 건다.
   //   - manual 카드(사용자가 직접 옮긴 카드): Dagre 좌표를 무시하고 현재 위치 유지
-  //   - 그 외 카드: Dagre 좌표 + '부모가 원래 자리에서 벗어난 양'
-  // 부모의 이동량을 자손에게 대물림하므로, 부모를 옮기면 그 아래 가지 전체가
-  // 모양을 유지한 채 따라온다. 깊이 제한은 없다
+  //   - 그 외 카드: Dagre 좌표를 그대로 적용
+  //
+  // 자손은 따라오지 않는다. 카드를 옮기는 목적은 '보기 편하게 간격을 조정하는 것'이지
+  // 가지 전체를 옮기는 것이 아니므로, 건드리지 않은 카드는 제자리에 두는 편이
+  // 예측 가능하다. Dagre는 옮긴 카드가 원래 자리에 있다고 계속 가정하기 때문에,
+  // 그 자리는 빈 채로 남고 엣지가 옮긴 카드까지 늘어난다 — 의도된 동작이다
   useEffect(() => {
     if (!nodesInitialized) return
 
@@ -164,53 +167,15 @@ function App() {
     const { nodes: layoutedNodes } = getLayoutedElements(measuredNodes, edges)
     const dagrePos = new Map(layoutedNodes.map((n) => [n.id, n.position]))
 
-    // 자식 → 부모 조회표. 트리 구조이므로 부모는 최대 1개
-    const parentOf = new Map(edges.map((e) => [e.target, e.source]))
-    // 부모를 따라 올라가며 깊이를 센다 (씨드카드 = 0)
-    const depthOf = (id) => {
-      let depth = 0
-      let p = parentOf.get(id)
-      while (p) {
-        depth += 1
-        p = parentOf.get(p)
-      }
-      return depth
-    }
+    setCards((prev) =>
+      prev.map((card) => {
+        // 직접 옮긴 카드는 어떤 경우에도 움직이지 않는다
+        if (card.manual) return card
 
-    setCards((prev) => {
-      // 카드별 이동량(실제 좌표 - Dagre 좌표). 자식은 여기서 부모 값을 꺼내 쓴다
-      const offset = new Map()
-      const next = new Map(prev.map((c) => [c.id, c]))
-
-      // 부모의 이동량이 먼저 정해져 있어야 자식이 물려받을 수 있으므로 깊이순으로 처리
-      const ordered = [...prev].sort((x, y) => depthOf(x.id) - depthOf(y.id))
-
-      ordered.forEach((card) => {
         const auto = dagrePos.get(card.id)
-        const inherited = offset.get(parentOf.get(card.id)) ?? { x: 0, y: 0 }
-
-        // 직접 옮긴 카드: 위치를 건드리지 않고, 얼마나 벗어났는지만 기록해 자손에게 물려준다
-        if (card.manual && auto) {
-          offset.set(card.id, {
-            x: card.position.x - auto.x,
-            y: card.position.y - auto.y,
-          })
-          return
-        }
-
-        // 나머지: 부모의 이동량을 그대로 이어받아 Dagre 좌표를 평행이동
-        // x·y에 같은 값을 더하므로 '부모 아래에 자식' 관계(rankdir: TB)는 그대로 유지된다
-        offset.set(card.id, inherited)
-        if (auto) {
-          next.set(card.id, {
-            ...card,
-            position: { x: auto.x + inherited.x, y: auto.y + inherited.y },
-          })
-        }
+        return auto ? { ...card, position: auto } : card
       })
-
-      return prev.map((c) => next.get(c.id))
-    })
+    )
 
     // 캔버스 진입 직후 첫 레이아웃일 때만 화면을 카드에 맞춘다
     // ReactFlow의 fitView prop은 Dagre 재배치 이전 좌표로 계산되어 카드가 화면 밖으로 밀리므로,
