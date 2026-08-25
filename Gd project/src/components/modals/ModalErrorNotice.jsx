@@ -12,7 +12,7 @@ import './ModalErrorNotice.css'
 //   'bar'   — 질문 텍스트 박스 자리 (가로 한 줄)
 //   'panel' — 선택지 목록 자리 (세로 중앙 정렬된 넓은 영역)
 // message: 무엇을 만들지 못했는지 알리는 문구 (예: '질문을 만들지 못했어요')
-// onRetry: '다시 생성' 클릭 시 실행할 재시도 함수 (모달의 fetchQuestion·fetchExamples)
+// onRetry: '다시 생성하기' 클릭 시 실행할 재시도 함수 (모달의 fetchQuestion·fetchExamples)
 
 // 경고 아이콘 크기는 형태별로 다르다 (버튼 안 아이콘은 18px로 공통이라 상수로 두지 않는다)
 const ALERT_ICON_SIZE = { bar: 20, panel: 24 }
@@ -38,7 +38,7 @@ function ModalErrorNotice({ variant = 'bar', message, onRetry }) {
       <button className="modal-error-notice__retry" onClick={onRetry}>
         {/* 경고 아이콘과 같은 화면상 두께(1.5px). size가 달라도 absoluteStrokeWidth로 맞춰진다 */}
         <RotateCw size={18} strokeWidth={1.5} absoluteStrokeWidth />
-        <span>다시 생성</span>
+        <span>다시 생성하기</span>
       </button>
     </div>
   )

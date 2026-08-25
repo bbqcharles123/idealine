@@ -200,9 +200,9 @@ function SidePanel({ card, parentCard, tab, onTabChange, onClose }) {
         {tab === 'ux' && uxData && (
           <div className="panel-ux">
 
-            {/* 종합요약 */}
+            {/* 종합 요약 */}
             <div className="panel-ux__section panel-ux__section--summary">
-              <p className="panel-label">종합요약</p>
+              <p className="panel-label">종합 요약</p>
               <div className="panel-ux__summary-box">
                 <p className="panel-ux__summary-text">{uxData.summary}</p>
               </div>

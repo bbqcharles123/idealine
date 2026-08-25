@@ -87,7 +87,10 @@ function WriteModal({ onClose, onSubmit }) {
           <div className="write-modal-header-row">
             <div className="write-modal-header">
               <h2 className="write-modal-title">직접작성</h2>
-              <p className="modal-subtitle">내 생각을 직접 입력해 새로운 아이디어 카드를 만듭니다</p>
+              {/* '내 생각을'에서 '내'를 뺀 이유: 부제는 앱이 사용자에게 설명하는 문장이라 화자가 앱인데,
+                  '내'는 사용자 시점이라 화자가 뒤섞인다. 빼면 확장·변형 부제와 구조도 완전히 같아진다
+                  (셋 다 주어 없이 목적어로 시작 → "생각을 / 아이디어의 구조를 / 아이디어의 요소를") */}
+              <p className="modal-subtitle">생각을 직접 입력해 새로운 아이디어 카드를 만듭니다</p>
             </div>
             <button className="write-close-btn" onClick={handleCloseOrCancel}>
               <img src="/close_modal.svg" width={26} height={26} alt="닫기" />
@@ -118,10 +121,21 @@ function WriteModal({ onClose, onSubmit }) {
               <div className="write-modal-field write-modal-field--desc">
                 <label className="modal-label">아이디어 설명</label>
                 <div className="write-modal-desc-body">
-                  <p className="modal-sublabel">누구를 위해, 어떤 불편함을, 어떻게 해결하는지 작성해주세요</p>
+                  {/* 서브라벨: 무엇을 쓸지 알려주는 안내. 확장·변형에서 AI 질문이 놓이는 자리를
+                      직접작성에서는 이 고정 질문이 대신한다(그 두 모달과 역할이 같다).
+                      의문형인 이유: 아래 placeholder가 '…작성해주세요'로 끝나므로 명령형을 쓰면
+                      같은 어미가 두 줄 연속으로 겹친다. 또 지시문은 할 일을 명령하지만 질문은
+                      생각을 유도하므로, 백지에서 시작하는 이 화면의 목적에 더 맞는다.
+                      네 항목(대상·불편함·해결·효익)을 조사와 어순까지 보여줘 따라 쓰면 문장이 된다 */}
+                  <p className="modal-sublabel">누구를 위해, 어떤 불편함을, 어떻게 해결해서 무엇이 좋아지나요?</p>
+                  {/* placeholder는 칸의 정체만 말한다. 이전에는 루틴 앱 예시 문장이 들어 있었는데,
+                      주제와 무관하게 고정돼 어떤 캔버스에서 열어도 같은 예시가 떴고, 3줄을 채워
+                      이미 입력된 칸처럼 보였다. 안내는 사라지지 않는 서브라벨이 전담하고,
+                      여기는 ExpandModal·TransformModal의 '질문에 답변을 작성해주세요'와 같은
+                      골격(X을 작성해주세요)으로 맞춘다 */}
                   <textarea
                     className="modal-textarea"
-                    placeholder="루틴 관리가 어려운 직장인을 위해, 매일 같은 알림을 무시하게 되는 문제를 해결한다. 앱을 열면 지금 상태에 맞는 루틴이 바로 보여 알림 없이도 루틴을 유지할 수 있다."
+                    placeholder="아이디어 설명을 작성해주세요"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     disabled={isSubmitting}

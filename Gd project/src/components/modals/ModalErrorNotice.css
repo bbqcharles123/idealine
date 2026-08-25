@@ -15,7 +15,9 @@
    버튼(26px)이 시안의 상하 패딩 16px보다 커서 패딩으로는 같은 높이가 나오지 않기 때문.
    높이를 고정하고 align-items: center로 세로 가운데 정렬하면 시안과 동일한 결과가 된다. */
 .modal-error-notice--bar {
-  gap: 12px;
+  /* 문구 묶음 ↔ 버튼 사이 간격. 문구 묶음이 flex:1이라 버튼은 어차피 오른쪽 끝에 붙으므로
+     이 값은 "문구 묶음이 가질 수 있는 최대 폭"만 결정한다 (문구가 길어질 때만 차이가 난다) */
+  gap: 8px;
   height: 51px;
   padding: 0 16px;
 }
@@ -64,7 +66,7 @@
   line-height: 24px;
 }
 
-/* 다시 생성 버튼: 오류 색을 배경으로 채운 강조 버튼 (형태별로 패딩만 다르다) */
+/* 다시 생성하기 버튼: 오류 색을 배경으로 채운 강조 버튼 (형태별로 패딩만 다르다) */
 .modal-error-notice__retry {
   display: flex;
   align-items: center;

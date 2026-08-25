@@ -31,7 +31,7 @@ function Toolbar({ activeModal, onExpand, onTransform, onWrite, recTool }) {
                 버튼 기준으로 툴바 padding-top 4px 만큼 더 띄워야 한다 (4 + 4). */}
             {isRec && (
               <Tooltip
-                text="추천하는 도구"
+                text="추천 도구"
                 placement="top"
                 arrowPosition="center"
                 offset={8}

@@ -11,6 +11,18 @@ body {
   font-family: 'Pretendard', system-ui, -apple-system, sans-serif;
 }
 
+/* 폼 요소는 브라우저 기본 스타일시트가 자체 font를 지정하기 때문에
+   위 body의 Pretendard를 상속하지 않는다. 그대로 두면 버튼 라벨만 Arial로 그려지고
+   (Arial에는 한글이 없어 한글은 OS 대체 폰트로 떨어진다) 시안과 어긋난다.
+   컴포넌트마다 font-family를 따로 박는 대신 여기서 한 번에 상속으로 되돌린다.
+   font-size는 컴포넌트가 각자 지정하므로 건드리지 않는다. */
+button,
+input,
+textarea,
+select {
+  font-family: inherit;
+}
+
 #root {
   width: 100%;
   height: 100vh;

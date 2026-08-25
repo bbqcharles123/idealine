@@ -45,7 +45,7 @@ function GenerationProgress({ steps = DEFAULT_STEPS, stepStates, allDone, onCanc
           // 정보 안내용 — 클릭 대상이 아니므로 버튼이 아니라 div로 마크업하고 pointer-events를 끈다
           <div className="generation-done-badge" role="status" aria-live="polite">
             <Check size={20} strokeWidth={2.5} absoluteStrokeWidth />
-            <span>생성완료</span>
+            <span>생성 완료</span>
           </div>
         ) : (
           <ModalButton variant="cancel" width={209} onClick={onCancel}>

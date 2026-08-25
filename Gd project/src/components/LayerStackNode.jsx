@@ -41,7 +41,7 @@ const TOOL_CONFIG = {
   expand: {
     textColor: 'var(--color-expand-text)',
     label: '확장하기',
-    desc: '이미 있는 요소를 하나 더 추가하되 조금 다르게 변형해보세요. 같은 듯 다른 요소가 새로운 가능성을 열어줍니다.',
+    desc: '기존 요소를 없애거나 합치거나 뒤집어보세요. 구조와 관계를 재배치하는 과정에서 새로운 아이디어를 발견할 수 있습니다.',
   },
   transform: {
     textColor: 'var(--color-transform-text)',

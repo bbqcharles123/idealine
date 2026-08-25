@@ -394,7 +394,7 @@ function App() {
     setCards(nextCards)
     setEdges(nextEdges)
     syncToFirestore(canvasId, nextCards, nextEdges)
-    // 카드는 이미 추가됐지만, 대기 UI가 "생성완료" 배지를 스치듯 보여줄 시간을 준 뒤에 모달을 닫는다
+    // 카드는 이미 추가됐지만, 대기 UI가 "생성 완료" 배지를 스치듯 보여줄 시간을 준 뒤에 모달을 닫는다
     // (배지 없이 곧바로 닫히면 화면이 갑자기 바뀌는 느낌을 준다)
     onProgress?.('cardAdded')
     await new Promise((resolve) => setTimeout(resolve, 1300))
@@ -444,7 +444,7 @@ function App() {
     setCards(nextCards)
     setEdges(nextEdges)
     syncToFirestore(canvasId, nextCards, nextEdges)
-    // 카드는 이미 추가됐지만, 대기 UI가 "생성완료" 배지를 스치듯 보여줄 시간을 준 뒤에 모달을 닫는다
+    // 카드는 이미 추가됐지만, 대기 UI가 "생성 완료" 배지를 스치듯 보여줄 시간을 준 뒤에 모달을 닫는다
     // (배지 없이 곧바로 닫히면 화면이 갑자기 바뀌는 느낌을 준다)
     onProgress?.('cardAdded')
     await new Promise((resolve) => setTimeout(resolve, 1300))
