@@ -73,3 +73,22 @@
 .toolbar-btn.rec .toolbar-btn-label {
   color: var(--color-write-text);
 }
+
+/* 모달이 열려 있는 동안(툴바 안에 .active가 있을 때) 나머지 버튼은
+   오버레이(.modal-overlay — inset: 0 · z-index: 1000)에 막혀 실제로 누를 수 없다.
+   지금은 평소와 똑같이 진해서 눌러도 되는 것처럼 보이므로, 그 사실을 색으로 드러낸다.
+   크기·굵기는 바꾸지 않는다 — 크기를 키우면 24px 고정 stroke 아이콘과 무게가 어긋난다.
+
+   hover·cursor 규칙은 두지 않는다. 오버레이가 화면 전체를 덮고 있어
+   마우스가 이 버튼에 닿지 않으므로 :hover 자체가 발생하지 않는다. */
+.toolbar:has(.toolbar-btn.active) .toolbar-btn:not(.active) .toolbar-btn-label {
+  color: var(--color-disabled);
+}
+
+/* 아이콘은 <img>라 color가 닿지 않으므로 .active의 흰색 변환과 같은 방식을 쓴다.
+   brightness(0)으로 검정을 만든 뒤 invert(p)를 걸면 결과가 p × 255이므로
+   62% = 158 = #9E9E9E로 --color-disabled와 같은 값이 된다.
+   토큰값을 바꾸면 이 62%도 함께 고쳐야 한다. */
+.toolbar:has(.toolbar-btn.active) .toolbar-btn:not(.active) img {
+  filter: brightness(0) invert(62%);
+}

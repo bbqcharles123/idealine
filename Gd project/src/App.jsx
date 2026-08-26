@@ -568,7 +568,13 @@ function App() {
               onTransform={() => setActiveModal('transform')}
               onWrite={() => setActiveModal('write')}
               recTool={
-                selectedCardId === null || selectedCardId === writeLayerCardId
+                // 추천 도구는 "어떤 도구를 고를까"를 돕는 정보이므로,
+                // 모달이 열려 있는 동안(= 이미 도구를 고른 뒤)에는 숨긴다.
+                // writeRecTool 자체를 지우지 않고 조건만 두는 이유는,
+                // 모달을 취소하면 도구 레이어가 그대로라 추천이 다시 보여야 하기 때문이다.
+                // (모달을 완료한 경우는 selectNewCard가 writeRecTool을 null로 만든다)
+                activeModal === null &&
+                (selectedCardId === null || selectedCardId === writeLayerCardId)
                   ? writeRecTool
                   : null
               }
