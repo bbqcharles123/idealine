@@ -1,0 +1,95 @@
+/* ============================================================
+   CanvasControls — 캔버스 좌측 하단 조정 컨트롤 (확대 · 축소 · 전체 보기)
+   Figma 스펙: 캡슐 48px 폭 / 버튼 40×40 / 아이콘 24px / 두 캡슐 사이 gap 20px
+
+   화면 위치(left 28px, bottom 24px)는 App.jsx의
+   <Panel position="bottom-left"> 인라인 margin이 잡는다.
+   캔버스 헤더가 top 24 · left 28이므로 좌상단과 좌하단이 대각 대칭이 된다.
+   ============================================================ */
+
+/* 두 캡슐을 감싸는 래퍼.
+   gap 20px이 줌(연속 조정)과 전체 보기(단발 복구)를 나누는 유일한 수단이다 —
+   구분선을 쓰지 않고 거리로 묶음을 표현한다.
+
+   그리고 이 래퍼가 두 캡슐 사이 28px 영역까지 클릭을 받아내므로,
+   그 자리를 눌러도 캔버스 빈 공간 클릭(onPaneClick)으로 새지 않는다.
+   → 두 캡슐을 각각 따로 배치하지 말 것. 래퍼가 사라지면 그 띠가 진짜 캔버스가 되고,
+     잘못 누르면 카드 선택과 사이드패널이 함께 풀린다 */
+.canvas-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 48px;
+}
+
+/* 캡슐: 캔버스 위에 떠 있는 조작 요소이므로
+   홈 버튼·도구툴바와 같은 pill 어휘(흰 면 + pill radius + 그림자)를 쓴다 */
+.canvas-controls__group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px;
+  background: var(--color-white);
+  border-radius: var(--radius-pill, 999px);
+  /* 도구툴바와 같은 elevation (Toolbar.css와 같은 값).
+     그림자는 아직 체계가 없어 의도적으로 토큰화하지 않은 영역이라 지역값으로 둔다 */
+  box-shadow: 0 8px 40px 0 rgba(0, 0, 0, 0.12);
+  box-sizing: border-box;
+}
+
+/* 버튼 + 툴팁 한 벌을 감싸는 wrapper.
+   ① Tooltip 이 position: absolute 로 잡을 기준점
+   ② 비활성 <button> 은 브라우저가 마우스 이벤트를 발생시키지 않으므로,
+      hover 를 버튼이 아니라 여기서 받아야 비활성일 때도 툴팁이 뜬다
+   display: flex 로 두어 캡슐 안에서 버튼이 40 × 40 을 그대로 유지한다 */
+.canvas-controls__btn-wrap {
+  position: relative;
+  display: flex;
+}
+
+/* 툴팁은 hover 에서만 보인다 — CanvasHeader 저장 배지와 같은 방식.
+   Tooltip 컴포넌트에 pointer-events: none 이 있어 hover 를 가로채지 않는다 */
+.canvas-controls__btn-wrap .tooltip {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.canvas-controls__btn-wrap:hover .tooltip {
+  opacity: 1;
+}
+
+/* 버튼: 아이콘 24px + padding 8px = 40 × 40 */
+.canvas-controls__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  border: none;
+  border-radius: var(--radius-pill, 999px);
+  background-color: var(--color-white);
+  cursor: pointer;
+  /* lucide 아이콘은 stroke에 currentColor를 쓰므로 색은 여기서만 정한다.
+     #1f1f1f는 홈·ⓘ 아이콘(Material Symbols 내보내기 색)과 같은 값이다.
+     토큰에 없는 값이지만, 캔버스 위에 떠 있는 아이콘끼리 맞추는 것이 근거다 */
+  color: #1f1f1f;
+  transition: background-color 120ms ease;
+}
+
+.canvas-controls__btn:hover:not(:disabled) {
+  /* 시안에 hover 상태가 정의되어 있지 않다. 구현 임시값이므로 토큰화하지 않는다.
+     도구툴바 버튼과 같은 값 — 흰 캡슐 안의 흰 버튼이라 이만큼은 진해야
+     어느 버튼 위에 있는지 읽힌다 */
+  background-color: #E4E4E4;
+}
+
+/* 줌 한계(minZoom · maxZoom) 도달.
+   누를 수 없는데 hover에 반응하면 "눌린다"고 거짓말하는 셈이므로
+   배경도 커서도 바뀌지 않는다 */
+.canvas-controls__btn:disabled {
+  color: var(--color-disabled);
+  cursor: default;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .canvas-controls__btn-wrap .tooltip { transition: none; }
+}

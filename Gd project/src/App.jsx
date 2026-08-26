@@ -11,6 +11,7 @@ import ExpandModal from './components/modals/ExpandModal'
 import TransformModal from './components/modals/TransformModal'
 import SidePanel from './components/SidePanel'
 import CanvasHeader from './components/CanvasHeader'
+import CanvasControls from './components/CanvasControls'
 import { getLayoutedElements } from './utils/layout'
 import { generateDerivedCard, phrasesToHighlights, generateWriteCard } from './ai/deriveCard'
 
@@ -20,6 +21,13 @@ const nodeTypes = {
   seed: SeedCard,
   layerstack: LayerStackNode,
 }
+
+// 화면을 카드 전체에 맞출 때 쓰는 옵션.
+// 캔버스 진입 시 첫 fitView와 조정 컨트롤의 '전체 보기' 버튼이 같은 값을 공유해야
+// "전체 보기 = 처음 들어왔을 때 그 화면"으로 동작이 일치한다.
+// (여기의 maxZoom은 캔버스 줌 상한이 아니라 '맞출 때 이보다 더 확대하지는 말라'는 뜻이다 —
+//  카드가 하나뿐일 때 화면이 200%로 튀는 것을 막는다)
+const FIT_VIEW_OPTIONS = { padding: 0.2, maxZoom: 1 }
 
 // Firestore 문서를 업데이트하는 헬퍼
 // 제목 저장이 이 시간을 넘기면 '지연'으로 본다.
@@ -167,7 +175,7 @@ function App() {
     if (!hasFitViewRef.current) {
       hasFitViewRef.current = true
       requestAnimationFrame(async () => {
-        await fitView({ padding: 0.2, maxZoom: 1 })
+        await fitView(FIT_VIEW_OPTIONS)
         requestAnimationFrame(() => setIsViewportReady(true))
       })
     }
@@ -535,6 +543,9 @@ function App() {
         deleteKeyCode={null}
         // 기본값(0.5)이면 카드가 많아졌을 때 최대로 축소해도 전체 트리가 화면에 안 담김
         minZoom={0.05}
+        // React Flow 기본값과 같은 값이지만 명시한다 — 조정 컨트롤이 이 값을 읽어
+        // 상한에서 확대 버튼을 잠그므로, 상한이 UI에 드러나는 값이 되었다
+        maxZoom={2}
         onNodesChange={handleNodesChange}
         onNodeClick={handleNodeClick}
         onPaneClick={handlePaneClick}
@@ -564,6 +575,13 @@ function App() {
             />
           </Panel>
         )}
+
+        {/* 캔버스 조정 컨트롤: 카드 선택 여부와 무관하게 상시 표시한다.
+            margin은 .react-flow__panel의 기본 15px을 덮어쓴 값 —
+            헤더(top 24 · left 28)와 좌측 세로축에서 대각 대칭이 된다 */}
+        <Panel position="bottom-left" style={{ marginLeft: '28px', marginBottom: '24px' }}>
+          <CanvasControls fitViewOptions={FIT_VIEW_OPTIONS} />
+        </Panel>
       </ReactFlow>
     </div>
   )
