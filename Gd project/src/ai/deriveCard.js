@@ -77,6 +77,16 @@ export async function generateToolExamples(cardDescription, direction) {
   // 방향성 프레임워크 설명 (예시는 확장하기에서만 사용하므로 'expand' 고정)
   const reasoning = getDirectionReasoning('expand', direction.label)
 
+  // 도구별 정의 목록: 방향성 설명(reasoning)은 "이 도구들이 왜 한 묶음인지"만 알려주므로,
+  // 도구끼리 서로 무엇이 다른지는 각 도구의 정의(TOOL_LAYER_DESC)를 함께 줘야 한다.
+  // 정의가 없는 도구명은 이름만 남긴다 — 데이터가 어긋나도 예시 생성 자체는 막히지 않도록.
+  const toolList = direction.toolNames
+    .map((name) => {
+      const desc = TOOL_LAYER_DESC.expand?.[name] ?? ''
+      return desc ? `- ${name}: ${desc}` : `- ${name}`
+    })
+    .join('\n')
+
   const system = `당신은 아이디어 발산 도구의 AI 어시스턴트입니다.
 사용자가 선택한 발전 방향성에 속한 각 사고도구를, 주어진 아이디어에 실제로 적용하면 어떤 결과가 나올지 구체적인 예시를 작성합니다.
 - 입력으로 주어진 도구만, 입력된 도구명 그대로 사용하세요.
@@ -92,7 +102,7 @@ ${direction.label}
 ${reasoning}
 
 [이 방향성의 도구 목록]
-${direction.toolNames.join(', ')}
+${toolList}
 
 각 도구별로 이 아이디어에 적용한 예시를 작성해주세요.`
 
