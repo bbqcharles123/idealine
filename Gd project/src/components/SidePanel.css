@@ -1,11 +1,35 @@
-/* 패널 전체: 우측 하단 고정, 캔버스 위에 오버레이 (Figma: w372 h906, right12, bottom20) */
+/* 패널 전체: 캔버스 헤더 아래에 고정, 캔버스 위에 오버레이
+   (Figma: w372, right12, bottom20 / 세로 1024 프레임에서 h904)
+
+   ── 왜 height가 아니라 top·bottom·max-height 세 개인가 ──
+   예전에는 height: 904px(시안에서 잰 값) + max-height: calc(100vh - 40px)였다.
+   max-height는 상한선이라 화면이 944px보다 짧을 때만 작동했고, 그보다 큰 화면에서는
+   904px 고정값이 그대로 드러났다. bottom: 20px에 매달린 채 높이만 904라서
+   세로 1440 화면에서는 패널 top이 516px까지 내려가 헤더와 뚝 떨어져 보였다.
+
+   시안의 의도는 "위아래 20px 꽉 채우기"가 아니라 "헤더 아래 20px에서 시작"이다.
+   세로 1024에서 현재 값을 역산하면 top = 1024 − 20 − 904 = 100이 나오는데,
+   이게 정확히 헤더 하단 + 20이다 (헤더 top 24 + 홈버튼 56 = 80, 80 + 20 = 100).
+   즉 904는 그렇게 배치한 결과값이지 규칙이 아니었다. 그래서 의도를 규칙으로 옮긴다.
+
+   ── 세 값이 함께 만드는 동작 ──
+   top·bottom이 둘 다 있고 height가 auto면 브라우저가 그 사이를 높이로 삼는다.
+   여기에 max-height가 걸리면 값이 과잉 지정(over-constrained)되어 bottom이 무시되고
+   top이 이긴다. 덕분에 한 규칙으로 세 구간이 모두 처리된다:
+     세로 709(노트북) → top 100, 높이 589, 아래 20   (눌려서 들어감)
+     세로 1024(시안)  → top 100, 높이 904, 아래 20   (시안과 완전히 동일)
+     세로 1440        → top 100, 높이 904(상한), 아래 516 (헤더 아래에 그대로 붙음)
+
+   max-height 904px은 새로 만든 숫자가 아니라 기존 height 값을 상한으로 옮긴 것이다.
+   떠 있는 카드(라운드 16 + 그림자 + 사방 여백)라서 붙박이 레일과 달리
+   화면 높이만큼 무한정 늘어나면 안 되기 때문에 상한이 필요하다. */
 .side-panel {
   position: fixed;
   right: 12px;
+  top: 100px;
   bottom: 20px;
   width: 372px;
-  height: 904px;
-  max-height: calc(100vh - 40px); /* top도 20px이 되도록: 100vh - 20(bottom) - (100vh-40) = 20px */
+  max-height: 904px;
   background: var(--color-white);
   border-radius: var(--radius-container);
   box-shadow: 0 4px 18px 1px rgba(0, 0, 0, 0.06);

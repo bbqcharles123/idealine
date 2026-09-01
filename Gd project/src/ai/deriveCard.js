@@ -7,7 +7,7 @@ import { mockToolExamples, mockQuestion, mockDerivedContent, mockWriteContent } 
 // UX 평가 전용 호출 (seedCard.js와 공유하는 공통 모듈)
 import { generateUxEval } from './uxEval.js'
 // 공통 OpenAI 클라이언트
-import { callOpenAI, USE_MOCK, TEMP_CREATIVE, TEMP_ANALYTIC } from './openaiClient.js'
+import { callOpenAI, USE_MOCK, TEMP_CREATIVE, TEMP_ANALYTIC, logTransform } from './openaiClient.js'
 
 // 도구 유형별 한글 라벨 (프롬프트에 사용)
 const TOOL_TYPE_LABEL = { expand: '확장하기', transform: '변형하기' }
@@ -63,6 +63,17 @@ function normalizeExamples(examples, toolNames) {
   }))
 
   const missing = ordered.filter((e) => e.example === '').map((e) => e.name)
+
+  // 스키마는 배열 길이를 강제하지 못해 '부분 누락'이 실제로 발생한다.
+  // 그때 callOpenAI는 통신 성공이므로 [AI ◀ 응답]을 성공으로 남기고, 실패 판정은 여기서 난다.
+  // 이 기록이 없으면 "로그는 성공인데 화면은 오류"인 모순이 생겨 원인을 짚을 수 없다.
+  logTransform(
+    'tool_examples',
+    missing.length > 0
+      ? 'normalizeExamples: 누락 ' + missing.length + '개 → 호출 실패와 동일하게 처리'
+      : 'normalizeExamples: 도구 ' + toolNames.length + '개 전부 수신',
+    { 요청한_도구: toolNames, 누락: missing },
+  )
   if (missing.length > 0) {
     throw new Error(
       `도구 예시 누락 (${toolNames.length}개 중 ${toolNames.length - missing.length}개 수신): ${missing.join(', ')}`
@@ -348,19 +359,33 @@ function findIgnoringWhitespace(answer, phrase) {
 // - 그래도 못 찾은 문구는 건너뜀, 겹치는 구간은 제거 (QAContent는 비중첩 구간 가정)
 export function phrasesToHighlights(answer, phrases) {
   const found = []
+
+  // 문구별 매칭 경로 기록 (후처리 로그용)
+  //   exact    답변에 그대로 있어 찾음
+  //   loose    공백을 무시하고 재탐색해 찾음 (AI가 띄어쓰기를 바꿔 쓴 경우)
+  //   notFound 못 찾아 버림 (AI가 답변에 없는 표현을 만들어낸 경우)
+  //   overlap  찾았으나 앞 구간과 겹쳐 버림
+  // 초기값을 notFound로 두고 찾을 때마다 덮어쓴다 — 어느 분기로도 안 걸리면 못 찾은 것이다.
+  const trace = []
+
   for (const phrase of phrases ?? []) {
     if (!phrase) continue
 
+    const entry = { phrase, result: 'notFound' }
+    trace.push(entry)
+
     const start = answer.indexOf(phrase)
     if (start !== -1) {
-      found.push({ start, end: start + phrase.length })
+      entry.result = 'exact'
+      found.push({ start, end: start + phrase.length, entry })
       continue
     }
 
     // 정확 일치 실패 → 공백 무시하고 재탐색
     const loose = findIgnoringWhitespace(answer, phrase)
     if (loose) {
-      found.push(loose)
+      entry.result = 'loose'
+      found.push({ ...loose, entry })
       continue
     }
 
@@ -374,9 +399,21 @@ export function phrasesToHighlights(answer, phrases) {
   let lastEnd = -1
   for (const h of found) {
     if (h.start >= lastEnd) {
-      result.push(h)
+      // entry는 로그용 참조이므로 카드 데이터에 섞이지 않도록 start/end만 담아 내보낸다
+      result.push({ start: h.start, end: h.end })
       lastEnd = h.end
+    } else {
+      h.entry.result = 'overlap'
     }
   }
+
+  // AI가 준 문구 수와 실제 하이라이트 수가 다르면 여기서 드러난다.
+  // (응답 로그의 highlightPhrases는 'AI가 만든 것', 이 로그는 '화면에 나간 것')
+  logTransform(
+    'derived_card',
+    'phrasesToHighlights: 문구 ' + trace.length + '개 → 하이라이트 ' + result.length + '개',
+    trace,
+  )
+
   return result
 }

@@ -1,14 +1,23 @@
 /* ── CanvasCard: 홈 작업공간 캔버스 카드 ── */
 
+/* Figma node 2816:846.
+   높이가 계산으로 딱 떨어진다 — padding 20 + 제목 44 + gap 52 + 배지 22 + padding 20
+   + 테두리 1×2 = 160px. 그래서 min-height가 아니라 height로 못 박는다.
+   제목도 배지도 높이가 고정이라 내용에 따라 카드가 자랄 일이 없고,
+   자라지 않아야 그리드에서 행 높이가 흔들리지 않는다.
+
+   폭은 지정하지 않는다 — 그리드가 정한다.
+   (HomePage의 카드 영역 1160px · 3열 · column-gap 28px → 368px) */
 .canvas-card {
   position: relative;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-element);
-  padding: 19px 23px 15px;
-  min-height: 160px;
+  padding: 20px 24px;
+  height: 160px;
   display: flex;
   flex-direction: column;
+  gap: 52px;
   cursor: pointer;
   box-sizing: border-box;
   overflow: hidden;
@@ -58,71 +67,44 @@
   }
 }
 
-/* 제목: 1~2줄, flex-grow로 나머지 공간 점유 → 하단 정보가 자연스럽게 아래로 */
+/* 제목: 정확히 2줄 높이로 고정 (22px × 2 = 44px).
+
+   flex:1로 남은 공간을 먹던 방식에서 바꿨다. 그때는 제목이 1줄이냐 2줄이냐에 따라
+   배지 행의 세로 위치가 카드마다 달라져, 카드가 여러 장 늘어섰을 때 배지들이
+   만드는 가로 정렬선이 사라졌다. 44px로 못 박으면 1줄짜리 제목은 아래 한 줄을
+   비워둔 채로 두고, 배지는 언제나 같은 자리에 온다.
+
+   line-height는 1.4(=25.2px)가 아니라 시안 그대로 22px다. 이 값이라야 2줄이
+   정확히 44px가 된다.
+
+   white-space: pre-line — 제목에 들어 있는 \n 줄바꿈을 살린다.
+   -webkit-line-clamp: 2 — 3줄이 되는 긴 제목은 2줄에서 말줄임(…)으로 자른다.
+   두 속성은 함께 동작한다(실제 브라우저에서 확인함): \n 줄바꿈이 유지된 채로
+   3줄째가 잘리고 카드 높이는 160px를 지킨다. */
 .canvas-card__title {
   font-family: var(--font-family-base);
   font-size: var(--font-size-heading3);
   font-weight: var(--font-weight-semibold);
   color: var(--color-body1);
-  line-height: 1.4;
+  line-height: 22px;
+  height: 44px;
   margin: 0;
   white-space: pre-line;
-  flex: 1;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
-/* 카드 수 + 배지를 묶는 하단 영역 */
-.canvas-card__bottom {
-  margin-top: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-/* 파생 카드 수 텍스트 */
-.canvas-card__card-count {
-  font-family: var(--font-family-base);
-  font-size: var(--font-size-body2);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-label);
-  line-height: var(--line-height-label);
-  margin: 0;
-}
-
-/* 배지 묶음 */
+/* 배지 묶음.
+   flex-wrap을 걸지 않는다(기본 nowrap) — 카드 높이가 160px 고정이라 배지가 두 줄로
+   접히면 둘째 줄이 잘려 나가기만 한다. 접히지 않는 것이 전제이고, 실제로 카드
+   안쪽 폭 318px에 배지 3종이 최대 297px(두 자리 수 기준)라 여유가 21px 있다. */
 .canvas-card__badges {
   display: flex;
   gap: 12px;
   align-items: center;
-  flex-wrap: wrap;
 }
 
-/* 공통 배지 */
-.canvas-card__badge {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
-  border-radius: var(--radius-pill);
-  font-family: var(--font-family-base);
-  font-size: var(--font-size-caption);
-  font-weight: var(--font-weight-regular);
-  white-space: nowrap;
-}
-
-/* 확장하기 배지: 연두 계열 */
-.canvas-card__badge--expand {
-  background: var(--color-expand-bg);
-  color: var(--color-expand-text);
-}
-
-/* 변형하기 배지: 보라 계열 */
-.canvas-card__badge--transform {
-  background: var(--color-transform-bg);
-  color: var(--color-transform-text);
-}
-
-/* 직접작성 배지: 청록 계열 */
-.canvas-card__badge--write {
-  background: var(--color-write-bg);
-  color: var(--color-write-text);
-}
+/* 배지 자체(pill·아이콘·색)는 DerivedCountBadge 컴포넌트가 갖는다.
+   여기 남은 .canvas-card__badges는 배지들을 늘어놓는 묶음 레이아웃만 담당한다. */

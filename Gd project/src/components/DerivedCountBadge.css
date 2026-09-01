@@ -1,0 +1,67 @@
+/* ── DerivedCountBadge: 캔버스 카드의 도구별 생성 개수 배지 ── */
+
+/* 시안 Figma node 2803:650 그대로.
+   높이 22px은 지정하지 않고 계산으로 나온다 — padding 4 + 아이콘 14 + padding 4. */
+.derived-count-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-regular);
+
+  /* 시안이 12px 텍스트에 지정한 행간 — 배지 세 개의 텍스트 노드
+     (2799:583 · 2799:588 · 2799:592)가 모두 14px로 명시돼 있다.
+
+     시안에 근거가 있는 값이지만 tokens.css에 올리지 않고 지역값으로 둔다.
+     행간 토큰을 새로 만들면 12px 텍스트를 쓰는 다른 화면까지 그 토큰을 따라가게
+     되는데, 그쪽 시안은 아직 검증하지 않았다. 영향 범위를 이 배지로 묶어둔다.
+
+     생략하면 브라우저 기본값 normal(Pretendard 12px 기준 14.5px)이 들어와
+     텍스트 줄 상자가 아이콘 14px보다 커지고, 배지가 22.5px이 된다. */
+  line-height: 14px;
+
+  white-space: nowrap;
+}
+
+/* 확장하기: 연두 계열 */
+.derived-count-badge--expand {
+  background: var(--color-expand-bg);
+  color: var(--color-expand-text);
+}
+
+/* 변형하기: 보라 계열 */
+.derived-count-badge--transform {
+  background: var(--color-transform-bg);
+  color: var(--color-transform-text);
+}
+
+/* 직접작성: 청록 계열 */
+.derived-count-badge--write {
+  background: var(--color-write-bg);
+  color: var(--color-write-text);
+}
+
+/* 파생 카드 없음: 중립 회색 (Figma node 2813:764)
+   위 세 배지와 형식은 완전히 같고(pill · padding 4/8 · 12px · 행간 14px) 색만 다르다.
+
+   두 값 모두 토큰을 쓰지 않고 지역값으로 둔다. 값이 우연히 같은 토큰이 있지만
+   의미가 달라서, 참조하면 나중에 그 토큰을 고칠 때 이 자리가 함께 끌려간다.
+
+   background #E4E4E4 — 이 배지가 놓이는 면은 캔버스 카드(#F5F5F5)다.
+     의미상 가장 가까운 --color-track(#EBEBEB, '비활성 pill')은 카드 면과 10단계
+     차이라 pill 모양이 거의 읽히지 않는다. tokens.css의 회색들은 흰 면(#FFFFFF)
+     기준으로 잡혀 있어서, 기준면이 한 단계 내려가는 이 자리에 맞는 토큰이 없다.
+     앱의 hover 배경(#E4E4E4)과 값은 같지만 저쪽은 '흰 면 위 hover'라 의미가 다르다.
+
+   color #555555 — 값은 --color-label과 같지만 이 배지의 글자 크기는 caption(12px)이다.
+     크기는 caption인데 색만 label인 조합이라, --color-label을 참조하면 이 텍스트가
+     '레이블'인 것처럼 잘못 읽힌다.
+     --color-caption(#767676)을 쓰지 않은 이유는 대비다 — #767676 on #E4E4E4는
+     3.57:1로 WCAG AA(본문 4.5:1) 미달이고, #555555는 5.86:1로 통과한다. */
+.derived-count-badge--empty {
+  background: #E4E4E4;
+  color: #555555;
+}

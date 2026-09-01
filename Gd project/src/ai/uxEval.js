@@ -10,7 +10,7 @@
 //  - areas의 criteria/status가 evaluationItems와 어긋날 수 없다 (코드로 계산하므로)
 // 반환 형태는 기존과 동일하므로 SidePanel 등 화면 코드는 이 파일을 신경 쓰지 않아도 된다.
 
-import { callOpenAI, USE_MOCK, TEMP_ANALYTIC } from './openaiClient.js'
+import { callOpenAI, USE_MOCK, TEMP_ANALYTIC, logTransform } from './openaiClient.js'
 import { mockUxData } from './__mock__.js'
 
 // UX 평가요소 정의 (논문: "초기 아이디어 판별을 위한 사전적 UX 평가 지표 연구", 이지은·유승헌)
@@ -205,5 +205,11 @@ ${description}
     TEMP_ANALYTIC,
     signal,
   )
-  return toUxData(res)
+  // AI 응답(res)과 카드에 저장되는 값(uxData)은 형태가 다르다.
+  // 특히 areas의 status('supplement'/'satisfied')는 AI가 준 값이 아니라
+  // 각 평가요소의 needsImprovement로부터 toUxData가 계산한 값이다.
+  // 사이드패널에 실제로 뜨는 건 이쪽이므로 변환 결과를 따로 남긴다.
+  const uxData = toUxData(res)
+  logTransform('ux_eval', 'toUxData: AI 응답 → 카드 저장값 (status는 코드가 계산)', uxData)
+  return uxData
 }

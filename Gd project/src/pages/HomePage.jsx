@@ -33,20 +33,53 @@ const PLACEHOLDER_HOLD_MS = 2600
 // 이전 글자가 덜 사라진 채로 다음 글자가 겹친다.
 const PLACEHOLDER_FADE_MS = 320
 
+// 직전 방문에 캔버스가 있었는지 기억해 두는 자리(localStorage 키).
+//
+// Firestore 구독은 비동기라 첫 렌더 시점에는 캔버스 개수를 알 수 없다.
+// 그때 canvases는 []인데, 이 []가 "0개다"인지 "아직 응답 전이다"인지 구분되지 않아
+// 작업공간 패널을 그릴지 정할 근거가 없다.
+// localStorage는 동기라 첫 렌더 그 자리에서 읽히므로, 직전 방문의 결과를 임시 답으로 쓴다.
+//
+// 어디까지나 추측값이다 — 데이터의 출처는 언제나 Firestore이고
+// 수백 ms 뒤 실제값이 이 추측을 덮는다. 브라우저가 바뀌면 그 브라우저의 첫 방문
+// 한 번만 빗나가고 이후로는 맞는다.
+const HAS_CANVASES_KEY = 'idealine.hasCanvases'
+
+// localStorage는 저장소 차단 설정 등에서 예외를 던질 수 있다.
+// 읽기에 실패해도 화면은 그려져야 하므로 조용히 기본값(false = 패널 없음)으로 넘어간다.
+function readHadCanvases() {
+  try {
+    return localStorage.getItem(HAS_CANVASES_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
+// 저장에 실패하면 다음 방문에서 추측이 한 번 빗나갈 뿐이므로 무시한다.
+function writeHadCanvases(has) {
+  try {
+    localStorage.setItem(HAS_CANVASES_KEY, has ? '1' : '0')
+  } catch {
+    // 무시
+  }
+}
+
 function HomePage() {
   const navigate = useNavigate()
 
   // 입력창 텍스트 상태
   const [inputValue, setInputValue] = useState('')
 
-  // 작업공간 전체보기/간소화 토글 상태
-  const [isExpanded, setIsExpanded] = useState(false)
-
   // Firestore에서 실시간으로 불러온 캔버스 목록
   const [canvases, setCanvases] = useState([])
 
   // Firestore 로딩 상태 (첫 구독 완료 전)
   const [loading, setLoading] = useState(true)
+
+  // 첫 렌더용 추측값 — 직전 방문에 캔버스가 있었는지.
+  // useState의 초기화 함수 자리에서 읽으므로 렌더마다 다시 읽지 않고 최초 한 번만 읽는다.
+  // 이후 갱신은 아래 onSnapshot이 localStorage에 직접 쓰므로 이 값은 바뀌지 않는다.
+  const [hadCanvases] = useState(readHadCanvases)
 
   // 제출 중 중복 클릭 방지
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -82,6 +115,9 @@ function HomePage() {
       }))
       setCanvases(data)
       setLoading(false)
+      // 다음 방문의 첫 렌더가 쓸 추측값을 갱신한다.
+      // 캔버스를 만들거나 지울 때마다 이 콜백이 다시 실행되므로 값은 항상 최신이다.
+      writeHadCanvases(data.length > 0)
     })
 
     return () => unsubscribe()
@@ -102,6 +138,16 @@ function HomePage() {
   // 기준은 하나다 — 사용자가 이 입력창을 쓰기 시작했는가.
   // 시작했다면 예시는 할 일을 마쳤고, 그 뒤의 움직임은 전부 방해다.
   const isRotating = isInputEmpty && !isFocused && !isSubmitting && !reduceMotion
+
+  // 작업공간 패널을 그릴지 여부.
+  // 아직 Firestore 응답 전(loading)이면 직전 방문 기억으로 추측하고,
+  // 응답이 온 뒤부터는 실제 개수로 판단한다.
+  //
+  // 캔버스가 0개면 빈 패널을 그리지 않고 섹션 자체를 렌더하지 않는다.
+  // 생성 중 dim 스크림도 그 섹션의 자식이므로 함께 사라진다 —
+  // isSubmitting 쪽에 별도 조건을 두지 않는 이유다. 조건이 두 곳으로 흩어지면
+  // 나중에 한쪽만 바뀐다.
+  const showWorkspace = loading ? hadCanvases : canvases.length > 0
 
   // 회전 타이머: 유지(2600ms) → 페이드아웃(320ms) → 인덱스 교체 → 다시 유지 … 반복.
   // setInterval이 아니라 setTimeout 사슬인 이유는 두 구간의 길이가 다르기 때문이다.
@@ -158,9 +204,13 @@ function HomePage() {
       }
 
       // 3) 완성된 씨드카드를 포함해 캔버스 문서 생성
-      //    캔버스 제목은 AI가 만든 아이디어 제목, topic은 입력 원문
+      //    캔버스 제목은 사용자가 입력한 주제 원문을 그대로 쓴다 (AI를 거치지 않는다).
+      //    - 캔버스는 '작업공간 전체'의 이름이고 씨드카드는 '그 안의 첫 아이디어 하나'라 층위가 다르다
+      //    - 헤더에서 제목을 고치면 캔버스 문서의 title만 갱신되고 카드 제목과는 갈라지므로(App.jsx),
+      //      처음부터 별개인 값을 AI로 맞춰줄 이유가 없다
+      //    - 목록에서 작업공간을 찾는 기준은 "내가 뭐라고 입력했는가"다
       const docRef = await addDoc(collection(db, 'canvases'), {
-        title: seed.title,
+        title: topic,
         topic,
         createdAt: serverTimestamp(),
         expandCount: 0,
@@ -210,7 +260,7 @@ function HomePage() {
   }
 
   return (
-    <div className="home-page">
+    <div className={`home-page${showWorkspace ? '' : ' home-page--empty'}`}>
 
       {/* 로고: absolute로 좌상단 고정 */}
       <h1 className="home-page__logo">IdeaLine</h1>
@@ -293,40 +343,39 @@ function HomePage() {
 
       </main>
 
-      {/* 작업공간 패널: absolute bottom:0, 확장 시 콘텐츠 위로 덮음 */}
-      <section className={`home-page__workspace${isExpanded ? ' home-page__workspace--expanded' : ''}`}>
+      {/* 작업공간 패널 (Figma node 2816:1809).
+          펼침/접힘 토글도, 패널 안쪽 스크롤도 없다 — 카드가 늘어나면 패널이
+          그만큼 길어지고, 화면 밖으로 넘친 부분은 문서 전체를 스크롤해서 본다.
 
-        {/* 섹션 헤더: 고정 */}
-        <div className="home-page__workspace-header">
-          <div>
+          캔버스가 0개면 이 섹션을 통째로 렌더하지 않는다(showWorkspace).
+          빈 패널을 그리지 않는 것이 목적이고, 그 결과로 히어로가 화면 세로 중앙에
+          놓인다 — 중앙 좌표를 따로 박는 게 아니라 패널이 빠진 만큼 콘텐츠 영역이
+          남은 높이를 차지하는 방식이라, 패널이 생기면 자동으로 원래 배치로 돌아온다.
+          (Figma node 2860:973) */}
+      {showWorkspace && (
+        <section className="home-page__workspace">
+
+          {/* 섹션 헤더 */}
+          <div className="home-page__workspace-header">
             <p className="home-page__workspace-title">작업공간</p>
             <p className="home-page__workspace-meta">
               {loading ? '불러오는 중' : `${canvases.length}개 캔버스`}
             </p>
           </div>
-          <button
-            className="home-page__workspace-toggle"
-            onClick={() => setIsExpanded((prev) => !prev)}
-            disabled={isSubmitting}
-          >
-            {isExpanded ? '간소화 ↓' : '전체보기 ↑'}
-          </button>
-        </div>
 
-        {/* 카드 본문: 접힘 → 잘림, 펼침 → 내부 스크롤 */}
-        <div className="home-page__workspace-body">
           <div className="home-page__canvas-grid">
             {canvases.map((canvas) => (
               <CanvasCard key={canvas.id} {...canvas} locked={isSubmitting} />
             ))}
           </div>
-        </div>
 
-        {/* 생성 중 dim 스크림 — Figma node 2630:23176, 패널 전체를 덮되
-            pointer-events:none으로 클릭은 그대로 카드까지 통과시킨다 */}
-        {isSubmitting && <div className="home-page__workspace-dim" />}
+          {/* 생성 중 dim 스크림 — Figma node 2630:23176, 패널 전체를 덮되
+              pointer-events:none으로 클릭은 그대로 카드까지 통과시킨다.
+              패널의 자식이므로 캔버스 0개일 때는 패널과 함께 사라진다. */}
+          {isSubmitting && <div className="home-page__workspace-dim" />}
 
-      </section>
+        </section>
+      )}
     </div>
   )
 }
