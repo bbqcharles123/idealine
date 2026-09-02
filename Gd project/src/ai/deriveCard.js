@@ -3,6 +3,8 @@
 
 import { TOOL_LAYER_DESC } from '../data/toolLayerDesc.js'
 import { getFrameworkContext, getDirectionReasoning } from '../data/frameworkDesc.js'
+// 직접작성 카드 전용 — 도구명 없이 확장하기/변형하기가 무엇을 할 수 있는지 설명한 텍스트
+import { WRITE_TOOL_DESC } from '../data/writeToolDesc.js'
 import { mockToolExamples, mockQuestion, mockDerivedContent, mockWriteContent } from './__mock__.js'
 // UX 평가 전용 호출 (seedCard.js와 공유하는 공통 모듈)
 import { generateUxEval } from './uxEval.js'
@@ -306,8 +308,8 @@ async function generateWriteContent(title, description, signal) {
 사용자가 직접 작성한 아이디어를 더 발전시키기 위해, 다음 두 접근 중 어떤 것이 더 적합한지 추천합니다.
 
 [추천 대상 도구]
-- ${TOOL_TYPE_LABEL.expand}: 요소의 구조와 관계를 재배치하는 접근 (없애기·합치기·뒤집기·외부에서 가져오기 등)
-- ${TOOL_TYPE_LABEL.transform}: 요소의 강도와 존재를 조정하는 접근 (증가·감소·창출·제거)
+- ${TOOL_TYPE_LABEL.expand}: ${WRITE_TOOL_DESC.expand}
+- ${TOOL_TYPE_LABEL.transform}: ${WRITE_TOOL_DESC.transform}
 
 [작성 규칙]
 - writeRec: 이 아이디어를 발전시키기에 더 적합한 쪽을 선택하세요. (${TOOL_TYPE_LABEL.expand} 선택 시 writeRec="expand", ${TOOL_TYPE_LABEL.transform} 선택 시 writeRec="transform")
