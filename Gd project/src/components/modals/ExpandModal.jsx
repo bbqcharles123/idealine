@@ -116,9 +116,10 @@ function ExpandModal({ selectedCard, onClose, onSubmit }) {
     // 재시도를 시작하는 순간 오류 상태를 풀어 로딩 문구가 보이게 한다
     setQuestionError(false)
     try {
-      // 2단계에서 선택한 도구의 예시를 함께 전달 → 질문이 그 적용 방향을 이어받음
-      const selectedExample = toolExamples.find((e) => e.name === currentTool.name)?.example ?? ''
-      const res = await generateQuestion(selectedCard?.data?.description ?? '', currentTool.name, 'expand', selectedExample)
+      // 2단계 예시는 질문 생성에 넘기지 않는다 (변형하기와 동일한 호출 형태).
+      // 예시를 재료로 주면 질문이 그 예시를 구체화하는 방향으로 고정되어,
+      // 사용자가 도구를 스스로 적용해볼 여지가 좁아지기 때문 (deriveCard.js 주석 참고)
+      const res = await generateQuestion(selectedCard?.data?.description ?? '', currentTool.name, 'expand')
       setAiQuestion(res.question)
       // 성공한 경우에만 생성 기준을 기록 → 이후 같은 도구로 재진입하면 재생성하지 않는다
       setQuestionKey(currentQuestionKey)

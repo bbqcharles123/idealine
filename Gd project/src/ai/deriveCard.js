@@ -130,8 +130,14 @@ ${toolList}
 // cardDescription: 부모 카드 본문
 // toolName: 선택한 도구명 (예: '제거')
 // toolType: 'expand' | 'transform'
-// selectedExample: 사용자가 2단계에서 선택한 적용 예시 (확장만 해당, 변형은 '')
 // 반환값: { question }
+//
+// 확장 2단계의 적용 예시(selectedExample)는 의도적으로 받지 않는다.
+// 예시는 "AI가 이미 만들어낸 완성된 해법 하나"이므로, 이걸 질문 생성 재료로 쓰면
+// 질문이 '도구가 적용된 질문'이 아니라 '그 예시를 더 파고드는 질문'이 되고,
+// 사용자 답변도 그 예시의 소재 범위를 벗어나지 못한다(디자인 고착).
+// → 예시는 2단계 화면에서 도구를 이해하고 고르는 용도로만 쓰고,
+//   질문의 구체성은 부모 카드 본문(아직 해법이 아닌 '재료')에서 가져온다.
 // ──────────────────────────────────────────────────────────
 const QUESTION_SCHEMA = {
   name: 'tool_question',
@@ -145,12 +151,14 @@ const QUESTION_SCHEMA = {
   },
 }
 
-export async function generateQuestion(cardDescription, toolName, toolType, selectedExample = '') {
+export async function generateQuestion(cardDescription, toolName, toolType) {
   if (USE_MOCK) return mockQuestion(toolName)
   // 프롬프트 컨텍스트: 도구 자체의 정의(toolLayerDesc) + 방향성 프레임워크 설명
   const toolDef = TOOL_LAYER_DESC[toolType]?.[toolName] ?? ''
   const frameworkCtx = getFrameworkContext(toolType, toolName)
 
+  // system: 어떤 아이디어가 들어오든 동일하게 적용되는 '처리 규칙'
+  // (호출마다 달라지는 실제 데이터는 아래 user에만 둔다)
   const system = `당신은 아이디어 발산 도구의 AI 어시스턴트입니다.
 '${TOOL_TYPE_LABEL[toolType]}' 과정에서 선택된 '${toolName}' 사고도구를 사용자가 자신의 아이디어에 적용해 보도록 유도하는 질문을 1개 만듭니다.
 
@@ -159,20 +167,16 @@ ${toolName}: ${toolDef}
 ${frameworkCtx}
 
 - 질문은 위 도구의 사고 방향에 정확히 맞아야 합니다.
-- 사용자가 방금 선택한 적용 방향이 주어지면, 그 방향을 구체화하는 질문이어야 합니다.
+- [아이디어]에 언급된 구체적 요소(기능·대상·상황) 중 이 도구를 적용하기 적합한 대상을 스스로 하나 찾아, 질문에 명시적으로 언급하세요.
 - 질문은 이 아이디어의 맥락에 맞게 구체적이어야 합니다.
 - 사용자가 답하기 쉽도록 열린 질문 1개만, 한국어로 작성하세요.`
 
-  // 2단계에서 선택한 예시가 있으면 프롬프트에 적용 방향으로 추가
-  const exampleSection = selectedExample
-    ? `\n\n[사용자가 선택한 적용 방향]\n${selectedExample}`
-    : ''
-
+  // user: 이번 호출에만 해당하는 데이터 (부모 카드 본문 + 적용할 도구명)
   const user = `[아이디어]
 ${cardDescription}
 
 [적용할 도구]
-${toolName}${exampleSection}
+${toolName}
 
 이 도구를 적용하도록 유도하는 질문을 작성해주세요.`
 
