@@ -222,8 +222,17 @@ const DERIVED_CONTENT_SCHEMA = {
 // 반환값: { title, description, highlightPhrases }
 async function generateDerivedContent(parentDescription, question, answer, toolName, toolType, signal) {
   if (USE_MOCK) return mockDerivedContent(toolName, answer)
+  // 도구 자체의 정의(toolLayerDesc)를 질문 생성(generateQuestion)과 동일하게 함께 넘긴다.
+  // highlightPhrases는 "답변에서 이 도구가 적용된 부분"을 가려내는 판별 작업인데,
+  // 도구명만 주면 판단 기준이 없어 도구와 무관한 부연 설명까지 뽑히는 문제가 있었다.
+  // toolType으로 조회하므로 이름이 같은 expand '제거'와 transform '제거'도 각자의 정의로 구분된다.
+  const toolDef = TOOL_LAYER_DESC[toolType]?.[toolName] ?? ''
+  // 정의가 비어 있으면(데이터 누락) 섹션 자체를 넣지 않는다.
+  // "결합: " 같은 빈 설명은 기준을 주지 못하면서 있는 것처럼만 보인다.
+  const toolDefSection = toolDef ? `\n\n[도구 설명]\n${toolName}: ${toolDef}` : ''
+
   const system = `당신은 아이디어 발산 도구의 AI 어시스턴트입니다.
-사용자가 '${TOOL_TYPE_LABEL[toolType]}'의 '${toolName}' 도구로 답변한 내용을 바탕으로, 발전된 파생 아이디어 카드를 생성합니다.
+사용자가 '${TOOL_TYPE_LABEL[toolType]}'의 '${toolName}' 도구로 답변한 내용을 바탕으로, 발전된 파생 아이디어 카드를 생성합니다.${toolDefSection}
 
 [아이디어 작성 규칙]
 - title: 발전된 아이디어를 한 줄로 표현한 제목
