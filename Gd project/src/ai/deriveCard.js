@@ -4,7 +4,11 @@
 import { TOOL_LAYER_DESC } from '../data/toolLayerDesc.js'
 // 확장 2단계 예시 생성 전용 도구 정의 — 화면용(toolLayerDesc)과 달리 기대효과 서술을 뺀 텍스트
 import { TOOL_EXAMPLE_DESC } from '../data/toolExampleDesc.js'
-import { getFrameworkContext, getDirectionReasoning } from '../data/frameworkDesc.js'
+import { getFrameworkContext } from '../data/frameworkDesc.js'
+// 확장 2단계 예시 생성의 요청 사양(프롬프트 문장·응답 스키마).
+// Vite 전용 코드가 없는 순수 모듈이라 Node 테스트 스크립트도 같은 함수를 부를 수 있다.
+// → 앱이 실제로 보내는 프롬프트와 테스트가 측정하는 프롬프트가 어긋날 수 없다.
+import { buildToolExamplesPrompt, buildToolExamplesSchema } from './prompts/toolExamplesPrompt.js'
 // 직접작성 카드 전용 — 도구명 없이 확장하기/변형하기가 무엇을 할 수 있는지 설명한 텍스트
 import { WRITE_TOOL_DESC } from '../data/writeToolDesc.js'
 import { mockToolExamples, mockQuestion, mockDerivedContent, mockWriteContent } from './__mock__.js'
@@ -22,35 +26,9 @@ const TOOL_TYPE_LABEL = { expand: '확장하기', transform: '변형하기' }
 // direction: { label, toolNames: ['제거','대체', ...] } — 선택한 방향성과 그 도구명들
 // 반환값: [{ name, example }] — 입력한 도구 순서대로
 // ──────────────────────────────────────────────────────────
-// 도구명 목록을 enum으로 주입해 예시 생성 스키마를 만든다.
-// name을 자유 문자열로 두면 모델이 '분할·분리'를 '분할/분리'처럼 살짝 다르게 써도 스키마를 통과하고,
-// 화면에서 도구와 예시를 짝지을 때(find) 매칭에 실패해 빈 선택지가 된다.
-// enum으로 고정하면 이름이 어긋나는 경우 자체가 사라진다. (strict 모드가 지원하는 키워드)
-function buildExamplesSchema(toolNames) {
-  return {
-    name: 'tool_examples',
-    schema: {
-      type: 'object',
-      additionalProperties: false,
-      required: ['examples'],
-      properties: {
-        examples: {
-          type: 'array',
-          items: {
-            type: 'object',
-            additionalProperties: false,
-            required: ['name', 'example'],
-            properties: {
-              name:    { type: 'string', enum: toolNames, description: '도구명 (입력한 도구명 그대로)' },
-              example: { type: 'string', description: '이 도구를 아이디어에 적용했을 때의 구체적 예시 (1~2문장)' },
-            },
-          },
-        },
-      },
-    },
-  }
-}
-
+// 프롬프트 문장과 응답 스키마는 prompts/toolExamplesPrompt.js로 옮겼다.
+// (테스트 스크립트가 같은 함수를 부르게 해서 프롬프트가 두 벌로 갈라지지 않도록)
+//
 // 응답 검증 + 정렬: 도구 수만큼 예시가 모두 채워졌는지 확인하고, 도구 순서대로 재정렬해 반환한다.
 //
 // strict 모드 Structured Outputs는 타입과 필수 필드만 보장할 뿐 배열 길이는 보장하지 않는다.
@@ -89,47 +67,20 @@ function normalizeExamples(examples, toolNames) {
 
 export async function generateToolExamples(cardDescription, direction) {
   if (USE_MOCK) return mockToolExamples(direction)
-  // 방향성 프레임워크 설명 (예시는 확장하기에서만 사용하므로 'expand' 고정)
-  const reasoning = getDirectionReasoning('expand', direction.label)
 
-  // 도구별 정의 목록: 방향성 설명(reasoning)은 "이 도구들이 왜 한 묶음인지"만 알려주므로,
-  // 도구끼리 서로 무엇이 다른지는 각 도구의 정의를 함께 줘야 한다.
-  //
-  // 여기서 쓰는 정의는 화면용(TOOL_LAYER_DESC)이 아니라 프롬프트 전용(TOOL_EXAMPLE_DESC)이다.
+  // 프롬프트에 넣을 도구 정의는 화면용(TOOL_LAYER_DESC)이 아니라 프롬프트 전용(TOOL_EXAMPLE_DESC)을 쓴다.
   // 화면용 문구는 "~해보세요. ~새로운 가치가 생깁니다" 형태라 도구마다 동일한 기대효과 수사가
   // 정의의 절반을 차지하고, 그 문장 골격을 모델이 그대로 따라 써서 예시가 도구와 무관하게
   // 같은 형태로 수렴하는 원인이 된다. TOOL_EXAMPLE_DESC는 조작 방식만 남긴 텍스트다.
-  //
-  // 정의가 없는 도구명은 이름만 남긴다 — 데이터가 어긋나도 예시 생성 자체는 막히지 않도록.
-  const toolList = direction.toolNames
-    .map((name) => {
-      const desc = TOOL_EXAMPLE_DESC.expand?.[name] ?? ''
-      return desc ? `- ${name}: ${desc}` : `- ${name}`
-    })
-    .join('\n')
-
-  const system = `당신은 아이디어 발산 도구의 AI 어시스턴트입니다.
-사용자가 선택한 발전 방향성에 속한 각 사고도구를, 주어진 아이디어에 실제로 적용하면 어떤 결과가 나올지 구체적인 예시를 작성합니다.
-- 입력으로 주어진 도구만, 입력된 도구명 그대로 사용하세요.
-- 도구 ${direction.toolNames.length}개 전부에 대해 하나씩 빠짐없이 작성하세요. 개수가 부족하면 응답 전체가 폐기됩니다.
-- example은 해당 도구를 이 아이디어에 적용한 결과를 1~2문장으로 구체적으로 묘사하세요.
-- 각 도구의 고유한 사고 방향이 예시에 분명히 드러나도록 작성하세요.`
-
-  const user = `[아이디어]
-${cardDescription}
-
-[선택한 방향성]
-${direction.label}
-${reasoning}
-
-[이 방향성의 도구 목록]
-${toolList}
-
-각 도구별로 이 아이디어에 적용한 예시를 작성해주세요.`
+  const { system, user } = buildToolExamplesPrompt(
+    cardDescription,
+    direction,
+    TOOL_EXAMPLE_DESC.expand,
+  )
 
   const result = await callOpenAI(
     [{ role: 'system', content: system }, { role: 'user', content: user }],
-    buildExamplesSchema(direction.toolNames)
+    buildToolExamplesSchema(direction.toolNames)
   )
   // 개수가 모자라면 여기서 throw → 호출부(모달)의 catch가 통신 실패와 동일하게 처리한다
   return normalizeExamples(result.examples, direction.toolNames)
