@@ -2,6 +2,8 @@
 // 본문 생성(창의)과 UX 평가(분석)를 분리하고, 공통 호출은 openaiClient의 callOpenAI를 사용한다.
 
 import { TOOL_LAYER_DESC } from '../data/toolLayerDesc.js'
+// 확장 2단계 예시 생성 전용 도구 정의 — 화면용(toolLayerDesc)과 달리 기대효과 서술을 뺀 텍스트
+import { TOOL_EXAMPLE_DESC } from '../data/toolExampleDesc.js'
 import { getFrameworkContext, getDirectionReasoning } from '../data/frameworkDesc.js'
 // 직접작성 카드 전용 — 도구명 없이 확장하기/변형하기가 무엇을 할 수 있는지 설명한 텍스트
 import { WRITE_TOOL_DESC } from '../data/writeToolDesc.js'
@@ -91,11 +93,17 @@ export async function generateToolExamples(cardDescription, direction) {
   const reasoning = getDirectionReasoning('expand', direction.label)
 
   // 도구별 정의 목록: 방향성 설명(reasoning)은 "이 도구들이 왜 한 묶음인지"만 알려주므로,
-  // 도구끼리 서로 무엇이 다른지는 각 도구의 정의(TOOL_LAYER_DESC)를 함께 줘야 한다.
+  // 도구끼리 서로 무엇이 다른지는 각 도구의 정의를 함께 줘야 한다.
+  //
+  // 여기서 쓰는 정의는 화면용(TOOL_LAYER_DESC)이 아니라 프롬프트 전용(TOOL_EXAMPLE_DESC)이다.
+  // 화면용 문구는 "~해보세요. ~새로운 가치가 생깁니다" 형태라 도구마다 동일한 기대효과 수사가
+  // 정의의 절반을 차지하고, 그 문장 골격을 모델이 그대로 따라 써서 예시가 도구와 무관하게
+  // 같은 형태로 수렴하는 원인이 된다. TOOL_EXAMPLE_DESC는 조작 방식만 남긴 텍스트다.
+  //
   // 정의가 없는 도구명은 이름만 남긴다 — 데이터가 어긋나도 예시 생성 자체는 막히지 않도록.
   const toolList = direction.toolNames
     .map((name) => {
-      const desc = TOOL_LAYER_DESC.expand?.[name] ?? ''
+      const desc = TOOL_EXAMPLE_DESC.expand?.[name] ?? ''
       return desc ? `- ${name}: ${desc}` : `- ${name}`
     })
     .join('\n')
