@@ -66,10 +66,26 @@ function getFramework(toolType) {
   return toolType === 'expand' ? BCC_FRAMEWORK : ERRC_FRAMEWORK
 }
 
-// 특정 도구가 속한 방향성의 설명을 문자열로 반환 (질문 생성 프롬프트용)
-// 예: "이 도구는 '...' 방향성에 속합니다. <reasoning>"
+// 특정 도구가 속한 방향성의 label을 문자열로 반환 (질문 생성 프롬프트용)
+// 예: "사용자는 '...' 방향성을 고른 뒤 이 도구를 선택했습니다."
+//
+// [reasoning을 넣지 않는 이유]
+// reasoning은 "이 도구들이 왜 한 묶음인지"(공통점)를 서술한 문장이라, 도구가 이미 1개로
+// 확정된 질문 생성 단계에서는 성분이 셋으로 갈리는데 어느 것도 기여하지 않는다.
+//   묶음의 공통점("두 도구 모두 기존의 전제를 뒤집는 방식입니다")  → 도구 1개짜리 질문엔 무의미
+//   선택한 도구의 조작 서술                                        → toolPromptDesc와 중복
+//   같은 묶음의 '다른' 도구 서술                                   → 오염
+// 마지막 항이 실제 문제였다. BCC 3·4방향성 reasoning은 다른 도구를 이름째 호명해서
+// ('재정의는 고객과 문제 자체를 새롭게 봅니다'), 역전을 고른 사용자의 프롬프트에
+// 재정의의 정의가 함께 실렸다. 모델에겐 이게 고른 도구에 대한 추가 지침인지 구분할 근거가 없다.
+// (예시 생성에서 reasoning을 뺀 판정은 toolExamplesPrompt.js 주석 참고 — 그쪽은 변별 방해가 이유였다)
+//
+// label은 남긴다. 사용자가 1단계에서 실제로 고른 문장이라
+// "이 사용자가 무엇을 하고 싶어서 이 도구까지 왔는가"를 담고 있고,
+// 이 정보는 toolPromptDesc에도 부모 카드 본문에도 없다.
+// reasoning 필드 자체는 논문 근거를 정리한 자산이라 데이터에 그대로 둔다(현재 읽는 곳은 없다).
 export function getFrameworkContext(toolType, toolName) {
   const dir = getFramework(toolType).find((d) => d.tools.includes(toolName))
   if (!dir) return ''
-  return `이 도구는 '${dir.label}' 방향성에 속합니다. ${dir.reasoning}`
+  return `사용자는 '${dir.label}' 방향성을 고른 뒤 이 도구를 선택했습니다.`
 }

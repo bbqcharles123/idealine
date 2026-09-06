@@ -2,7 +2,8 @@
 // 변형하기 모달에서 사용하는 4개 방향성 — 각 방향성에 도구가 1:1로 매핑됨
 //
 // bccData.js와 같은 원칙으로 구조와 식별자만 담는다.
-// 도구 설명 텍스트는 화면용(toolLayerDesc.js) / 프롬프트용(frameworkDesc.js)에 따로 있다.
+// 도구 설명 텍스트는 화면용(toolLayerDesc.js) / 프롬프트 도구 정의(toolPromptDesc.js) /
+// 프롬프트 방향성(frameworkDesc.js)에 따로 있다.
 //
 // [실제로 읽히는 필드]
 //   label       — 변형 모달 1단계 방향성 선택지로 화면에 그대로 표시 (TransformModal)

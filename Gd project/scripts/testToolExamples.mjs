@@ -2,13 +2,13 @@
 //
 // [무엇을 재는가]
 // 현재 앱이 실제로 쓰는 조건 하나만 돌려서, 만들어진 선택지 문장의 상태를 지표와 시트로 남긴다.
-//   - 도구 정의: 프롬프트 전용 텍스트(TOOL_EXAMPLE_DESC.expand)
+//   - 도구 정의: 프롬프트 전용 텍스트(TOOL_PROMPT_DESC.expand)
 //   - 프롬프트: buildToolExamplesPrompt (앱과 같은 함수)
 // 프롬프트를 고칠 때마다 돌려서 보완점을 찾는 용도다.
 //
 // [예전에는 A/B 비교 스크립트였다]
 // 원래는 도구 정의로 화면용 텍스트(TOOL_LAYER_DESC)를 넣는 조건 A와
-// 프롬프트 전용 텍스트(TOOL_EXAMPLE_DESC)를 넣는 조건 B를 나란히 돌려 비교했다.
+// 프롬프트 전용 텍스트(TOOL_PROMPT_DESC)를 넣는 조건 B를 나란히 돌려 비교했다.
 // 그 비교는 이미 끝났고(프롬프트 전용 텍스트를 쓰기로 확정), 앞으로 화면용 정의로 되돌릴 일이 없다.
 // 두 조건을 계속 돌리면 호출이 두 배로 들면서 이제 쓰지 않는 조건의 결과가 리포트에 섞여
 // 오히려 읽기 어려워지므로 단일 조건으로 정리했다.
@@ -29,7 +29,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { buildToolExamplesPrompt, buildToolExamplesSchema } from '../src/ai/prompts/toolExamplesPrompt.js'
-import { TOOL_EXAMPLE_DESC } from '../src/data/toolExampleDesc.js'
+import { TOOL_PROMPT_DESC } from '../src/data/toolPromptDesc.js'
 import { BCC_DIRECTIONS } from '../src/data/bccData.js'
 
 // ──────────────────────────────────────────────────────────
@@ -149,7 +149,7 @@ function metricsOf(groups) {
 // ──────────────────────────────────────────────────────────
 
 // 도구 정의는 프롬프트 전용 텍스트 하나만 쓴다 (앱이 실제로 넘기는 것과 동일)
-const TOOL_DESC = TOOL_EXAMPLE_DESC.expand
+const TOOL_DESC = TOOL_PROMPT_DESC.expand
 
 const DIRECTIONS = BCC_DIRECTIONS.map((d) => ({
   label: d.label,
@@ -231,7 +231,7 @@ async function main() {
   //    같은 도구가 회차마다 어떤 대상을 고르는지, 도구끼리 침범하지 않는지를 여기서 본다.
   let cmp = `# tool_examples 결과 (${stamp})\n\n`
   cmp += `- 모델 ${MODEL} / temperature ${TEMPERATURE} / 방향성당 ${REPEAT}회\n`
-  cmp += `- 도구 정의: 프롬프트 전용 텍스트(TOOL_EXAMPLE_DESC.expand)\n`
+  cmp += `- 도구 정의: 프롬프트 전용 텍스트(TOOL_PROMPT_DESC.expand)\n`
   cmp += `- 지표: ${JSON.stringify(summary)}\n\n`
   for (const d of DIRECTIONS) {
     cmp += `## ${d.label}\n\n`

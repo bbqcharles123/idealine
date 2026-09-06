@@ -4,7 +4,7 @@
 // [이 파일이 담는 것 — 구조와 식별자만]
 // 도구를 설명하는 텍스트는 여기 두지 않는다. 설명은 용도별로 파일이 나뉘어 있다.
 //   화면(도구 레이어)  : toolLayerDesc.js
-//   프롬프트(예시 생성) : toolExampleDesc.js
+//   프롬프트(도구 정의) : toolPromptDesc.js  — 예시·질문·본문 생성이 공유한다
 //   프롬프트(방향성)    : frameworkDesc.js
 // 이 파일에 설명이 함께 있으면 같은 도구에 대한 문장이 한 벌 더 늘어나,
 // 나중에 "이 도구를 어떻게 정의했더라"를 찾을 때 어느 것이 실제로 쓰이는지 알 수 없게 된다.
@@ -12,7 +12,7 @@
 // [실제로 읽히는 필드]
 //   label        — 확장 모달 1단계 방향성 선택지로 화면에 그대로 표시 (ExpandModal)
 //   tools[].name — 도구명의 단일 출처. AI 호출에 넘기는 toolNames이자 응답 스키마 enum의 원본이고,
-//                  toolExampleDesc.js의 키 순서도 이 배열 순서를 따른다
+//                  toolPromptDesc.js의 키 순서도 이 배열 순서를 따른다
 //   tools[].icon — 확장 모달 3단계 도구 칩 아이콘
 //
 // [example·question 필드를 삭제한 이유]

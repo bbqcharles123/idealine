@@ -1,9 +1,9 @@
 // 확장/변형/직접작성 모달에서 사용하는 AI 호출 함수 모음
 // 본문 생성(창의)과 UX 평가(분석)를 분리하고, 공통 호출은 openaiClient의 callOpenAI를 사용한다.
 
-import { TOOL_LAYER_DESC } from '../data/toolLayerDesc.js'
-// 확장 2단계 예시 생성 전용 도구 정의 — 화면용(toolLayerDesc)과 달리 기대효과 서술을 뺀 텍스트
-import { TOOL_EXAMPLE_DESC } from '../data/toolExampleDesc.js'
+// 프롬프트 전용 도구 정의 — 화면용(toolLayerDesc)과 달리 기대효과 서술을 뺀 텍스트.
+// 예시·질문·본문 세 호출이 모두 이걸 쓴다(화면용 텍스트는 LayerStackNode에서만 읽는다).
+import { TOOL_PROMPT_DESC } from '../data/toolPromptDesc.js'
 import { getFrameworkContext } from '../data/frameworkDesc.js'
 // 확장 2단계 예시 생성의 요청 사양(프롬프트 문장·응답 스키마).
 // Vite 전용 코드가 없는 순수 모듈이라 Node 테스트 스크립트도 같은 함수를 부를 수 있다.
@@ -11,6 +11,8 @@ import { getFrameworkContext } from '../data/frameworkDesc.js'
 import { buildToolExamplesPrompt, buildToolExamplesSchema } from './prompts/toolExamplesPrompt.js'
 // 사용자 입력 주제(topic)를 다루는 규칙 — 씨드카드 쪽과 정책을 함께 관리하기 위해 분리
 import { buildTopicBoundaryRule } from './prompts/topicScope.js'
+// 아이디어 본문 품질 규칙 — 씨드카드 생성(seedCard.js)과 같은 문장을 쓰기 위해 분리한 모듈
+import { buildIdeaWritingRule, buildFeasibilityRule } from './prompts/ideaRules.js'
 // 직접작성 카드 전용 — 도구명 없이 확장하기/변형하기가 무엇을 할 수 있는지 설명한 텍스트
 import { WRITE_TOOL_DESC } from '../data/writeToolDesc.js'
 import { mockToolExamples, mockQuestion, mockDerivedContent, mockWriteContent } from './__mock__.js'
@@ -71,14 +73,14 @@ function normalizeExamples(options, toolNames) {
 export async function generateToolExamples(cardDescription, direction) {
   if (USE_MOCK) return mockToolExamples(direction)
 
-  // 프롬프트에 넣을 도구 정의는 화면용(TOOL_LAYER_DESC)이 아니라 프롬프트 전용(TOOL_EXAMPLE_DESC)을 쓴다.
+  // 프롬프트에 넣을 도구 정의는 화면용(TOOL_LAYER_DESC)이 아니라 프롬프트 전용(TOOL_PROMPT_DESC)을 쓴다.
   // 화면용 문구는 "~해보세요. ~새로운 가치가 생깁니다" 형태라 도구마다 동일한 기대효과 수사가
   // 정의의 절반을 차지하고, 그 문장 골격을 모델이 그대로 따라 써서 예시가 도구와 무관하게
-  // 같은 형태로 수렴하는 원인이 된다. TOOL_EXAMPLE_DESC는 조작 방식만 남긴 텍스트다.
+  // 같은 형태로 수렴하는 원인이 된다. TOOL_PROMPT_DESC는 조작 방식만 남긴 텍스트다.
   const { system, user } = buildToolExamplesPrompt(
     cardDescription,
     direction,
-    TOOL_EXAMPLE_DESC.expand,
+    TOOL_PROMPT_DESC.expand,
   )
 
   const result = await callOpenAI(
@@ -117,22 +119,47 @@ const QUESTION_SCHEMA = {
 
 export async function generateQuestion(cardDescription, toolName, toolType) {
   if (USE_MOCK) return mockQuestion(toolName)
-  // 프롬프트 컨텍스트: 도구 자체의 정의(toolLayerDesc) + 방향성 프레임워크 설명
-  const toolDef = TOOL_LAYER_DESC[toolType]?.[toolName] ?? ''
+  // 프롬프트 컨텍스트: 도구 자체의 정의(toolPromptDesc) + 방향성 프레임워크 설명
+  // 예시 생성(generateToolExamples)과 같은 정의를 써야 2단계에서 고른 예시와
+  // 3단계 질문이 같은 도구 해석 위에 놓인다.
+  const toolDef = TOOL_PROMPT_DESC[toolType]?.[toolName] ?? ''
+  // 방향성 label — 사용자가 이 도구에 도달한 경위(맥락)일 뿐 도구의 정의가 아니라서,
+  // [도구 설명] 안에 넣지 않고 별도 섹션으로 분리한다.
+  // 예전에는 [도구 설명] 헤더 아래에 붙어 있어서 방향성 문장이 그 도구의 정의처럼 읽혔고,
+  // 묶인 다른 도구의 서술까지 도구 정의 자리에 실렸다(자세한 경위는 frameworkDesc.js 주석).
+  // 방향성을 못 찾으면 빈 문자열이 오므로 섹션 자체를 넣지 않는다 — 빈 헤더는 정보를 주지 못한다.
   const frameworkCtx = getFrameworkContext(toolType, toolName)
+  const contextSection = frameworkCtx ? `\n\n[선택 맥락]\n${frameworkCtx}` : ''
 
   // system: 어떤 아이디어가 들어오든 동일하게 적용되는 '처리 규칙'
   // (호출마다 달라지는 실제 데이터는 아래 user에만 둔다)
+  //
+  // [요소 예시 열거(기능·대상·상황)를 뺀 이유]
+  // 괄호 안 열거는 예시로 적었지만 모델에게는 허용 목록으로 읽힌다.
+  // 아이디어에 적힌 구체적 요소는 그 셋 말고도 얼마든지 있다(데이터·제약·시점·비용·관계 등).
+  // 열거가 오히려 고를 수 있는 범위를 좁혔다. 대신 요소의 조건("아이디어에 실제로 적혀 있는")만
+  // 남겼다 — 예시 생성 프롬프트도 열거 없이 같은 형태로 쓴다(toolExamplesPrompt.js).
+  // "그 표현 그대로"와 "지어내지 않습니다"를 덧붙인 건, 요소를 모델이 요약·일반화해 버리면
+  // 사용자가 자기 아이디어의 어느 부분을 말하는 것인지 알아보지 못하기 때문이다.
+  //
+  // ['맥락에 맞게 구체적이어야 합니다'를 바꾼 이유]
+  // 이 문장은 검사할 수 없다. 무엇이 맥락이고 어디부터 구체적인지 기준이 없어서,
+  // 모델이 지켰는지 여부를 자기도 판정할 수 없다. 게다가 질문의 목적(도구를 적용하도록 유도)은
+  // system 첫 문단이 이미 말하고 있어 내용도 겹쳤다.
+  // → 판정 가능한 형태로 바꿨다: 요소를 바꿔치기했을 때 질문이 그대로 성립하면 실패.
+  //   같은 계열의 검사를 예시 생성 프롬프트도 쓴다(그쪽은 도구를 바꿔치기한다).
+  //
+  // 이 규칙들은 보장이 아니라 유도다. 질문 생성에는 아직 측정 스크립트가 없어
+  // (scripts/testToolExamples.mjs는 예시 생성 전용) 효과는 확인되지 않았다.
   const system = `당신은 아이디어 발산 도구의 AI 어시스턴트입니다.
 '${TOOL_TYPE_LABEL[toolType]}' 과정에서 선택된 '${toolName}' 사고도구를 사용자가 자신의 아이디어에 적용해 보도록 유도하는 질문을 1개 만듭니다.
 
 [도구 설명]
-${toolName}: ${toolDef}
-${frameworkCtx}
+${toolName}: ${toolDef}${contextSection}
 
 - 질문은 위 도구의 사고 방향에 정확히 맞아야 합니다.
-- [아이디어]에 언급된 구체적 요소(기능·대상·상황) 중 이 도구를 적용하기 적합한 대상을 스스로 하나 찾아, 질문에 명시적으로 언급하세요.
-- 질문은 이 아이디어의 맥락에 맞게 구체적이어야 합니다.
+- [아이디어]에 실제로 적혀 있는 구체적 요소 중 이 도구를 적용하기 적합한 것을 스스로 하나 골라, 그 표현 그대로 질문에 넣으세요. 아이디어에 없는 요소를 새로 지어내지 않습니다.
+- 고른 요소를 다른 아이디어의 요소로 바꿔 넣어도 질문이 그대로 성립한다면 실패입니다. 이 아이디어이기 때문에 물을 수 있는 질문이어야 합니다.
 - 사용자가 답하기 쉽도록 열린 질문 1개만, 한국어로 작성하세요.`
 
   // user: 이번 호출에만 해당하는 데이터 (부모 카드 본문 + 적용할 도구명)
@@ -174,7 +201,7 @@ const DERIVED_CONTENT_SCHEMA = {
       description: { type: 'string', description: '파생 아이디어 본문 (2~3문장)' },
       highlightPhrases: {
         type: 'array',
-        description: 'answer(사용자 답변) 안에서 도구가 적용된 핵심 부분의 문구. 반드시 answer에 그대로 등장하는 부분 문자열이어야 함',
+        description: 'answer(사용자 답변) 안에서 도구의 조작 대상·조작 결과에 해당하는 문구. 반드시 answer에 그대로 등장하는 부분 문자열이어야 함',
         items: { type: 'string' },
       },
     },
@@ -187,11 +214,12 @@ const DERIVED_CONTENT_SCHEMA = {
 // 반환값: { title, description, highlightPhrases }
 async function generateDerivedContent(parentDescription, topic, question, answer, toolName, toolType, signal) {
   if (USE_MOCK) return mockDerivedContent(toolName, answer)
-  // 도구 자체의 정의(toolLayerDesc)를 질문 생성(generateQuestion)과 동일하게 함께 넘긴다.
+  // 도구 자체의 정의(toolPromptDesc)를 질문 생성(generateQuestion)과 동일하게 함께 넘긴다.
   // highlightPhrases는 "답변에서 이 도구가 적용된 부분"을 가려내는 판별 작업인데,
   // 도구명만 주면 판단 기준이 없어 도구와 무관한 부연 설명까지 뽑히는 문제가 있었다.
+  // 판별 기준으로는 조작 방식 서술이 맞다 — 화면용의 기대효과 수사는 판별에 기여하지 않는다.
   // toolType으로 조회하므로 이름이 같은 expand '제거'와 transform '제거'도 각자의 정의로 구분된다.
-  const toolDef = TOOL_LAYER_DESC[toolType]?.[toolName] ?? ''
+  const toolDef = TOOL_PROMPT_DESC[toolType]?.[toolName] ?? ''
   // 정의가 비어 있으면(데이터 누락) 섹션 자체를 넣지 않는다.
   // "결합: " 같은 빈 설명은 기준을 주지 못하면서 있는 것처럼만 보인다.
   const toolDefSection = toolDef ? `\n\n[도구 설명]\n${toolName}: ${toolDef}` : ''
@@ -200,13 +228,89 @@ async function generateDerivedContent(parentDescription, topic, question, answer
   const boundaryRule = buildTopicBoundaryRule(topic)
   const topicSection = boundaryRule ? `\n\n${boundaryRule}` : ''
 
+  // system 구성:
+  //   [도구 설명](toolPromptDesc) → [주제 경계](topicScope) → [역할과 목적](이 호출 전용)
+  //   → [아이디어 작성 규칙]·[실현 가능성 기준](ideaRules) → [하이라이트 규칙](이 호출 전용)
+  //
+  // [역할과 목적]은 씨드 프롬프트에도 같은 이름의 섹션이 있지만 내용이 달라 공유하지 않는다.
+  // 씨드는 "발산의 출발점"이고, 파생은 완결된 아이디어이면서 동시에 다음 확장·변형의 부모다.
+  // 부모 관계 문장(부모를 그대로 다시 쓰지 않는다)도 성격이 같아 이 섹션으로 모았다.
+  //   — 예전에는 buildIdeaWritingRule() 뒤에 한 줄로 붙어 있어서, 공용 규칙의 일부인지
+  //     이 호출만의 조건인지 프롬프트만 봐서는 갈리지 않았다.
+  //
+  // ["답변을 옮겨 적지 말고 기능으로 정리하라"를 넣은 이유]
+  // 실제 생성된 카드 중 description이 사용자 답변과 거의 같은 것들이 있었다.
+  // 답변은 질문에 대한 대답이라 사례 나열이나 구어체인 경우가 많은데, 그게 그대로 본문이 되면
+  // 카드가 '아이디어'가 아니라 '답변 복사본'이 되어 다음 확장·변형의 재료로 쓰기 어렵다.
+  // (관찰된 형태: "스트레스 높으면 마그네슘 재료를, 수면의 질이 낮으면 캐모마일차를…"처럼
+  //  답변이 나열한 사례가 그대로 본문에 옮겨진 카드. 여기서 아이디어에 해당하는 것은
+  //  개별 사례가 아니라 "사용자 상태를 판단해 추천 재료를 다르게 한다"는 동작 규칙이다.)
+  // 이 사례 자체는 프롬프트에 넣지 않는다 — 식단·건강 도메인이 무관한 주제의 파생카드까지
+  // 그 틀로 끌고 갈 위험이 있어서, 구조("무엇을 판단해 무엇을 다르게 하는지")만 규칙으로 옮겼다.
+  //
+  // 답변의 구체성이 사라지는 것 아니냐는 우려는 하이라이트가 받는다 —
+  // 사용자 답변 원문은 사이드패널에 그대로 남고 도구가 적용된 자리가 표시되므로,
+  // description까지 답변 문장을 보존할 필요가 없다. 역할이 갈린다.
+  //
+  // 뒤의 두 규칙 블록은 씨드카드 생성이 쓰는 문장을 그대로 가져온다.
+  // 파생카드도 캔버스에 놓이면 씨드와 똑같이 사용자가 발전시키는 재료이고 UX 평가 대상이므로,
+  // 좋은 아이디어의 기준이 달라야 할 이유가 없다. 예전에는 여기 title·description 규칙을
+  // 한 줄씩만 적어 둬서, 씨드 본문은 대상·상황·문제·해결이 갖춰지는데 파생 본문은
+  // "2~3문장"만 지키면 되는 상태로 품질 기준이 벌어졌다.
+  //
+  // highlightPhrases 규칙은 가져오지 않고 여기 남긴다 — 씨드 응답에는 없는 필드라
+  // 공용 규칙에 섞으면 씨드 프롬프트가 존재하지 않는 출력 필드를 설명하게 된다.
+  //
+  // [하이라이트 규칙을 도구별로 쓰지 않고 정의에서 유도하게 한 이유]
+  // 예전 규칙은 "'${toolName}' 도구가 적용된 핵심 부분"이 전부여서, 도구 이름만 갈릴 뿐
+  // 무엇을 핵심으로 볼지는 모델의 상식에 맡겨져 있었다. 그렇다고 도구 15개(expand 11 + transform 4)의
+  // 판별 기준을 따로 쓰면, toolPromptDesc가 이미 겪은 문제(정의가 서로 겹쳐 도구가 안 갈림)가
+  // 기준 쪽에서 재발하고 도구가 늘 때마다 두 벌을 같이 고쳐야 한다.
+  // TOOL_PROMPT_DESC는 효과 서술을 빼고 조작 방식만 남긴 덕에 15개가 모두
+  // "무엇을(대상) 어떻게 한다(결과)" 골격을 공유한다 → 그 두 자리를 답변에서 찾으라고 하면
+  // 도구별 기준이 정의로부터 자동으로 따라 나온다. 규칙은 한 벌로 끝나고 도구가 늘어도 그대로다.
+  //
+  // 특정 도구의 예시(예: '대체'는 무엇이 무엇으로 바뀌었는지)는 일부러 넣지 않는다.
+  // 한 도구의 사례가 다른 도구의 발췌 형태까지 그 틀로 끌고 가기 때문이다
+  // (같은 성분의 전염을 toolLayerDesc → 예시 생성에서 이미 관찰했다).
+  // 발췌 개수 상한도 두지 않는다 — 답변마다 조작이 드러나는 자리 수가 다른데
+  // 상한이 기준처럼 읽히면 있는 자리를 못 넣거나 빈 자리를 채우게 된다.
+  // 과다 발췌가 실제로 관찰되면 그때 상한을 얹는다.
+  //
+  // 발췌 길이("최소 단위로 자르라")와 겹침 금지도 같은 이유로 넣지 않았다.
+  // 둘 다 모델이 지켰는지 스스로 판정할 수 없는 조건이고 — 특히 겹침 판정은 문자 위치 계산을
+  // 요구하는데, 좌표 대신 문구를 받기로 한 이유가 바로 모델이 글자 수를 못 세기 때문이다.
+  // 겹친 구간은 phrasesToHighlights가 뒤엣것을 버려 렌더는 어차피 지켜진다(손실은 로그에 남는다).
+  // → 처음부터 조건을 많이 걸지 않고, logTransform의 overlap/notFound 비율을 보고 필요한 것만 얹는다.
+  //
+  // 대신 규칙 앞에 이 필드가 화면에서 무엇을 하는지를 적었다.
+  // 조건을 덜어낸 자리를 목적으로 메우는 쪽이 낫다고 봤다 — 발췌 후보가 여럿일 때
+  // "어느 쪽이 규칙에 맞나"는 판정이 안 되지만 "어느 쪽이 사용자에게 알아보이나"는 방향이 잡힌다.
+  // 읽는 사람이 답변을 쓴 본인이라는 점(자기 문장에서 알아볼 수 있는 덩어리여야 한다)과,
+  // 사용자가 도구를 의식하지 않고 답했다는 점(본인도 모르는 적용 지점을 짚어주는 일이다)이
+  // 발췌 단위를 정하는 실질적 기준이 된다. 길이 규칙을 빼도 조각 단어가 덜 나오길 기대한 부분이다.
   const system = `당신은 아이디어 발산 도구의 AI 어시스턴트입니다.
 사용자가 '${TOOL_TYPE_LABEL[toolType]}'의 '${toolName}' 도구로 답변한 내용을 바탕으로, 발전된 파생 아이디어 카드를 생성합니다.${toolDefSection}${topicSection}
 
-[아이디어 작성 규칙]
-- title: 발전된 아이디어를 한 줄로 표현한 제목
-- description: 부모 아이디어와 사용자 답변을 반영해 발전시킨 본문 2~3문장
-- highlightPhrases: 사용자 답변(answer)에서 '${toolName}' 도구가 적용된 핵심 부분을 그대로 발췌한 문구들. 반드시 answer에 글자 그대로 존재하는 부분 문자열만 넣으세요. 없으면 빈 배열.`
+[역할과 목적]
+- 생성하는 파생 아이디어는 그 자체로 완결된 아이디어인 동시에, 사용자가 여기서 다시 확장·변형을 이어가는 재료로도 사용됩니다.
+- 부모 아이디어에 사용자 답변을 반영해 발전시킨 내용으로 작성합니다. 부모 아이디어를 그대로 다시 쓰지 않습니다.
+- 사용자 답변은 아이디어의 재료이지 본문이 아닙니다. 답변의 문장을 옮겨 적지 말고, 답변에서 파악한 내용을 제품·서비스의 기능으로 정리해 작성합니다.
+- 답변에 개별 사례가 나열되어 있으면 사례를 그대로 옮기지 말고, 그 사례들이 공통으로 따르는 동작 규칙(무엇을 판단해 무엇을 다르게 하는지)으로 서술합니다.
+
+${buildIdeaWritingRule()}
+
+${buildFeasibilityRule()}
+
+[하이라이트 규칙]
+highlightPhrases는 사용자 답변(answer)에서 위 [도구 설명]의 조작이 실제로 일어난 자리를 발췌한 것입니다.
+사용자는 도구를 의식하지 않고 질문에 답했을 뿐이어서, 자기 답변의 어느 부분이 '${toolName}' 도구를 적용한 결과인지 모르는 상태입니다.
+발췌한 문구는 사용자가 자기 답변을 다시 읽을 때 그 자리에 표시되어, 본인이 어디에 도구를 적용했는지 알아보게 하는 데 쓰입니다.
+- [도구 설명]의 정의를 "무엇을(조작 대상)"과 "어떻게 되었는지(조작 결과)" 두 자리로 읽으세요.
+- 답변에서 그 자리를 채운 표현을 발췌하세요. 답변에 나타난 자리만 넣습니다.
+- 반드시 답변에 글자 그대로 존재하는 부분 문자열만 넣으세요. 글자를 고치거나 요약하지 않습니다.
+- 답변이 아니라 [부모 아이디어]에 있던 표현, 그리고 이유·기대효과·부연 설명은 넣지 않습니다.
+- 어느 자리도 답변에서 찾을 수 없으면 빈 배열을 반환하세요.`
 
   const user = `[부모 아이디어]
 ${parentDescription}
@@ -386,6 +490,9 @@ export function phrasesToHighlights(answer, phrases) {
     // 조용히 버리면 "하이라이트가 안 뜨는" 증상만 남아 원인 파악이 어려우므로 경고를 남긴다.
     console.warn('[highlight] 답변에서 찾지 못한 문구라 하이라이트를 건너뜁니다:', phrase)
   }
+
+  //ai가 생성한 하이라이트문구 겹치는 부분 조정하는 코드
+
   found.sort((a, b) => a.start - b.start)
 
   const result = []

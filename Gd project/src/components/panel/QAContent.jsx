@@ -1,7 +1,12 @@
 import './QAContent.css'
 
 // answer 텍스트를 highlights 범위(character index) 기준으로 세그먼트 배열로 분할
-// highlights: [{start, end}, ...] — AI API 연동 후 채워질 예정, 없으면 일반 텍스트
+// highlights: [{start, end}, ...] — AI가 준 문구를 deriveCard.js의 phrasesToHighlights가
+//   answer 기준 문자 인덱스로 변환해 카드에 저장해 둔 값. 비어 있으면 전체를 일반 텍스트로 낸다.
+//   (AI가 답변에 없는 표현을 만들거나 구간이 겹치면 그쪽에서 버려지므로 빈 배열이 정상적으로 들어온다)
+//
+// 구간은 서로 겹치지 않는다고 가정한다 — 아래에서 pos를 앞으로만 밀며 slice를 이어 붙이므로,
+// 겹친 구간이 들어오면 같은 글자가 두 번 렌더된다. 겹침 제거는 phrasesToHighlights가 끝내고 넘긴다.
 function buildSegments(text, highlights) {
   if (!text || !highlights?.length) return [{ text, highlighted: false }]
 
@@ -29,7 +34,7 @@ const HIGHLIGHT_COLOR = {
 // question:   모달에서 제시된 질문 텍스트
 // answer:     사용자가 입력한 응답 텍스트
 // tagType:    'expand' | 'transform' — 하이라이트 색상 결정에 사용
-// highlights: [{start, end}] — AI가 도구 적용 위치를 반환할 때 사용 (현재 미연동)
+// highlights: [{start, end}] — 답변 중 도구가 적용된 구간. SidePanel이 card.data.highlights를 그대로 넘긴다.
 function QAContent({ question, answer, tagType, highlights }) {
   const segments = buildSegments(answer, highlights)
   const highlightColor = HIGHLIGHT_COLOR[tagType] ?? HIGHLIGHT_COLOR.expand
