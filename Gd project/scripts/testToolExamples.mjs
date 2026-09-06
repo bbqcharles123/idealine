@@ -1,10 +1,18 @@
-// 확장 2단계 예시 생성(tool_examples) A/B 테스트 스크립트
+// 확장 2단계 선택지 생성(tool_examples) 측정 스크립트
 //
-// [무엇을 비교하는가]
-//   조건 A: 도구 정의로 화면용 텍스트(TOOL_LAYER_DESC.expand)를 넣는다  ← 기존
-//   조건 B: 도구 정의로 프롬프트 전용 텍스트(TOOL_EXAMPLE_DESC.expand)를 넣는다  ← 변경 후
-// 두 조건에서 도구 정의 말고는 아무것도 다르지 않다(프롬프트 문장·모델·temperature·스키마 동일).
-// 변수가 하나여야 결과 차이를 정의 교체에 귀속시킬 수 있다.
+// [무엇을 재는가]
+// 현재 앱이 실제로 쓰는 조건 하나만 돌려서, 만들어진 선택지 문장의 상태를 지표와 시트로 남긴다.
+//   - 도구 정의: 프롬프트 전용 텍스트(TOOL_EXAMPLE_DESC.expand)
+//   - 프롬프트: buildToolExamplesPrompt (앱과 같은 함수)
+// 프롬프트를 고칠 때마다 돌려서 보완점을 찾는 용도다.
+//
+// [예전에는 A/B 비교 스크립트였다]
+// 원래는 도구 정의로 화면용 텍스트(TOOL_LAYER_DESC)를 넣는 조건 A와
+// 프롬프트 전용 텍스트(TOOL_EXAMPLE_DESC)를 넣는 조건 B를 나란히 돌려 비교했다.
+// 그 비교는 이미 끝났고(프롬프트 전용 텍스트를 쓰기로 확정), 앞으로 화면용 정의로 되돌릴 일이 없다.
+// 두 조건을 계속 돌리면 호출이 두 배로 들면서 이제 쓰지 않는 조건의 결과가 리포트에 섞여
+// 오히려 읽기 어려워지므로 단일 조건으로 정리했다.
+// 그때의 결과는 scripts/results에 남아 있고, 그 B 조건 수치가 지금 상태의 비교 기준선이다.
 //
 // [프롬프트는 앱과 같은 함수로 만든다]
 // src/ai/prompts/toolExamplesPrompt.js를 그대로 import한다.
@@ -21,7 +29,6 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { buildToolExamplesPrompt, buildToolExamplesSchema } from '../src/ai/prompts/toolExamplesPrompt.js'
-import { TOOL_LAYER_DESC } from '../src/data/toolLayerDesc.js'
 import { TOOL_EXAMPLE_DESC } from '../src/data/toolExampleDesc.js'
 import { BCC_DIRECTIONS } from '../src/data/bccData.js'
 
@@ -141,10 +148,8 @@ function metricsOf(groups) {
 // 실행
 // ──────────────────────────────────────────────────────────
 
-const CONDITIONS = [
-  { key: 'A', label: '기존 (화면용 TOOL_LAYER_DESC)', descMap: TOOL_LAYER_DESC.expand },
-  { key: 'B', label: '변경 (프롬프트용 TOOL_EXAMPLE_DESC)', descMap: TOOL_EXAMPLE_DESC.expand },
-]
+// 도구 정의는 프롬프트 전용 텍스트 하나만 쓴다 (앱이 실제로 넘기는 것과 동일)
+const TOOL_DESC = TOOL_EXAMPLE_DESC.expand
 
 const DIRECTIONS = BCC_DIRECTIONS.map((d) => ({
   label: d.label,
@@ -153,60 +158,57 @@ const DIRECTIONS = BCC_DIRECTIONS.map((d) => ({
 
 async function main() {
   const apiKey = readApiKey()
-  const total = CONDITIONS.length * DIRECTIONS.length * REPEAT
-  console.log(`총 ${total}회 호출 (조건 ${CONDITIONS.length} × 방향성 ${DIRECTIONS.length} × 반복 ${REPEAT})\n`)
+  const total = DIRECTIONS.length * REPEAT
+  console.log(`총 ${total}회 호출 (방향성 ${DIRECTIONS.length} × 반복 ${REPEAT})\n`)
 
-  const groups = [] // { condition, direction, round, examples }
+  const groups = [] // { direction, round, examples }
   let done = 0
 
-  for (const cond of CONDITIONS) {
-    for (const direction of DIRECTIONS) {
-      const { system, user } = buildToolExamplesPrompt(IDEA, direction, cond.descMap)
-      const schema = buildToolExamplesSchema(direction.toolNames)
+  for (const direction of DIRECTIONS) {
+    const { system, user } = buildToolExamplesPrompt(IDEA, direction, TOOL_DESC)
+    const schema = buildToolExamplesSchema(direction.toolNames)
 
-      for (let round = 1; round <= REPEAT; round++) {
-        let res
+    for (let round = 1; round <= REPEAT; round++) {
+      let res
+      try {
+        res = await callOpenAI(apiKey, [
+          { role: 'system', content: system },
+          { role: 'user', content: user },
+        ], schema)
+      } catch (err) {
+        // 일시적 실패는 한 번만 재시도한다 (계속 실패하면 그 회차를 건너뛴다)
+        console.log(`  재시도: ${err.message}`)
         try {
           res = await callOpenAI(apiKey, [
             { role: 'system', content: system },
             { role: 'user', content: user },
           ], schema)
-        } catch (err) {
-          // 일시적 실패는 한 번만 재시도한다 (계속 실패하면 그 회차를 건너뛴다)
-          console.log(`  재시도: ${err.message}`)
-          try {
-            res = await callOpenAI(apiKey, [
-              { role: 'system', content: system },
-              { role: 'user', content: user },
-            ], schema)
-          } catch (err2) {
-            console.log(`  실패로 건너뜀: ${err2.message}`)
-            done++
-            continue
-          }
+        } catch (err2) {
+          console.log(`  실패로 건너뜀: ${err2.message}`)
+          done++
+          continue
         }
-
-        // 도구 순서대로 정렬 (앱의 normalizeExamples와 같은 처리)
-        const examples = direction.toolNames.map((name) => ({
-          name,
-          example: res.examples.find((e) => e.name === name)?.example?.trim() ?? '(누락)',
-        }))
-        groups.push({ condition: cond.key, direction: direction.label, round, examples })
-
-        done++
-        process.stdout.write(`\r진행 ${done}/${total}`)
       }
+
+      // 도구 순서대로 정렬 (앱의 normalizeExamples와 같은 처리)
+      // 응답 필드는 스키마 이름(toolName/optionText)을 따르지만,
+      // 이 스크립트 내부의 집계·리포트 형식은 기존 { name, example }을 그대로 쓴다.
+      // → 예전 결과 파일과 같은 형식이라 지난 기록과 그대로 비교할 수 있다.
+      const examples = direction.toolNames.map((name) => ({
+        name,
+        example: res.options.find((o) => o.toolName === name)?.optionText?.trim() ?? '(누락)',
+      }))
+      groups.push({ direction: direction.label, round, examples })
+
+      done++
+      process.stdout.write(`\r진행 ${done}/${total}`)
     }
   }
   console.log('\n')
 
-  // 조건별 지표 집계
-  const summary = CONDITIONS.map((c) => ({
-    조건: c.key,
-    설명: c.label,
-    ...metricsOf(groups.filter((g) => g.condition === c.key)),
-  }))
-  console.table(summary)
+  // 지표 집계 (단일 조건이므로 한 줄)
+  const summary = metricsOf(groups)
+  console.table([summary])
 
   // ── 결과 파일 저장 ──
   mkdirSync(RESULT_DIR, { recursive: true })
@@ -216,50 +218,50 @@ async function main() {
   const raw = {
     실행시각: new Date().toISOString(),
     설정: { MODEL, TEMPERATURE, REPEAT, IDEA },
-    조건: CONDITIONS.map((c) => ({ key: c.key, label: c.label })),
     지표: summary,
-    프롬프트샘플: CONDITIONS.map((c) => ({
-      조건: c.key,
-      ...buildToolExamplesPrompt(IDEA, DIRECTIONS[0], c.descMap),
-    })),
+    // 실제로 보낸 프롬프트를 그대로 남긴다 — 나중에 "이 결과가 어느 프롬프트에서 나왔는지"를
+    // 결과 파일만 보고 알 수 있어야 지난 기록과 비교할 때 근거가 된다.
+    프롬프트샘플: buildToolExamplesPrompt(IDEA, DIRECTIONS[0], TOOL_DESC),
     결과: groups,
   }
   const rawPath = join(RESULT_DIR, `${stamp}-raw.json`)
   writeFileSync(rawPath, JSON.stringify(raw, null, 2), 'utf-8')
 
-  // 2) 비교 시트 — 같은 방향성·회차를 조건 A/B 나란히 놓아 눈으로 보는 용도
-  let cmp = `# tool_examples A/B 비교 (${stamp})\n\n`
+  // 2) 결과 시트 — 방향성별로 회차를 이어 놓아 눈으로 읽는 용도
+  //    같은 도구가 회차마다 어떤 대상을 고르는지, 도구끼리 침범하지 않는지를 여기서 본다.
+  let cmp = `# tool_examples 결과 (${stamp})\n\n`
   cmp += `- 모델 ${MODEL} / temperature ${TEMPERATURE} / 방향성당 ${REPEAT}회\n`
-  cmp += `- A: 기존(화면용 정의) / B: 변경(프롬프트용 정의)\n\n`
+  cmp += `- 도구 정의: 프롬프트 전용 텍스트(TOOL_EXAMPLE_DESC.expand)\n`
+  cmp += `- 지표: ${JSON.stringify(summary)}\n\n`
   for (const d of DIRECTIONS) {
     cmp += `## ${d.label}\n\n`
     for (let round = 1; round <= REPEAT; round++) {
+      const g = groups.find((x) => x.direction === d.label && x.round === round)
       cmp += `### ${round}회차\n\n`
-      for (const c of CONDITIONS) {
-        const g = groups.find((x) => x.condition === c.key && x.direction === d.label && x.round === round)
-        cmp += `**${c.key}**\n\n`
-        if (!g) { cmp += `- (실패)\n\n`; continue }
-        for (const e of g.examples) cmp += `- **${e.name}**: ${e.example}\n`
-        cmp += '\n'
-      }
+      if (!g) { cmp += `- (실패)\n\n`; continue }
+      for (const e of g.examples) cmp += `- **${e.name}**(${e.example.length}자): ${e.example}\n`
+      cmp += '\n'
     }
   }
-  const cmpPath = join(RESULT_DIR, `${stamp}-비교.md`)
+  const cmpPath = join(RESULT_DIR, `${stamp}-결과.md`)
   writeFileSync(cmpPath, cmp, 'utf-8')
 
-  // 3) 블라인드 판정 시트 — 도구명을 가린 예시를 보고 어느 도구인지 맞춰 보는 용도
-  //    이게 진짜 지표(③ 도구 구별성)다. 조건 A/B도 가려서 편향을 없앤다.
+  // 3) 블라인드 판정 시트 — 도구명을 가린 문장을 보고 어느 도구인지 맞춰 보는 용도
+  //    도구 구별성은 숫자로 잴 수 없어서 사람이 판정해야 하는데,
+  //    도구명이 보이면 "그렇게 읽히도록" 판단이 기울므로 가린 채로 본다.
   //    정답은 raw.json에만 들어 있다.
+  // 1~2회차만 뽑는다. 전 회차를 다 넣으면 사람이 판정할 양이 너무 많아진다.
+  // (조건이 둘이던 때는 1회차만으로 8묶음이 나왔는데, 단일 조건이 된 지금 같은 양을 유지하는 수치다)
   const blindGroups = groups
-    .filter((g) => g.round === 1)
+    .filter((g) => g.round <= 2)
     .map((g, i) => ({ ...g, no: i + 1 }))
     .sort(() => Math.random() - 0.5)
 
   let blind = `# 블라인드 도구 판정 시트 (${stamp})\n\n`
-  blind += `각 묶음의 예시가 아래 도구 중 어느 것인지 맞춰 보세요.\n`
-  blind += `예시만 읽고 도구를 되짚을 수 있으면 도구별 차이가 드러난 것이고,\n`
-  blind += `헷갈리면 예시가 서로 구별되지 않는 것입니다.\n`
-  blind += `정답과 조건(A/B)은 같은 시각의 -raw.json에 있습니다.\n\n`
+  blind += `각 묶음의 문장이 아래 도구 중 어느 것인지 맞춰 보세요.\n`
+  blind += `문장만 읽고 도구를 되짚을 수 있으면 도구별 차이가 드러난 것이고,\n`
+  blind += `헷갈리면 문장이 서로 구별되지 않는 것입니다.\n`
+  blind += `정답은 같은 시각의 -raw.json에 있습니다.\n\n`
   for (const g of blindGroups) {
     blind += `## 묶음 ${g.no}\n\n`
     blind += `후보 도구: ${[...g.examples.map((e) => e.name)].sort().join(' / ')}\n\n`

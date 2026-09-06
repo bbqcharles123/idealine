@@ -277,8 +277,8 @@ function ExpandModal({ selectedCard, onClose, onSubmit }) {
                     currentDirection.tools.map((tool, i) => (
                       <ModalOption
                         key={i}
-                        // 도구명(고정)에 맞는 AI 예시를 찾아 표시, 없으면 빈 문자열
-                        text={toolExamples.find((e) => e.name === tool.name)?.example ?? ''}
+                        // 도구명(고정)에 맞는 AI 선택지 문장을 찾아 표시, 없으면 빈 문자열
+                        text={toolExamples.find((o) => o.toolName === tool.name)?.optionText ?? ''}
                         isSelected={selectedToolIdx === i}
                         onClick={() => setSelectedToolIdx(i)}
                       />

@@ -1,6 +1,9 @@
 // 확장(BCC)/변형(ERRC) 사고 프레임워크 설명
 // 1단계 방향성별로 "어떤 도구가 왜 이 방향성에 속하는지" 설명 텍스트.
-// 화면 표시용이 아니라 AI 프롬프트에 컨텍스트로 주입해 예시·질문 품질을 높이는 용도.
+// 화면 표시용이 아니라 AI 프롬프트에 컨텍스트로 주입하는 용도.
+// 현재 사용처는 질문 생성(deriveCard.js의 generateQuestion) 한 곳뿐이다.
+// 예시 생성(toolExamplesPrompt.js)에서는 뺐다 — 그 단계는 도구를 서로 다르게 써야 하는데
+// 이 텍스트는 "왜 한 묶음인지"(공통점)를 말해 변별을 방해했다. 이유는 그 파일 주석에 있다.
 
 // 확장(BCC): 4개 방향성 — 각 방향성에 속한 도구들과 그 묶음의 사고 논리
 const BCC_FRAMEWORK = [
@@ -69,10 +72,4 @@ export function getFrameworkContext(toolType, toolName) {
   const dir = getFramework(toolType).find((d) => d.tools.includes(toolName))
   if (!dir) return ''
   return `이 도구는 '${dir.label}' 방향성에 속합니다. ${dir.reasoning}`
-}
-
-// 특정 방향성(label)의 설명을 반환 (도구 예시 생성 프롬프트용 — 호출 2에서 사용 예정)
-export function getDirectionReasoning(toolType, directionLabel) {
-  const dir = getFramework(toolType).find((d) => d.label === directionLabel)
-  return dir ? dir.reasoning : ''
 }

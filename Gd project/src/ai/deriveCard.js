@@ -9,6 +9,8 @@ import { getFrameworkContext } from '../data/frameworkDesc.js'
 // Vite 전용 코드가 없는 순수 모듈이라 Node 테스트 스크립트도 같은 함수를 부를 수 있다.
 // → 앱이 실제로 보내는 프롬프트와 테스트가 측정하는 프롬프트가 어긋날 수 없다.
 import { buildToolExamplesPrompt, buildToolExamplesSchema } from './prompts/toolExamplesPrompt.js'
+// 사용자 입력 주제(topic)를 다루는 규칙 — 씨드카드 쪽과 정책을 함께 관리하기 위해 분리
+import { buildTopicBoundaryRule } from './prompts/topicScope.js'
 // 직접작성 카드 전용 — 도구명 없이 확장하기/변형하기가 무엇을 할 수 있는지 설명한 텍스트
 import { WRITE_TOOL_DESC } from '../data/writeToolDesc.js'
 import { mockToolExamples, mockQuestion, mockDerivedContent, mockWriteContent } from './__mock__.js'
@@ -24,7 +26,8 @@ const TOOL_TYPE_LABEL = { expand: '확장하기', transform: '변형하기' }
 // 호출 2: 도구별 예시 생성 (확장 모달 2단계 선택지)
 // cardDescription: 부모 카드 본문
 // direction: { label, toolNames: ['제거','대체', ...] } — 선택한 방향성과 그 도구명들
-// 반환값: [{ name, example }] — 입력한 도구 순서대로
+// 반환값: [{ toolName, optionText }] — 입력한 도구 순서대로
+//   (필드명을 name/example에서 바꾼 이유는 prompts/toolExamplesPrompt.js 주석 참고)
 // ──────────────────────────────────────────────────────────
 // 프롬프트 문장과 응답 스키마는 prompts/toolExamplesPrompt.js로 옮겼다.
 // (테스트 스크립트가 같은 함수를 부르게 해서 프롬프트가 두 벌로 갈라지지 않도록)
@@ -38,13 +41,13 @@ const TOOL_TYPE_LABEL = { expand: '확장하기', transform: '변형하기' }
 // 그대로 넘기면 예시를 못 찾은 도구가 빈 선택지로 렌더되고 클릭까지 되므로,
 // 하나라도 비면 호출 실패와 동일하게 throw해 모달의 오류 처리로 넘긴다.
 // → 화면이 가질 수 있는 상태를 로딩/실패/정상 3가지로 고정한다.
-function normalizeExamples(examples, toolNames) {
-  const ordered = toolNames.map((name) => ({
-    name,
-    example: examples.find((e) => e.name === name)?.example?.trim() ?? '',
+function normalizeExamples(options, toolNames) {
+  const ordered = toolNames.map((toolName) => ({
+    toolName,
+    optionText: options.find((o) => o.toolName === toolName)?.optionText?.trim() ?? '',
   }))
 
-  const missing = ordered.filter((e) => e.example === '').map((e) => e.name)
+  const missing = ordered.filter((o) => o.optionText === '').map((o) => o.toolName)
 
   // 스키마는 배열 길이를 강제하지 못해 '부분 누락'이 실제로 발생한다.
   // 그때 callOpenAI는 통신 성공이므로 [AI ◀ 응답]을 성공으로 남기고, 실패 판정은 여기서 난다.
@@ -83,7 +86,7 @@ export async function generateToolExamples(cardDescription, direction) {
     buildToolExamplesSchema(direction.toolNames)
   )
   // 개수가 모자라면 여기서 throw → 호출부(모달)의 catch가 통신 실패와 동일하게 처리한다
-  return normalizeExamples(result.examples, direction.toolNames)
+  return normalizeExamples(result.options, direction.toolNames)
 }
 
 // ──────────────────────────────────────────────────────────
@@ -179,9 +182,10 @@ const DERIVED_CONTENT_SCHEMA = {
 }
 
 // 파생카드 본문 생성(창의): 부모 아이디어 + 사용자 답변으로 발전된 아이디어를 만든다.
+// topic: 사용자가 홈 화면에서 입력한 원문 주제 (씨드카드 data.topic에서 조회해 전달)
 // signal: AbortSignal (생략 가능) — 생성 중 X 아이콘으로 취소 시 이 호출을 중단
 // 반환값: { title, description, highlightPhrases }
-async function generateDerivedContent(parentDescription, question, answer, toolName, toolType, signal) {
+async function generateDerivedContent(parentDescription, topic, question, answer, toolName, toolType, signal) {
   if (USE_MOCK) return mockDerivedContent(toolName, answer)
   // 도구 자체의 정의(toolLayerDesc)를 질문 생성(generateQuestion)과 동일하게 함께 넘긴다.
   // highlightPhrases는 "답변에서 이 도구가 적용된 부분"을 가려내는 판별 작업인데,
@@ -192,8 +196,12 @@ async function generateDerivedContent(parentDescription, question, answer, toolN
   // "결합: " 같은 빈 설명은 기준을 주지 못하면서 있는 것처럼만 보인다.
   const toolDefSection = toolDef ? `\n\n[도구 설명]\n${toolName}: ${toolDef}` : ''
 
+  // 주제 경계 규칙. topic이 없으면(구버전 캔버스) 빈 문자열이 오므로 섹션 자체를 넣지 않는다.
+  const boundaryRule = buildTopicBoundaryRule(topic)
+  const topicSection = boundaryRule ? `\n\n${boundaryRule}` : ''
+
   const system = `당신은 아이디어 발산 도구의 AI 어시스턴트입니다.
-사용자가 '${TOOL_TYPE_LABEL[toolType]}'의 '${toolName}' 도구로 답변한 내용을 바탕으로, 발전된 파생 아이디어 카드를 생성합니다.${toolDefSection}
+사용자가 '${TOOL_TYPE_LABEL[toolType]}'의 '${toolName}' 도구로 답변한 내용을 바탕으로, 발전된 파생 아이디어 카드를 생성합니다.${toolDefSection}${topicSection}
 
 [아이디어 작성 규칙]
 - title: 발전된 아이디어를 한 줄로 표현한 제목
@@ -220,12 +228,13 @@ ${answer}
 }
 
 // 파생카드 생성(공개 함수): 본문 생성 → 생성된 본문으로 UX 평가를 순차 실행해 합쳐 반환한다.
+// topic: 사용자가 홈 화면에서 입력한 원문 주제 (씨드카드 data.topic에서 조회해 전달)
 // signal: AbortSignal (생략 가능) — 모달에서 생성 중 X 아이콘으로 취소 시 두 호출 모두 중단시키기 위해 그대로 전달
 // onProgress: 생략 가능 — 대기 UI 체크리스트 갱신용. 호출 A 완료 시 'content', 호출 B 완료 시 'uxEval'을 넘긴다.
 // 반환값: { title, description, highlightPhrases, uxData }  ← 기존과 동일
-export async function generateDerivedCard(parentDescription, question, answer, toolName, toolType, signal, onProgress) {
+export async function generateDerivedCard(parentDescription, topic, question, answer, toolName, toolType, signal, onProgress) {
   // 1) 본문 생성 (창의, temperature 높음)
-  const content = await generateDerivedContent(parentDescription, question, answer, toolName, toolType, signal)
+  const content = await generateDerivedContent(parentDescription, topic, question, answer, toolName, toolType, signal)
   onProgress?.('content')
   // 2) 생성된 본문을 대상으로 UX 평가 (분석, temperature 낮음)
   const uxData = await generateUxEval(content.title, content.description, signal)

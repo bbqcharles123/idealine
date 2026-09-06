@@ -70,9 +70,9 @@ export function mockSeedContent(topic) {
 // ── 호출 2: 도구별 예시 생성 ─────────────────────────────────
 // generateToolExamples(cardDescription, direction) → [{ name, example }]
 export function mockToolExamples(direction) {
-  return direction.toolNames.map((name) => ({
-    name,
-    example: `[MOCK] '${name}' 도구를 적용하면 기존 기능에서 핵심 요소를 재구성하여 새로운 사용자 경험을 만들어낼 수 있습니다.`,
+  return direction.toolNames.map((toolName) => ({
+    toolName,
+    optionText: `[MOCK] '${toolName}' 도구를 적용하면 기존 기능에서 핵심 요소를 재구성하여 새로운 사용자 경험을 만들어낼 수 있습니다.`,
   }))
 }
 

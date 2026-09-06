@@ -374,7 +374,11 @@ function App() {
   const createDerivedCard = useCallback(async (answer, toolName, question, toolType, signal, onProgress) => {
     // 부모 카드 본문을 AI 입력으로 사용
     const parent = cards.find((c) => c.id === effectiveCardId)
-    const result = await generateDerivedCard(parent?.data?.description ?? '', question, answer, toolName, toolType, signal, onProgress)
+    // 사용자가 입력한 원문 주제. 캔버스당 씨드카드는 1개뿐이므로 여기서 조회한다.
+    // (파생카드마다 topic을 복사해 두지 않는 이유: 캔버스 전체에 하나뿐인 불변값이라
+    //  카드 수만큼 중복되면 값이 갈라질 여지만 생긴다)
+    const topic = cards.find((c) => c.type === 'seed')?.data?.topic ?? ''
+    const result = await generateDerivedCard(parent?.data?.description ?? '', topic, question, answer, toolName, toolType, signal, onProgress)
 
     // AI가 반환한 강조 문구를 answer 기준 {start,end} 인덱스로 변환
     const highlights = phrasesToHighlights(answer, result.highlightPhrases)
