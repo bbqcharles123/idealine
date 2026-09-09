@@ -85,7 +85,7 @@ export function buildToolExamplesPrompt(cardDescription, direction, toolDescMap)
 
   // system: 어떤 아이디어가 들어오든 동일하게 적용되는 '작성 규칙'
   //
-  // [이 문장이 쓰이는 곳] 블록을 두는 이유
+  // [사용 맥락] 블록을 두는 이유
   // 원래 프롬프트에는 이 문장이 어디에 어떻게 표시되는지가 한 줄도 없어서, 모델이 자기 출력을
   // '완성된 제안서'로 여기고 "~함으로써 더욱 편리한 경험을 제공합니다" 같은 문장을 썼다.
   // 네 문장이 각각 다른 문제를 겨냥한다.
@@ -113,7 +113,7 @@ export function buildToolExamplesPrompt(cardDescription, direction, toolDescMap)
   const system = `당신은 아이디어 발산 도구의 AI 어시스턴트입니다.
 주어진 사고도구 각각을 주어진 아이디어에 실제로 적용하면 어떤 결과가 나올지 문장 하나로 작성합니다.
 
-[이 문장이 쓰이는 곳]
+[사용 맥락]
 작성한 문장은 사용자에게 선택지로 제시됩니다.
 사용자는 문장 ${direction.toolNames.length}개를 읽고 마음에 드는 것을 하나 고르며, 고른 문장을 만드는 데 쓰인 사고도구가 다음 단계에서 그 사용자의 아이디어를 발전시키는 데 사용됩니다.
 화면에는 도구 이름이 표시되지 않고 문장만 보입니다.
