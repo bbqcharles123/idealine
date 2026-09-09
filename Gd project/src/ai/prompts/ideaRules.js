@@ -14,7 +14,6 @@
 //   (파생 전용 필드를 공용 규칙에 섞으면 씨드 프롬프트가 존재하지 않는 필드를 설명하게 된다)
 //
 // 이 파일은 openaiClient.js(→ import.meta.env, Vite 전용)를 부르지 않는 순수 문자열 모듈이다.
-// 그래야 Node 테스트 스크립트에서도 그대로 import할 수 있다 — 이 조건을 깨지 않을 것.
 // (같은 이유로 분리한 선례: prompts/topicScope.js, prompts/toolExamplesPrompt.js)
 
 // [표기 규칙 — 두 함수 공통]

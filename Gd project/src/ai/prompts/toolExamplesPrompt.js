@@ -9,7 +9,14 @@
 // → 프롬프트 문장의 출처를 이 파일 하나로 만들고, 앱과 테스트가 같은 함수를 부른다.
 //
 // 이 파일은 브라우저 전용 API를 쓰지 않는다(순수 문자열 조립 + 정적 데이터 import).
-// 그래야 Node에서도 그대로 실행된다 — 앞으로도 이 조건을 깨지 않도록 유지할 것.
+// 그래야 이 파일만 읽어도 최종 프롬프트를 알 수 있다 — 앞으로도 이 조건을 깨지 않도록 유지할 것.
+
+// 프롬프트에 넣을 도구 정의 — 화면용(TOOL_LAYER_DESC)이 아니라 프롬프트 전용을 쓴다.
+// 화면용 문구는 "~해보세요. ~새로운 가치가 생깁니다" 형태라 도구마다 동일한 기대효과 수사가
+// 정의의 절반을 차지하고, 그 문장 골격을 모델이 그대로 따라 써서 예시가 도구와 무관하게
+// 같은 형태로 수렴하는 원인이 된다. TOOL_PROMPT_DESC는 조작 방식만 남긴 텍스트다.
+// (이 판단은 이미 끝난 것이라 바깥에서 바꿀 여지를 두지 않는다 — 여기서 직접 가져온다)
+import { TOOL_PROMPT_DESC } from '../../data/toolPromptDesc.js'
 
 // 응답 스키마 (Structured Outputs)
 // 도구명 목록을 enum으로 주입해 선택지 생성 스키마를 만든다.
@@ -54,12 +61,11 @@ export function buildToolExamplesSchema(toolNames) {
 // cardDescription: 부모 카드 본문 (확장 모달을 연 카드의 description)
 // direction:       { label, toolNames } — 1단계에서 사용자가 고른 방향성과 그 도구명들.
 //   이 함수가 읽는 것은 toolNames뿐이다. label은 프롬프트에 넣지 않는다(이유는 아래 toolList 주석).
-//   인자 형태는 호출부(ExpandModal)·테스트 스크립트와 맞춰 그대로 둔다.
-// toolDescMap:     도구명 → 정의 문자열 맵.
-//   앱은 프롬프트 전용 정의(TOOL_PROMPT_DESC.expand)를 넘긴다.
-//   테스트 스크립트가 화면용 정의(TOOL_LAYER_DESC.expand)를 넘겨 A/B를 비교할 수 있도록
-//   출처를 고정하지 않고 인자로 받는다 — 이 인자가 실험의 유일한 변수다.
-export function buildToolExamplesPrompt(cardDescription, direction, toolDescMap) {
+//   인자 형태는 호출부(ExpandModal → generateToolExamples)와 맞춰 그대로 둔다.
+//
+// 도구 정의는 인자로 받지 않는다. 이 함수는 확장하기 2단계 전용이라 정의의 출처가
+// TOOL_PROMPT_DESC.expand 하나로 정해져 있고, 호출부가 그것을 바꿀 이유가 없다.
+export function buildToolExamplesPrompt(cardDescription, direction) {
   // 도구별 정의 목록 — 도구끼리 무엇이 다른지를 알려주는 유일한 정보원이다.
   //
   // [frameworkDesc의 방향성 설명(reasoning)을 빼둔 이유]
@@ -70,7 +76,7 @@ export function buildToolExamplesPrompt(cardDescription, direction, toolDescMap)
   // user가 먼저 "세 도구 모두 더하는 방향의 사고입니다" 같은 문장으로
   // 서로 바꿔 읽어도 된다는 근거를 주고 있었다 — 목적과 정반대 신호다.
   // 게다가 2방향성 reasoning은 결합을 "서로 다른 것을 연결"이라 서술해,
-  // 아래 TOOL_PROMPT_DESC가 세운 결합(외부 자원) / 연결(무관한 두 요소)의 경계를
+  // TOOL_PROMPT_DESC가 세운 결합(외부 자원) / 연결(무관한 두 요소)의 경계를
   // 같은 프롬프트 안에서 무너뜨렸다.
   // → reasoning을 뺐고, 뒤이어 같은 판정으로 label까지 뺐다(아래 user 주석). 지금 프롬프트에
   //   들어가는 방향성 정보는 없고, 도구 간 차이는 이 정의 목록이 전담한다.
@@ -78,7 +84,7 @@ export function buildToolExamplesPrompt(cardDescription, direction, toolDescMap)
   // 정의가 없는 도구명은 이름만 남긴다 — 데이터가 어긋나도 예시 생성 자체는 막히지 않도록.
   const toolList = direction.toolNames
     .map((name) => {
-      const desc = toolDescMap?.[name] ?? ''
+      const desc = TOOL_PROMPT_DESC.expand?.[name] ?? ''
       return desc ? `- ${name}: ${desc}` : `- ${name}`
     })
     .join('\n')
@@ -166,8 +172,8 @@ export function buildToolExamplesPrompt(cardDescription, direction, toolDescMap)
   // 반면 label은 "그 묶음이 왜 한 방향인지"를 서술한 공통점 문장이라, 위에서 reasoning을 뺀 것과
   // 같은 계열의 위험(도구끼리 서로 바꿔 읽어도 되는 신호)을 약하게 갖고 있다.
   // 사용자가 그 방향성을 고른 사실은 이미 '넘어온 도구 목록'으로 반영돼 있으므로 블록째 뺀다.
-  // (direction.label은 이 프롬프트에서 더 이상 읽지 않는다. 인자 형태는 호출부·테스트 스크립트를
-  //  건드리지 않으려고 그대로 두고, toolNames.length는 계속 쓴다)
+  // (direction.label은 이 프롬프트에서 더 이상 읽지 않는다. 인자 형태는 호출부를 건드리지 않으려고
+  //  그대로 두고, toolNames.length는 계속 쓴다)
   //
   // 용어는 system 규칙과 같은 단어로 맞춘다 — '조작 대상', '정의에 적힌 조작'.
   // 예전 문구 '손댈 지점'은 system('조작 대상')·도구 정의('핵심요소', '구성 요소의 일부')와

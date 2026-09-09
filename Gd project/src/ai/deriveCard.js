@@ -2,7 +2,8 @@
 // 본문 생성(창의)과 UX 평가(분석)를 분리하고, 공통 호출은 openaiClient의 callOpenAI를 사용한다.
 
 // 프롬프트 전용 도구 정의 — 화면용(toolLayerDesc)과 달리 기대효과 서술을 뺀 텍스트.
-// 예시·질문·본문 세 호출이 모두 이걸 쓴다(화면용 텍스트는 LayerStackNode에서만 읽는다).
+// 이 파일에서는 질문 생성·본문 생성 두 호출이 쓴다(화면용 텍스트는 LayerStackNode에서만 읽는다).
+// 예시 생성도 같은 정의를 쓰지만 prompts/toolExamplesPrompt.js가 직접 가져간다.
 import { TOOL_PROMPT_DESC } from '../data/toolPromptDesc.js'
 import { getFrameworkContext } from '../data/frameworkDesc.js'
 // 확장 2단계 예시 생성의 요청 사양(프롬프트 문장·응답 스키마).
@@ -32,7 +33,6 @@ const TOOL_TYPE_LABEL = { expand: '확장하기', transform: '변형하기' }
 //   (필드명을 name/example에서 바꾼 이유는 prompts/toolExamplesPrompt.js 주석 참고)
 // ──────────────────────────────────────────────────────────
 // 프롬프트 문장과 응답 스키마는 prompts/toolExamplesPrompt.js로 옮겼다.
-// (테스트 스크립트가 같은 함수를 부르게 해서 프롬프트가 두 벌로 갈라지지 않도록)
 //
 // 응답 검증 + 정렬: 도구 수만큼 예시가 모두 채워졌는지 확인하고, 도구 순서대로 재정렬해 반환한다.
 //
@@ -73,15 +73,9 @@ function normalizeExamples(options, toolNames) {
 export async function generateToolExamples(cardDescription, direction) {
   if (USE_MOCK) return mockToolExamples(direction)
 
-  // 프롬프트에 넣을 도구 정의는 화면용(TOOL_LAYER_DESC)이 아니라 프롬프트 전용(TOOL_PROMPT_DESC)을 쓴다.
-  // 화면용 문구는 "~해보세요. ~새로운 가치가 생깁니다" 형태라 도구마다 동일한 기대효과 수사가
-  // 정의의 절반을 차지하고, 그 문장 골격을 모델이 그대로 따라 써서 예시가 도구와 무관하게
-  // 같은 형태로 수렴하는 원인이 된다. TOOL_PROMPT_DESC는 조작 방식만 남긴 텍스트다.
-  const { system, user } = buildToolExamplesPrompt(
-    cardDescription,
-    direction,
-    TOOL_PROMPT_DESC.expand,
-  )
+  // 프롬프트에 넣을 도구 정의(TOOL_PROMPT_DESC.expand)는 buildToolExamplesPrompt가 직접 가져온다.
+  // 이 호출은 확장하기 2단계 전용이라 정의의 출처가 하나로 정해져 있어 넘길 것이 없다.
+  const { system, user } = buildToolExamplesPrompt(cardDescription, direction)
 
   const result = await callOpenAI(
     [{ role: 'system', content: system }, { role: 'user', content: user }],

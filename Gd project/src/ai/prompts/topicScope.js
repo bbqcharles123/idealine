@@ -9,7 +9,6 @@
 // topic에 관한 문장은 전부 이 파일 하나를 출처로 삼는다.
 //
 // 이 파일은 openaiClient.js(→ import.meta.env, Vite 전용)를 부르지 않는 순수 문자열 모듈이다.
-// 그래야 Node 테스트 스크립트에서도 그대로 import할 수 있다 — 이 조건을 깨지 않을 것.
 // (같은 이유로 분리한 선례: prompts/toolExamplesPrompt.js)
 
 // 씨드카드 본문 생성용 — 입력 원문을 얼마나 그대로 쓸 것인가에 대한 규칙.
