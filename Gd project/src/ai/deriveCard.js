@@ -79,7 +79,8 @@ export async function generateToolExamples(cardDescription, direction) {
 
   const result = await callOpenAI(
     [{ role: 'system', content: system }, { role: 'user', content: user }],
-    buildToolExamplesSchema(direction.toolNames)
+    buildToolExamplesSchema(direction.toolNames),
+    TEMP_CREATIVE,
   )
   // 개수가 모자라면 여기서 throw → 호출부(모달)의 catch가 통신 실패와 동일하게 처리한다
   return normalizeExamples(result.options, direction.toolNames)
@@ -202,9 +203,17 @@ ${toolName}
 [적용할 도구]는 사용자가 앞 단계에서 고른 사고도구이고, 그 정의는 [도구 설명]에 있습니다.
 [적용할 도구]를 [아이디어]에 적용해 보도록 유도하는 질문 1개를 작성합니다.`
 
+  // temperature: 이 호출에서 발산하는 주체는 AI가 아니라 사용자다.
+  // 질문의 역할은 새 아이디어를 내놓는 것이 아니라, 발산이 일어날 자리를 부모 카드 본문 안에
+  // 정확히 지정하는 것이다([작성 규칙]이 "실제로 적혀 있는 요소를 그 표현 그대로",
+  // "지어내지 않습니다"로 입력에 대한 충실성을 요구한다 — 발산과 반대 방향의 제약이다).
+  // 게다가 산출물이 질문 1개라서, 선택지 3개를 주는 예시 생성과 달리 사용자가 고를 대안이 없다.
+  // → 새 아이디어 발산이 아니라 입력 충실성이 품질 조건이므로 TEMP_ANALYTIC을 쓴다
+  //   (직접작성 본문 생성이 낮은 값을 쓰는 것과 같은 기준).
   return callOpenAI(
     [{ role: 'system', content: system }, { role: 'user', content: user }],
-    QUESTION_SCHEMA
+    QUESTION_SCHEMA,
+    TEMP_ANALYTIC,
   )
 }
 
