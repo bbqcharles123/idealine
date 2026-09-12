@@ -21,6 +21,13 @@
      로고가 이 기둥의 왼쪽 모서리에 맞춰 서기 때문에, 패널과 로고가 각자
      다른 숫자를 들고 있다가 한쪽만 바뀌는 일이 없도록 여기서 한 번만 정의한다. */
   --home-column-width: 1280px;
+
+  /* 입력창 폭(시안 642). 히어로 텍스트의 줄바꿈 경계와 추천 키워드 영역의 폭이
+     모두 이 값을 기준으로 한다 — 키워드 칩은 "입력창 폭 안에서 텍스트 길이에 따라
+     조정되는" 것이 전제이므로, 642는 칩 영역이 따로 가진 숫자가 아니라 입력창에서 빌려온 값이다.
+     세 곳(.home-page__hero / .home-page__input-wrap / .home-page__keywords)이 각자
+     642를 들고 있으면 입력창 폭을 바꿀 때 한 곳만 고칠 여지가 생기므로 여기서 한 번만 정의한다. */
+  --home-input-width: 642px;
 }
 
 /* ── 로고: 콘텐츠 기둥 좌상단 ── */
@@ -59,17 +66,31 @@
 
   margin-top 196px  — 시안 히어로 텍스트 top(196). 로고는 absolute라 흐름을 차지하지
     않으므로, 페이지 맨 위에서 잰 값을 그대로 쓴다(로고 하단 56 기준으로는 140).
-  gap 56px — 텍스트 블록 하단(269) → 입력창 top(325).
-  margin-bottom 164px — 입력창 하단(389) → 작업공간 패널 top(553).
-    Frame 1789(첫 화면) 기준값이다. Frame 1803(스크롤 전체)에는 같은 자리가 541로
-    잡혀 있어 12px 어긋나는데, 첫 화면에서 눈으로 확인되는 쪽인 1789를 따랐다.
+  gap 32px — 히어로 묶음 하단 → 추천 키워드 블록 top (Figma node 2880:2458).
+    예전에는 이 값이 56이었다. 그때는 이 상자의 자식이 텍스트 블록과 입력창 둘뿐이라
+    56이 곧 "텍스트 ↔ 입력창" 간격이었고, 키워드 블록이 생기면서 간격이 두 종류가 되어
+    56은 .home-page__hero-group으로 내려갔다.
+  margin-bottom 80px — 콘텐츠 기둥 하단 → 작업공간 패널 top (Figma node 2886:2839).
+    시안 좌표로 검산하면 기둥(2886:2845) y 338 + height 347 = 685, 패널(2886:2883) y 765 → 80px이다.
+    예전 값은 164였고 기준도 "입력창 하단 → 패널"이었다. 칩 블록이 입력창과 패널 사이에 들어오면서
+    기준점이 "기둥 하단(= 다른 키워드 버튼 하단)"으로 바뀌었고, 시안도 그 기준으로 다시 그려졌다.
+    164를 그대로 두면 패널 top이 553 → 708로 155px 내려가 900px 높이 화면에서 첫 카드 행이 56px 잘렸다.
 */
 .home-page__content {
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 32px;
+  margin: 196px 0 80px;
+}
+
+/* 히어로 묶음: 텍스트 블록 + 입력창 (Figma node 2879:2327).
+   gap 56px — 텍스트 블록 하단(269) → 입력창 top(325). 위 .home-page__content에서 옮겨온 값이다. */
+.home-page__hero-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 56px;
-  margin: 196px 0 164px;
 }
 
 /* ── 캔버스 0개: 작업공간 패널 없이 히어로만 (Figma node 2860:973) ──
@@ -79,7 +100,7 @@
    중앙 좌표를 직접 박지 않는 쪽을 택했다 — 패널이 생기면 이 클래스가 빠지면서
    위의 margin 배치로 저절로 돌아오기 때문이다.
 
-   margin: 0 — 위 규칙의 196px/164px은 패널이 있을 때의 간격이라 여기서는 상쇄해야 한다.
+   margin: 0 — 위 규칙의 196px/80px은 패널이 있을 때의 간격이라 여기서는 상쇄해야 한다.
    남겨두면 그만큼 중심이 아래로 밀린다. */
 .home-page--empty .home-page__content {
   flex: 1;
@@ -107,7 +128,7 @@
   flex-direction: column;
   align-items: center;
   gap: 16px;
-  width: 642px;
+  width: var(--home-input-width);
 }
 
 .home-page__title {
@@ -135,14 +156,18 @@
 
 .home-page__input-wrap {
   position: relative;
-  width: 642px;
+  width: var(--home-input-width);
 }
 
 .home-page__input {
   width: 100%;
   min-height: 64px;
-  /* padding-right 68 = 버튼 right(20) + 버튼 폭(32) + 글자와 버튼 사이 16 */
-  padding: 16px 68px 16px 20px;
+  /* padding-right 62 = 버튼 right(20) + 버튼 폭(32) + 글자와 버튼 사이 10.
+     시안(Figma node 2879:2331)이 텍스트 폭을 560으로 잡아 둔 값에서 나온다 —
+     20(왼쪽) + 560 + 10(gap) + 32(버튼) + 20(오른쪽) = 642.
+     예전 값은 68(글자와 버튼 사이 16)이었는데, 시안의 gap이 10이라 6px 줄였다.
+     아래 .home-page__input-ph의 right와 반드시 같아야 한다. */
+  padding: 16px 62px 16px 20px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-container);
   background: var(--color-white);
@@ -161,10 +186,10 @@
    (GradientBorder.css:16 — 자식의 크기·패딩·border는 건드리지 않는 순수 래퍼). */
 .home-page__input-ph {
   position: absolute;
-  /* 입력창의 padding-left(20px) / padding-right(68px)과 같은 값이어야 한다.
+  /* 입력창의 padding-left(20px) / padding-right(62px)과 같은 값이어야 한다.
      하나라도 어긋나면 타이핑을 시작하는 순간 글자가 튄다. */
   left: 20px;
-  right: 68px;
+  right: 62px;
   /* 1px = 입력창 border 안쪽 */
   top: 1px;
   bottom: 1px;
@@ -294,6 +319,114 @@
   .home-page__input-btn-icon--spin {
     animation: none;
   }
+}
+
+/* ── 추천 키워드 (Figma node 2880:2457) ── */
+
+/* 폭은 입력창과 같은 642다 (Figma node 2886:2855의 w-full).
+   칩이 놓일 수 있는 경계가 곧 입력창 폭이라는 뜻이다 — 칩은 그 안에서 텍스트 길이에 따라 자리를 잡는다.
+   gap 24px — 칩 묶음 하단 → "다른 키워드" top */
+.home-page__keywords {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  width: var(--home-input-width);
+
+  /* 200ms · cubic-bezier(0.4, 0, 0.2, 1) — 사이드패널 슬라이드와 같은 값이다. */
+  transition: opacity 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 생성 중(isSubmitting) — 사라지되 자리는 그대로 남긴다.
+
+   높이를 0으로 접지 않는 이유가 이 규칙의 전부다. 묶음은 세로 가운데 정렬이라
+   (캔버스 0개) 이 블록이 자리를 비우면 히어로+입력창이 77px 아래로 내려온다.
+   제출 버튼을 누른 그 순간에 그라디언트 링과 안내 문구까지 함께 나타나므로,
+   거기에 입력창 이동까지 겹치면 변화가 세 개다. 자리를 남겨 두면 입력창은 한 픽셀도 움직이지 않는다.
+
+   시안도 같은 결론이다 — 제출 전(2885:2548)과 제출 후(2886:2786) 모두 묶음 top이 338이다.
+   제출 후 프레임은 칩이 없어 높이가 197인데도 정중앙(413)이 아니라 338에 서 있고,
+   그건 "칩 자리가 남아 있다"는 뜻이다. 기둥 높이 348을 유지하면 1024 화면에서
+   (1024 − 348) / 2 = 338로 두 프레임의 좌표가 그대로 나온다.
+
+   visibility에 200ms 지연을 두는 이유: 지연이 없으면 opacity가 줄기 전에 즉시 숨어
+   페이드가 보이지 않는다. 펼칠 때는 아래 기본 규칙이 적용돼 지연 없이 바로 보인다.
+   opacity: 0만으로도 화면에서는 사라지지만, visibility까지 꺼야 페이지 내 찾기에서도 빠진다.
+   (클릭과 포커스는 JSX의 inert가 막는다) */
+.home-page__keywords--folded {
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 200ms cubic-bezier(0.4, 0, 0.2, 1),
+    visibility 0s 200ms;
+}
+
+/* 모션 축소: 페이드 없이 즉시 사라진다. 자리는 어느 쪽이든 그대로다. */
+@media (prefers-reduced-motion: reduce) {
+  .home-page__keywords,
+  .home-page__keywords--folded {
+    transition: none;
+  }
+}
+
+/* 두 줄(5개 / 3개) 사이 간격 8px (Figma node 2886:2857) */
+.home-page__kw-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+/* 한 줄: 폭은 642(부모의 100%)로 못 박고 그 안에서 칩을 가운데로 모은다 (Figma node 2886:2858).
+   칩 사이 가로 간격 8px.
+
+   width를 주지 않고 max-content로 두면 642 경계가 강제되지 않아, 키워드가 길어졌을 때
+   줄이 조용히 입력창 폭을 넘어 삐져나간다. 폭을 못 박고 flex-wrap을 함께 걸어 두면
+   그 경우 줄 안에서 접히므로 — 블록이 한 줄만큼 길어지는 것이 눈에 보이고, 그래서 고칠 수 있다.
+
+   지금 데이터로는 접히지 않는다. 실측으로 첫 줄 463px / 둘째 줄 328px이고 상한은 642다.
+   (KEYWORD_SETS의 길이 상한이 이 여유를 만든다 — HomePage.jsx의 그 상수 주석 참고) */
+.home-page__kw-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+}
+
+/* "다른 키워드" 버튼 (Figma node 2880:2368).
+
+   테두리도 배경도 없다. 그래서 칩(테두리 있는 흰 pill)과 형태가 확실히 갈린다 —
+   같은 자리에 놓인 두 요소가 서로 다른 종류임을 색이 아니라 형태로 말한다.
+
+   color를 버튼에 두면 아이콘까지 함께 따라온다. lucide 기본값이 stroke="currentColor"이기 때문이고,
+   덕분에 hover에서 아이콘과 텍스트가 한 줄로 같이 바뀐다.
+   (panel/IdeaSource.css의 "같은 버튼 안의 아이콘도 텍스트와 색이 일치한다"와 같은 규칙)
+
+   line-height 18px을 --line-height-label로 참조하지 않는 이유: 이 텍스트는 label(14px SemiBold)이 아니라
+   body2(14px Regular)다. 18px 행간 토큰이 label용 하나뿐이라, 값이 같아도 의미가 달라 참조하지 않는다
+   (DerivedCountBadge.css가 같은 상황에서 내린 판단과 동일). */
+.home-page__kw-swap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-body2);
+  font-weight: var(--font-weight-regular);
+  line-height: 18px;
+  color: var(--color-body2);
+}
+
+/* 시안에 hover 상태가 정의되어 있지 않다. 구현 임시값이므로 토큰화하지 않는다.
+   텍스트만 있는 요소는 면을 칠할 자리가 없어 잉크를 진하게 하는 쪽을 쓴다 —
+   이 제품이 작업공간 토글 텍스트에 쓰는 방식과 같다. */
+.home-page__kw-swap:hover {
+  color: var(--color-heading1);
 }
 
 /* ── 작업공간 패널 ── */

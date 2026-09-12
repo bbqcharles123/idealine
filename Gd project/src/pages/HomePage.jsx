@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowUp, LoaderCircle } from 'lucide-react'
+import { ArrowUp, LoaderCircle, RefreshCw } from 'lucide-react'
 import { collection, onSnapshot, addDoc, serverTimestamp, query, orderBy } from 'firebase/firestore'
 import { db } from '../firebase'
 import CanvasCard from '../components/CanvasCard'
 import GradientBorder from '../components/GradientBorder'
+import KeywordChip from '../components/KeywordChip'
 import { generateSeedCard } from '../ai/seedCard'
 import './HomePage.css'
 
@@ -22,6 +23,54 @@ const PLACEHOLDER_EXAMPLES = [
   '대학생 자취 생활을 돕는 서비스',
   '탄소중립 실천을 유도하는 생활 밀착형 서비스',
   'AI 기술 기반 혁신적인 제품 및 서비스 아이디어',
+]
+
+// 입력창 아래에 보여줄 추천 키워드. 한 세트가 한 화면이고, "다른 키워드"를 누르면 다음 세트로 넘어간다.
+// Figma node 2879:2321 / 2880:2457. 1번 세트가 시안에 그려진 그 조합이다.
+//
+// 세트 하나 = 8개, 줄 구성은 [5개, 3개]다. 칩이 놓이는 영역의 폭은 입력창과 같은 642px이고,
+// 칩은 그 안에서 텍스트 길이에 따라 자리를 잡는다 — 줄을 배열 두 개로 나누는 것은
+// "어느 칩이 같은 줄에 서는가"만 정하는 것이고, 줄 안에서의 배치는 폭이 정한다.
+//
+// 자연 줄바꿈(한 배열 + flex-wrap)에 전부 맡기지 않는 이유는 균형이다. 8개의 폭 합이 804px이고
+// 한 줄 용량이 642px이라, 자동으로 흘리면 첫 줄이 용량까지 꽉 차고 남은 것만 둘째 줄로 내려간다
+// (1번 세트로 계산하면 592px / 204px). 시안의 5+3은 466px / 330px이라 훨씬 고르다.
+// 그 균형은 사람이 나눠야 나온다.
+//
+// 타입 배치도 시안 그대로 줄1 = 단·단·구·단·단 / 줄2 = 구·단·구다.
+// 구형을 뒤로 몰면 둘째 줄만 길어져 덩어리가 기울어 보인다.
+//
+// 길이 상한: 단어형 6자 · 구형 10자. 이 상한을 지키면 한 줄이 642px을 넘지 않는다
+// (실측 첫 줄 463px / 둘째 줄 328px). 상한을 넘겨도 조용히 삐져나가지는 않는다 —
+// .home-page__kw-row에 flex-wrap이 걸려 있어 줄 안에서 접히고, 블록이 한 줄만큼 길어지는 것이
+// 눈에 보인다. 그래도 "다른 키워드" 버튼 자리가 내려가므로, 단어를 바꿀 때 길이를 먼저 확인해야 한다.
+//
+// 컴포넌트 바깥에 두는 이유는 PLACEHOLDER_EXAMPLES와 같다 — 안에 두면 렌더마다 새 배열이 만들어진다.
+const KEYWORD_SETS = [
+  [
+    ['1인 가구', '다회용기', '시니어 디지털 교육', '복약 알림', '코딩 학습'],
+    ['관광 약자 접근성', '주거 계약', '전기차 충전 대기'],
+  ],
+  [
+    ['문해력', '대중교통', '자취생 식비 관리', '탄소중립', '정신건강'],
+    ['만성질환 자가관리', '생성형 AI', '데이터 프라이버시'],
+  ],
+  [
+    ['진로 탐색', '자전거', '반려동물 돌봄 공백', '층간소음', '분리배출'],
+    ['음식물 쓰레기 감축', '수면의 질', '팀 프로젝트 협업'],
+  ],
+  [
+    ['학습 습관', 'AI 면접', '운동 습관 지속', '빈집 활용', '집안일'],
+    ['반복 업무 자동화', '중고 거래', '시니어 환승 안내'],
+  ],
+  [
+    ['스터디', '병원 대기', '좁은 집 수납', '딥페이크', '소상공인'],
+    ['제로웨이스트 소비', '이사 준비', '자격증 학습 관리'],
+  ],
+  [
+    ['도시 열섬', '전공 선택', '식단 기록 부담', '재활 운동', '온디바이스'],
+    ['음성 접근성 개선', '골목 상권', '심야 이동 수단'],
+  ],
 ]
 
 // 한 예시를 보여주고 있는 시간. 가장 긴 6번(25자)을 읽는 데 걸리는 시간이 기준이다
@@ -44,6 +93,16 @@ const PLACEHOLDER_FADE_MS = 320
 // 수백 ms 뒤 실제값이 이 추측을 덮는다. 브라우저가 바뀌면 그 브라우저의 첫 방문
 // 한 번만 빗나가고 이후로는 맞는다.
 const HAS_CANVASES_KEY = 'idealine.hasCanvases'
+
+// 개발용 스위치 — 주소에 ?empty=1을 붙이면 캔버스가 0개인 것처럼 그린다.
+// Firestore 데이터를 지우지 않고 "작업공간 패널이 없는 화면"을 확인하기 위한 것이다.
+//
+// import.meta.env.DEV로 감싸므로 프로덕션 빌드에서는 항상 false이고,
+// 번들러가 그 조건을 정적으로 접어 이 판단 자체가 결과물에서 사라진다.
+// 모듈 최상단에서 한 번만 읽는다 — 주소를 바꾸려면 어차피 새로고침해야 한다.
+const FORCE_EMPTY =
+  import.meta.env.DEV &&
+  new URLSearchParams(window.location.search).get('empty') === '1'
 
 // localStorage는 저장소 차단 설정 등에서 예외를 던질 수 있다.
 // 읽기에 실패해도 화면은 그려져야 하므로 조용히 기본값(false = 패널 없음)으로 넘어간다.
@@ -83,6 +142,13 @@ function HomePage() {
 
   // 제출 중 중복 클릭 방지
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // 지금 보여주고 있는 키워드 세트의 인덱스. "다른 키워드"를 누르면 다음 세트로 넘어간다.
+  //
+  // 선택된 칩은 여기 두지 않는다 — inputValue === label로 파생시킨다(아래 렌더 참고).
+  // 별도 상태를 두면 사용자가 입력창을 직접 고쳤을 때 칩의 선택 표시가 남아
+  // "선택된 칩"과 "실제 입력값"이 갈라진다. 판단 기준이 한 곳이면 그럴 일이 없다.
+  const [keywordSet, setKeywordSet] = useState(0)
 
   // 회전 placeholder — 지금 보여줄 예시의 인덱스와 "사라지는 중" 여부
   const [phIndex, setPhIndex] = useState(0)
@@ -147,7 +213,8 @@ function HomePage() {
   // 생성 중 dim 스크림도 그 섹션의 자식이므로 함께 사라진다 —
   // isSubmitting 쪽에 별도 조건을 두지 않는 이유다. 조건이 두 곳으로 흩어지면
   // 나중에 한쪽만 바뀐다.
-  const showWorkspace = loading ? hadCanvases : canvases.length > 0
+  // FORCE_EMPTY(?empty=1)는 개발 중에만 참이 될 수 있다 — 위 상수 주석 참고.
+  const showWorkspace = FORCE_EMPTY ? false : loading ? hadCanvases : canvases.length > 0
 
   // 회전 타이머: 유지(2600ms) → 페이드아웃(320ms) → 인덱스 교체 → 다시 유지 … 반복.
   // setInterval이 아니라 setTimeout 사슬인 이유는 두 구간의 길이가 다르기 때문이다.
@@ -244,6 +311,14 @@ function HomePage() {
     if (e.key === 'Enter') handleSubmit()
   }
 
+  // 키워드 칩 클릭: 입력값을 채우기만 하고 제출하지 않는다.
+  // 고른 키워드를 그 자리에서 고쳐 쓸 수 있어야 한다 — 칩은 완성된 주제가 아니라 출발점이다.
+  const handleKeywordSelect = (word) => setInputValue(word)
+
+  // "다른 키워드": 다음 세트로. 마지막 세트에서는 처음으로 돌아온다.
+  const handleKeywordSwap = () =>
+    setKeywordSet((prev) => (prev + 1) % KEYWORD_SETS.length)
+
   // 입력값 변경. 값을 지워서 다시 비면 "보고 있던 예시 그대로" 돌아온다.
   // 포커스 중에는 회전이 멈춰 있으므로, 사용자가 타이핑을 시작하기 직전에 마지막으로
   // 본 문구가 곧 그 예시다 — 임의로 튀어나온 게 아니라 방금 본 그것이라,
@@ -267,6 +342,10 @@ function HomePage() {
 
       {/* 콘텐츠 영역: flex:1로 작업공간 위 남은 공간 차지, 세로 중앙 정렬 */}
       <main className="home-page__content">
+
+        {/* 히어로 묶음 (Figma node 2879:2327) — 텍스트와 입력창은 gap 56으로 묶여 있고,
+            그 묶음과 아래 키워드 블록 사이는 gap 32다. 두 간격이 달라서 한 겹 감싼다. */}
+        <div className="home-page__hero-group">
 
         {/* 타이틀 + 서브타이틀 */}
         <div className="home-page__hero">
@@ -339,6 +418,65 @@ function HomePage() {
               아이디어를 만들고 있어요
             </p>
           )}
+        </div>
+
+        </div>
+
+        {/* 추천 키워드 (Figma node 2880:2457) — 무엇을 입력할지 막힌 사용자에게 출발점을 준다.
+            기존 입력창의 구조·회전 placeholder·제출 동작은 하나도 바꾸지 않았다.
+            회전 placeholder를 그대로 남기는 이유: 칩은 2~10자만 담으므로 "긴 문장도 된다"를
+            말할 수 없고, 그 일은 지금도 placeholder가 4자 → 25자로 하고 있다. 둘은 하는 일이 다르다.
+
+            생성 중(isSubmitting)에는 블록을 접는다. 작업공간 패널처럼 dim으로 덮지 않는 이유는,
+            패널과 달리 이건 "생성 중에 볼 이유가 전혀 없는" 요소이기 때문이다 — 주제는 이미 정해져서 제출됐다.
+
+            렌더 자체를 걷어내지 않고 클래스로 숨기는 이유는 자리 때문이다.
+            묶음은 세로 가운데 정렬이라(캔버스 0개) 블록이 자리를 비우면 히어로+입력창이 77px 아래로 뛴다.
+            제출 버튼을 누른 그 순간에 그라디언트 링·안내 문구까지 함께 나타나므로 변화가 세 개 겹친다.
+            DOM에 남겨 두고 높이를 유지한 채 사라지게 하면 입력창은 한 픽셀도 움직이지 않는다.
+            시안도 그렇게 그려져 있다 — 제출 전(2885:2548)과 제출 후(2886:2786) 모두 묶음 top이 338이다.
+            (자세한 근거는 HomePage.css의 .home-page__keywords--folded 주석에 있다)
+
+            inert — 접힌 동안 칩과 버튼이 탭 이동과 스크린리더에서 모두 빠진다.
+            높이만 0으로 만들면 화면에서만 사라지고 포커스는 그대로 들어간다.
+            조건은 이 래퍼 한 곳에만 둔다. */}
+        <div
+          className={`home-page__keywords${isSubmitting ? ' home-page__keywords--folded' : ''}`}
+          inert={isSubmitting}
+        >
+          <div className="home-page__kw-rows">
+            {KEYWORD_SETS[keywordSet].map((row, rowIndex) => (
+              // key로 배열 인덱스를 쓰는 이유: 줄은 항상 2개이고 순서도 바뀌지 않는다(5개 줄 → 3개 줄).
+              <div className="home-page__kw-row" key={rowIndex}>
+                {row.map((word) => (
+                  <KeywordChip
+                    key={word}
+                    label={word}
+                    // 선택 상태를 상태 변수가 아니라 입력값에서 파생시킨다.
+                    // 사용자가 입력창을 직접 고치면 선택 표시가 저절로 풀린다.
+                    selected={inputValue === word}
+                    onSelect={handleKeywordSelect}
+                  />
+                ))}
+              </div>
+            ))}
+          </div>
+
+          {/* "다른 키워드" (Figma node 2880:2368).
+              아이콘에 color를 넘기지 않는다 — lucide 기본값이 stroke="currentColor"라서
+              CSS의 color 한 줄로 아이콘과 텍스트가 함께 바뀐다(hover 포함).
+
+              strokeWidth={2}는 기본값이지만 명시한다. 시안이 Scale 툴로 24px → 18px을 줄여
+              stroke가 1.5로 구워져 있고, size={18}에서 2칸 × (18/24) = 1.5px으로 그 값과 같다.
+              (LayerStackNode.jsx의 ArrowUp size={18} strokeWidth={2}와 같은 조합) */}
+          <button
+            type="button"
+            className="home-page__kw-swap"
+            onClick={handleKeywordSwap}
+          >
+            <RefreshCw size={18} strokeWidth={2} aria-hidden="true" />
+            다른 키워드
+          </button>
         </div>
 
       </main>

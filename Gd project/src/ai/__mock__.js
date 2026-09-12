@@ -77,10 +77,21 @@ export function mockToolExamples(direction) {
 }
 
 // ── 호출 3·4: 질문 생성 ──────────────────────────────────────
-// generateQuestion(...) → { question }
+// generateQuestion(...) → { question, answerExamples }
+//
+// answerExamples는 모달의 '예시 답변' 목록에 그대로 들어간다.
+// 문장 길이를 실제 규칙(70자 이내 = 선택지 2줄)에 맞춰 둔다 —
+// 짧은 [MOCK] 한 줄로 두면 mock으로 볼 때만 모달 높이가 달라져
+// 레이아웃을 확인하는 용도로 쓸 수 없다.
+// 세 개가 서로 다른 요소를 건드리는 것도 프롬프트 규칙과 같게 맞춘 것이다.
 export function mockQuestion(toolName) {
   return {
     question: `[MOCK] '${toolName}' 도구를 이 아이디어에 적용한다면, 어떤 요소를 어떻게 바꾸고 싶으신가요?`,
+    answerExamples: [
+      `[MOCK] 지금 기능을 쓰는 대상을 바꿔서, 처음 접하는 사람에게 맞는 형태로 한 벌 더 만든다`,
+      `[MOCK] 쓰이는 상황을 바꿔서, 매일이 아니라 주 단위로 몰아서 쓰는 흐름에 맞춘다`,
+      `[MOCK] 받는 쪽이 아니라 제공하는 쪽에도 같은 기능을 두어 양쪽을 한 화면에서 잇는다`,
+    ],
   }
 }
 

@@ -184,8 +184,78 @@
   color: var(--color-caption);
 }
 
-/* 답변 섹션: 라벨 + textarea */
+/* 답변 섹션: 라벨 행 + (textarea 또는 예시 답변 목록) */
 .expand-answer-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* 답변 라벨 행: '답변'(좌) / 예시 답변 토글(우)
+   질문 섹션의 .expand-question-header와 같은 구조다 — 두 행이 위아래로 마주 보므로 맞춘다 */
+.expand-answer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* 예시 답변 토글 버튼
+   형태(테두리 1px · radius 8 · padding 4/8 · 14/18 SemiBold)는 재생성 버튼과 같지만
+   색 계열이 다르다 — 재생성은 중립 회색이고 이쪽은 primary 계열이다(Figma node 2911:3338).
+   그래서 두 버튼은 비활성 표현도 서로 다른 규칙을 쓴다(아래 주석 참고). */
+.expand-examples-btn {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-element);
+  padding: 4px 8px;
+  background: var(--color-white);
+  cursor: pointer;
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-label);
+  font-weight: var(--font-weight-semibold);
+  line-height: 18px;
+  color: var(--color-label);
+}
+
+/* 강조 — 답변칸이 비어 있는 동안에만 켠다.
+   아직 아무것도 안 쓴 사람에게만 권하고, 한 글자라도 들어오면 기본 회색으로 돌아간다.
+   테두리 두께는 그대로 1px이고 색만 바뀐다 (CLAUDE.md의 '두께를 바꾸지 않는다' 규칙) */
+.expand-examples-btn--highlight {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+/* 비활성 ① 일시적 잠금 (질문 생성 중 · 파생카드 생성 중)
+   색을 바꾸지 않는다. 왜 안 눌리는지는 화면이 이미 말하고 있고
+   (질문 박스의 '질문 생성 중' 문구 / GenerationProgress 체크리스트),
+   1~3초짜리 구간에서 색이 깜빡이면 노이즈만 남는다.
+   이 앱은 textarea·input도 disabled에 시각 변화를 두지 않는다 — 같은 결을 따른다.
+   다만 cursor는 되돌린다: 색이 안 바뀌는 건 '아무 말도 안 하는 것'이지만,
+   손가락 커서는 '눌러도 된다'고 적극적으로 잘못 말하는 것이라 성격이 다르다. */
+.expand-examples-btn:disabled,
+.expand-regenerate-btn:disabled {
+  cursor: default;
+}
+
+/* 비활성 ② 후보 없음 (2개 미만) — 이 버튼에만 있는 지속적 불능
+   ①과 달리 이유를 말해주는 것이 화면에 하나도 없으므로 버튼 자신이 색으로 말해야 한다.
+   모달 filled 버튼의 '미충족'과 같은 잉크·면을 쓴다 — 값이 같을 뿐 아니라
+   "조건이 안 갖춰져 지금은 못 누른다"는 뜻도 같다.
+   테두리를 배경과 같은 색으로 두는 이유: 보이기는 filled disabled와 같은 어휘가 되면서
+   두께는 1px 그대로라 활성↔비활성 전환에서 버튼 크기가 변하지 않는다. */
+.expand-examples-btn--unavailable {
+  background: var(--color-unready-bg);
+  border-color: var(--color-unready-bg);
+  color: var(--color-unready-text);
+}
+
+/* 예시 답변 목록: 답변 textarea가 있던 자리를 그대로 쓴다.
+   둘이 동시에 화면에 있는 순간이 없으므로 모달 높이가 더해지지 않고 둘 중 큰 쪽에서 멈춘다.
+   gap 12px는 1·2단계 선택지 목록(.expand-modal-options)과 같은 값이다 —
+   선택지는 단계가 달라도 같은 부품이어야 한다. */
+.expand-examples-list {
   display: flex;
   flex-direction: column;
   gap: 12px;

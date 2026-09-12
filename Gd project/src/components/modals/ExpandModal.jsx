@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react'
+import { ChevronDown, ChevronUp } from 'lucide-react'
 import ModalButton from './ModalButton'
 import ModalOption from './ModalOption'
 import ModalProgress from './ModalProgress'
@@ -31,6 +32,15 @@ function ExpandModal({ selectedCard, onClose, onSubmit }) {
   // Step 3 질문: AI가 생성한 질문 텍스트와 로딩 상태
   const [aiQuestion, setAiQuestion] = useState('')
   const [isLoadingQuestion, setIsLoadingQuestion] = useState(false)
+
+  // Step 3 답변 후보: 질문과 같은 호출로 함께 받아온 문장들 (generateQuestion이 정제해 넘겨준다)
+  // 답을 떠올리지 못한 사용자가 골라 쓰는 용도이고, 고르면 그대로 answer에 들어간다.
+  const [answerExamples, setAnswerExamples] = useState([])
+
+  // 답변 후보 목록이 펼쳐져 있는지.
+  // 펼친 동안에는 답변 textarea를 숨기고 그 자리에 목록을 놓는다 — 둘이 동시에 있으면
+  // 모달이 답변칸 높이만큼 그대로 길어진다(시안 기준 875px). 자리를 번갈아 쓰면 745px에서 멈춘다.
+  const [examplesOpen, setExamplesOpen] = useState(false)
 
   // 질문 생성 실패 여부 — 오류 안내 UI 표시 조건
   // 오류 문구를 aiQuestion에 넣지 않고 별도 상태로 두는 이유:
@@ -77,6 +87,37 @@ function ExpandModal({ selectedCard, onClose, onSubmit }) {
     ? currentDirection.tools[selectedToolIdx]
     : null
 
+  // ── '예시 답변' 버튼의 상태 ──
+  // 못 누르는 이유가 두 가지인데 성격이 달라서 나눈다.
+  //
+  // examplesLocked   = 다른 작업이 진행 중이라 잠시 막는 것. 곧 풀린다.
+  //   왜 안 눌리는지는 화면이 이미 말하고 있다 — 질문 생성 중에는 질문 박스에 '질문 생성 중'이,
+  //   파생카드 생성 중에는 GenerationProgress 체크리스트가 떠 있다.
+  //   그래서 색을 바꾸지 않고 cursor만 되돌린다(이 앱은 textarea·재생성 버튼도 같은 방식이다).
+  //
+  // examplesUnavailable = 후보를 못 만들어 계속 못 누르는 것.
+  //   이유를 말해주는 것이 화면에 하나도 없으므로 버튼 자신이 색으로 말해야 한다.
+  //   기준을 2개로 둔 이유: 후보가 하나뿐이면 '이게 정답'으로 읽혀 강요가 된다.
+  //
+  // 순서가 중요하다 — 질문 생성 중에는 후보가 아직 안 왔을 뿐인데 length로만 판단하면
+  // '못 만들었다' 색이 잘못 뜬다. 그래서 locked를 먼저 거른다.
+  const examplesLocked = isLoadingQuestion || isSubmitting
+  const examplesUnavailable = !examplesLocked && answerExamples.length < 2
+  const examplesDisabled = examplesLocked || examplesUnavailable
+
+  // 답변칸이 비어 있는 동안에만 버튼을 파랗게 강조한다 (Figma node 2911:3338).
+  // 스스로 쓰기 시작한 사람에게는 더 이상 권할 이유가 없으므로 한 글자만 들어와도 회색으로 내려앉는다.
+  //
+  // examplesLocked를 조건에 넣지 않는다.
+  // 넣으면 질문 생성 대기 1~3초 동안 회색이었다가 질문이 뜨는 순간 파랗게 변한다 —
+  // 그건 위에서 정한 "일시적 잠금은 색을 바꾸지 않는다"를 정면으로 어기는 것이고,
+  // 사용자가 보게 되는 것은 이유 없이 한 번 깜빡이는 버튼이다.
+  // 3단계에 들어선 순간부터 파란 상태로 그대로 있고, 그동안 못 누른다는 사실은 cursor만 말한다.
+  //
+  // examplesUnavailable은 조건에 넣는다. 그쪽은 "후보가 없다"라서
+  // 파란 강조(=권함)와 뜻이 정면으로 충돌하기 때문이다.
+  const examplesHighlighted = answer.trim() === '' && !examplesUnavailable
+
   // 도구 예시 생성(호출 2): 선택된 방향성의 도구들에 대해 아이디어 적용 예시를 받아옴
   // Step 2 진입 시 호출
   const fetchExamples = async () => {
@@ -115,12 +156,21 @@ function ExpandModal({ selectedCard, onClose, onSubmit }) {
     setIsLoadingQuestion(true)
     // 재시도를 시작하는 순간 오류 상태를 풀어 로딩 문구가 보이게 한다
     setQuestionError(false)
+    // 질문이 새로 만들어지면 후보도 새 질문의 것으로 바뀐다.
+    // 목록을 펼친 채로 두면 새 질문 아래에 이전 질문의 후보가 남으므로 함께 접고 비운다.
+    setExamplesOpen(false)
+    setAnswerExamples([])
     try {
       // 2단계 예시는 질문 생성에 넘기지 않는다 (변형하기와 동일한 호출 형태).
       // 예시를 재료로 주면 질문이 그 예시를 구체화하는 방향으로 고정되어,
       // 사용자가 도구를 스스로 적용해볼 여지가 좁아지기 때문 (deriveCard.js 주석 참고)
       const res = await generateQuestion(selectedCard?.data?.description ?? '', currentTool.name, 'expand')
       setAiQuestion(res.question)
+      // 질문과 후보는 한 응답에서 함께 온다. React의 자동 배칭으로 두 setState가 한 번에 반영되므로
+      // "질문은 떴는데 후보는 아직"인 중간 상태가 생기지 않는다 — 후보용 로딩 플래그가 따로 필요 없는 이유다.
+      // 후보가 0~1개여도 질문 생성은 성공이다(generateQuestion이 throw하지 않는다).
+      // 그 경우는 아래 examplesUnavailable이 '예시 답변' 버튼을 비활성으로 두는 것으로 처리된다.
+      setAnswerExamples(res.answerExamples ?? [])
       // 성공한 경우에만 생성 기준을 기록 → 이후 같은 도구로 재진입하면 재생성하지 않는다
       setQuestionKey(currentQuestionKey)
     } catch (err) {
@@ -343,7 +393,52 @@ function ExpandModal({ selectedCard, onClose, onSubmit }) {
                     생성 중에 고친 내용은 AI에도 카드에도 반영되지 않고 사라진다.
                     반영되지 않을 수정을 애초에 막아 사용자가 착각하지 않도록 한다 */}
                 <div className="expand-answer-section">
-                  <label className="modal-label">답변</label>
+                  {/* 라벨 행: '답변'(좌) / 예시 답변 토글(우).
+                      버튼은 3단계에 들어서는 순간부터 항상 렌더한다 — 조건부로 그렸다 지우면
+                      질문 생성이 끝나는 순간 버튼이 튀어나와 라벨 행이 한 번 움직인다.
+                      상태는 disabled와 색으로만 표현해 레이아웃을 고정한다. */}
+                  <div className="expand-answer-header">
+                    <label className="modal-label">답변</label>
+                    <button
+                      className={
+                        'expand-examples-btn'
+                        + (examplesHighlighted ? ' expand-examples-btn--highlight' : '')
+                        + (examplesUnavailable ? ' expand-examples-btn--unavailable' : '')
+                      }
+                      onClick={() => setExamplesOpen((prev) => !prev)}
+                      disabled={examplesDisabled}
+                      aria-expanded={examplesOpen}
+                    >
+                      <span>예시 답변</span>
+                      {/* 화살표가 다음 동작을 말한다 — 아래는 '펼쳐진다', 위는 '접힌다'.
+                          사이드패널 UxAreaAccordion이 쓰는 것과 같은 어휘다.
+                          absoluteStrokeWidth: size에 비례해 획이 얇아지는 것을 막아 18px에서도 2px을 유지한다 */}
+                      {examplesOpen
+                        ? <ChevronUp size={18} strokeWidth={2} absoluteStrokeWidth />
+                        : <ChevronDown size={18} strokeWidth={2} absoluteStrokeWidth />}
+                    </button>
+                  </div>
+
+                  {/* 답변칸과 후보 목록은 같은 자리를 번갈아 쓴다 (둘이 동시에 있는 순간이 없다).
+                      고르면 목록이 닫히고 그 문장이 들어간 답변칸이 돌아오므로,
+                      고른 뒤에도 평범한 답변칸이라 그 자리에서 고쳐 쓸 수 있다. */}
+                  {examplesOpen ? (
+                    <div className="expand-examples-list">
+                      {/* 1·2단계와 같은 ModalOption을 쓴다 — 3단계라고 다른 모양의 선택지를 만들 이유가 없다.
+                          isSelected는 넘기지 않는다: 고르는 즉시 목록이 닫히고 답변칸으로 바뀌므로
+                          '선택된 채로 남아 있는' 상태 자체가 존재하지 않는다. */}
+                      {answerExamples.map((text, i) => (
+                        <ModalOption
+                          key={i}
+                          text={text}
+                          onClick={() => {
+                            setAnswer(text)
+                            setExamplesOpen(false)
+                          }}
+                        />
+                      ))}
+                    </div>
+                  ) : (
                   <textarea
                     className="modal-textarea"
                     placeholder="질문에 답변을 작성해주세요"
@@ -351,6 +446,7 @@ function ExpandModal({ selectedCard, onClose, onSubmit }) {
                     onChange={(e) => setAnswer(e.target.value)}
                     disabled={isLoadingQuestion || isSubmitting}
                   />
+                  )}
                 </div>
 
               </div>
@@ -419,9 +515,12 @@ function ExpandModal({ selectedCard, onClose, onSubmit }) {
                 <ModalButton variant="outline" width={209} onClick={handleBack}>
                   이전으로
                 </ModalButton>
+                {/* examplesOpen을 막는 이유: 목록이 펼쳐진 동안에는 답변칸이 화면에 없다.
+                    이때 이전에 써둔 답변이 남아 있으면, 사용자는 자기가 무엇으로 카드를 만들었는지
+                    보지 못한 채 생성이 진행된다. 보이지 않는 값으로는 카드를 만들지 않는다. */}
                 <ModalButton
                   variant={submitError ? 'danger' : 'filled'}
-                  disabled={answer.trim() === '' || isLoadingQuestion || !aiQuestion}
+                  disabled={answer.trim() === '' || isLoadingQuestion || !aiQuestion || examplesOpen}
                   width={209}
                   onClick={handleSubmit}
                 >
