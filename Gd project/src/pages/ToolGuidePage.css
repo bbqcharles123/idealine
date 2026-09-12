@@ -1,0 +1,272 @@
+/* 전시용 도구 안내 페이지 (가로 거치 아이패드, /tool-guide)
+   클래스 접두사는 tg- (tool-guide) */
+
+/* ── 무대 ──
+   기준 캔버스를 화면 한가운데 놓고 배율만 입힌다.
+   overflow: hidden은 배율이 1보다 클 수 없게 막는 안전장치가 아니라(그건 JS의 min이 한다),
+   회전 직후 배율이 갱신되기 전 한 프레임 동안 내용이 삐져나오는 것을 가리는 역할이다.
+
+   100dvh를 쓰는 이유 — iOS 사파리에서 100vh는 주소창이 펼쳐진 상태의 높이라
+   실제 표시 영역보다 크다. dvh는 그 순간의 실제 높이를 가리킨다.
+   (배율 계산 자체는 ResizeObserver가 요소 크기를 직접 재므로 여기서는 바닥만 맞추면 된다) */
+.tg-stage {
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-background);
+
+  /* 전시 고정 처리 —
+     touch-action: manipulation은 더블탭 확대와 탭 지연(300ms)을 없앤다.
+     index.html의 viewport meta를 고치지 않는 이유는 그 값이 앱 전체(캔버스 화면 포함)에
+     적용되기 때문이다. 캔버스는 확대·축소가 기능이므로 전역으로 막으면 안 된다. */
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── 기준 캔버스 ──
+   width·height·transform은 JSX가 인라인으로 준다 (1194 × 834 + scale).
+   transform-origin이 center여야 .tg-stage의 flex 가운데 정렬과 축이 맞는다. */
+.tg-page {
+  flex-shrink: 0;
+  box-sizing: border-box;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-white);
+  transform-origin: center center;
+}
+
+/* ── 헤더 ── */
+.tg-header__title {
+  margin: 0;
+  font-size: var(--font-size-heading2);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-heading2-3);
+}
+
+.tg-header__sub {
+  margin: 6px 0 0;
+  font-size: var(--font-size-body1);
+  color: var(--color-caption);
+}
+
+/* ── 휠 두 벌 ──
+   남는 세로 공간을 전부 차지하고 그 안에서 가운데 정렬한다.
+   휠 자체는 450px 고정이라 이 영역이 커져도 커지지 않는다 — 여백만 늘어난다. */
+.tg-wheels {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 60px;
+}
+
+/* ── 휠 한 벌 ──
+   도구 색을 지역 변수로 한 번만 선언하고 내부 요소들이 이를 참조한다.
+   --tg-line은 토큰이 아니라 도구 잉크의 투명도 낮춘 값이다 —
+   점선 원·십자선·노드 테두리처럼 '선'으로만 쓰이는 색이라 면색 토큰을 쓸 수 없고,
+   잉크를 그대로 쓰면 도구 이름보다 장식이 더 진해진다. */
+.tg-wheel {
+  position: relative;
+  width: 450px;
+  height: 450px;
+  flex-shrink: 0;
+}
+
+.tg-wheel--expand {
+  --tg-ink: var(--color-expand-text);
+  --tg-bg: var(--color-expand-bg);
+  --tg-line: rgba(46, 125, 50, 0.35);
+}
+
+.tg-wheel--transform {
+  --tg-ink: var(--color-transform-text);
+  --tg-bg: var(--color-transform-bg);
+  --tg-line: rgba(123, 97, 196, 0.35);
+}
+
+/* 노드를 잇는 점선 원 */
+.tg-wheel__ring {
+  position: absolute;
+  border: 1px dashed var(--tg-line);
+  border-radius: 50%;
+}
+
+/* axis 모드의 살 — 중심에서 노드 방향으로 뻗는다.
+   transform-origin이 왼쪽 끝이어야 rotate의 축이 휠 중심에 놓인다. */
+.tg-wheel__spoke {
+  position: absolute;
+  height: 1px;
+  background: var(--tg-line);
+  transform-origin: 0 50%;
+}
+
+/* quadrant 모드의 안쪽 원 + 십자선 */
+.tg-wheel__inner {
+  position: absolute;
+  border: 1px solid var(--tg-line);
+  border-radius: 50%;
+}
+
+.tg-wheel__cross {
+  position: absolute;
+  background: var(--tg-line);
+}
+
+.tg-wheel__cross--v { width: 1px; }
+.tg-wheel__cross--h { height: 1px; }
+
+/* 방향성 라벨.
+   left·top이 라벨의 '중심'으로 주어지므로 translate(-50%, -50%)로 되민다. */
+.tg-wheel__axis {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+  font-size: var(--font-size-body2);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-heading2-3);
+}
+
+/* axis 모드의 라벨은 살 위에 얹히므로, 흰 바탕으로 선을 끊어 글자가 선에 겹치지 않게 한다 */
+.tg-wheel__axis--axis {
+  padding: 2px 8px;
+  background: var(--color-white);
+}
+
+/* 가운데 원 — 프레임워크 이름 */
+.tg-wheel__hub {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--tg-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-body2);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-white);
+}
+
+/* ── 도구 노드 ──
+   선택 상태에서 테두리를 굵히지 않는다. CLAUDE.md의 규칙대로 border는 1px로 두고
+   늘어나는 두께는 box-shadow 링으로 바깥에 덧댄다 — 안 그러면 border-box 때문에
+   원 안의 아이콘·라벨이 밀린다. */
+.tg-node {
+  position: absolute;
+  box-sizing: border-box;
+  padding: 0;
+  border: 1px solid var(--tg-line);
+  border-radius: 50%;
+  background: var(--color-white);
+  color: var(--tg-ink);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  cursor: pointer;
+  font-family: var(--font-family-base);
+}
+
+.tg-node--on {
+  background: var(--tg-bg);
+  box-shadow: 0 0 0 2px var(--tg-ink);
+}
+
+/* 라벨은 잉크가 아니라 본문 색이다 — 아이콘이 이미 도구 색을 쓰고 있어
+   글자까지 같은 색이면 이름이 장식처럼 읽힌다 */
+.tg-node__label {
+  font-size: var(--font-size-nano);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1;
+  white-space: nowrap;
+  color: var(--color-heading2-3);
+}
+
+/* ── 설명 영역 ──
+   높이를 고정하는 이유: 도구마다 설명 길이가 다른데 높이가 변하면 그 위의 휠이
+   함께 움직인다. 관람객이 도구를 연달아 눌러보는 화면에서 그림이 들썩이면 안 된다. */
+.tg-detail {
+  height: 190px;
+  box-sizing: border-box;
+  border-radius: var(--radius-container, 16px);
+  padding: 22px 28px;
+  overflow: hidden;
+}
+
+.tg-detail--empty {
+  background: var(--color-surface);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.tg-detail__prompt {
+  font-size: var(--font-size-body1);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-heading2-3);
+}
+
+.tg-detail__hint {
+  font-size: var(--font-size-body2);
+  color: var(--color-caption);
+}
+
+.tg-detail--expand {
+  background: var(--color-expand-bg);
+  --tg-ink: var(--color-expand-text);
+  --tg-line: rgba(46, 125, 50, 0.35);
+}
+
+.tg-detail--transform {
+  background: var(--color-transform-bg);
+  --tg-ink: var(--color-transform-text);
+  --tg-line: rgba(123, 97, 196, 0.35);
+}
+
+.tg-detail__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--tg-ink);
+}
+
+.tg-detail__name {
+  font-size: var(--font-size-heading2);
+  font-weight: var(--font-weight-bold);
+}
+
+.tg-detail__badge {
+  margin-left: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--color-white);
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* 긴 문단은 이 앱 전체가 justify를 쓴다 (카드 본문·답변·요약 모두) */
+.tg-detail__desc {
+  margin: 14px 0 0;
+  font-size: var(--font-size-body1);
+  line-height: 28px;
+  color: var(--color-body1);
+  text-align: justify;
+}
+
+.tg-detail__route {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--tg-line);
+  font-size: var(--font-size-body2);
+  line-height: 22px;
+  color: var(--color-body2);
+}
+
+.tg-detail__route b:first-child { color: var(--tg-ink); }
+.tg-detail__route b + b { color: var(--color-heading2-3); }

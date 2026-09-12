@@ -1,11 +1,8 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { Handle, Position, useUpdateNodeInternals } from '@xyflow/react'
-import {
-  Eraser, ArrowLeftRight, Scissors, Layers, Combine,
-  Copy, ArrowRightLeft, RefreshCw, Lightbulb, Link, GitBranch,
-  TrendingUp, TrendingDown, Sparkles, Ban, ArrowUp,
-} from 'lucide-react'
+import { ArrowUp } from 'lucide-react'
 import { TOOL_LAYER_DESC } from '../data/toolLayerDesc.js'
+import { TAG_ICON } from '../data/toolIcons.js'
 import './LayerStackNode.css'
 
 // PEEK_HEIGHT: idle 상태에서 카드 아래로 도구 레이어가 노출되는 높이 (42px)
@@ -14,28 +11,8 @@ import './LayerStackNode.css'
 //           아이디어 레이어와 20px 겹침 (overlap)은 CSS에서 처리
 const PEEK_HEIGHT = 42
 
-// tagName별 lucide-react 아이콘 컴포넌트 매핑
-const TAG_ICON = {
-  expand: {
-    '제거':        Eraser,
-    '대체':        ArrowLeftRight,
-    '분할·분리':   Scissors,
-    '용도통합':    Layers,
-    '결합':        Combine,
-    '복제':        Copy,
-    '역전':        ArrowRightLeft,
-    '재정의':      RefreshCw,
-    '유추':        Lightbulb,
-    '연결':        Link,
-    '속성 의존성': GitBranch,
-  },
-  transform: {
-    '증가': TrendingUp,
-    '감소': TrendingDown,
-    '창출': Sparkles,
-    '제거': Ban,
-  },
-}
+// tagName별 아이콘 매핑은 src/data/toolIcons.js로 옮겼다 —
+// 도구 안내 페이지(ToolGuidePage)가 같은 매핑을 쓰므로 단일 출처가 필요했다.
 
 const TOOL_CONFIG = {
   expand: {
